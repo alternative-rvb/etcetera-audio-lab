@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test TTS</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app-container">
+      <header class="top-bar">
+        <h1>Test TTS</h1>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Changer de thème">🌙</button>
+      </header>
+
+      <div class="layout-grid">
+        <!-- Colonne Gauche : Saisie, Moteur, Voix, Paramètres -->
+        <div class="column column-left">
+          <div class="input-card">
+            <h1 class="">Paramètres</h1>
+            <label for="text" class="field-label">Texte à synthétiser</label>
+            <textarea id="text" placeholder="Entrez le texte à synthétiser..." rows="5">Le chat s'assit près du grand vieil arbre et observa les oiseaux exécuter leur ballet aérien. « Quelle heure est-il ? » demanda-t-elle en fronçant les sourcils, avant d'ajouter : « Nous avons rendez-vous à neuf heures et quart, pas à dix-neuf heures ! » Malgré la pluie battante et les rafales de vent, ils décidèrent de traverser les Champs-Élysées à pied, un peu essoufflés mais résolument heureux.</textarea>
+          </div>
+
+          <div class="controls">
+            <div class="engine-switch" id="engineSwitch" role="group" aria-label="Moteur TTS">
+              <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true">Edge TTS (Microsoft)</button>
+              <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false">Piper (local)</button>
+            </div>
+
+            <div class="voice-selection">
+              <div class="voice-selection-header">
+                <span class="label-text">Modèle de voix (France)</span>
+                <span id="voiceCountBadge" class="voice-count"></span>
+              </div>
+              <div id="voiceButtons" class="voice-grid" role="radiogroup" aria-label="Modèle de voix"></div>
+            </div>
+
+            <div id="edgeControls" class="engine-controls">
+              <label>
+                Vitesse (%)
+                <input id="ratePercent" type="range" min="-50" max="50" step="5" value="0" />
+                <span id="ratePercentValue">+0%</span>
+              </label>
+            </div>
+
+            <div id="piperControls" class="engine-controls" hidden>
+              <label>
+                Vitesse (length scale)
+                <input id="lengthScale" type="range" min="0.5" max="2" step="0.05" value="1" />
+                <span id="lengthScaleValue">1.00</span>
+              </label>
+
+              <label>
+                Variation (noise scale)
+                <input id="noiseScale" type="range" min="0" max="1" step="0.05" value="0.667" />
+                <span id="noiseScaleValue">0.67</span>
+              </label>
+
+              <label>
+                Expressivité (noise w)
+                <input id="noiseW" type="range" min="0" max="1" step="0.05" value="0.8" />
+                <span id="noiseWValue">0.80</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button id="generate">Générer la voix</button>
+            <p id="status"></p>
+          </div>
+
+          <!-- Section d'information à onglets : Expliquer l'objectif | Aide -->
+          <div class="info-section">
+            <div class="tab-nav" role="tablist" aria-label="Informations et aide">
+              <button type="button" class="tab-nav-btn active" id="tabBtnGoal" role="tab" aria-selected="true" aria-controls="tabPanelGoal">
+                Expliquer l'objectif
+              </button>
+              <button type="button" class="tab-nav-btn" id="tabBtnHelp" role="tab" aria-selected="false" aria-controls="tabPanelHelp">
+                Aide
+              </button>
+            </div>
+
+            <div class="tab-panels">
+              <!-- Onglet 1 : Expliquer l'objectif -->
+              <div class="tab-panel active" id="tabPanelGoal" role="tabpanel" aria-labelledby="tabBtnGoal">
+                <div class="tab-content-block">
+                  <h3 class="tab-panel-title">Banc d'essai Text-to-Speech (TTS)</h3>
+                  <p class="tab-panel-intro">
+                    Ce projet évalue et compare différents moteurs de synthèse vocale pour le français (<code>fr-FR</code>), en vue d'une intégration dans l'application NextJS (NowWeAct) et d'un déploiement auto-hébergé sur VPS OVH.
+                  </p>
+                  
+                  <div class="tab-grid-compare">
+                    <div class="tab-mini-card card-edge">
+                      <div class="mini-card-header">
+                        <span class="card-badge engine-edge">Edge TTS</span>
+                        <span class="mini-card-tag">Cloud Neural</span>
+                      </div>
+                      <p class="mini-card-desc">
+                        Voix neurales Microsoft Edge via endpoint gratuit sans clé API. Moteur de référence actuellement en production dans NowWeAct.
+                      </p>
+                      <ul class="mini-card-features">
+                        <li>Excellente fluidité et naturel (Denise, Henri, etc.)</li>
+                        <li>Format MP3 léger & contrôle du débit (pitch/rate)</li>
+                        <li>Dépendance réseau vers les serveurs Microsoft</li>
+                      </ul>
+                    </div>
+
+                    <div class="tab-mini-card card-piper">
+                      <div class="mini-card-header">
+                        <span class="card-badge engine-piper">Piper</span>
+                        <span class="mini-card-tag">100% Local CPU</span>
+                      </div>
+                      <p class="mini-card-desc">
+                        Moteur open-source (binaire natif C++ + ONNX) tournant entièrement en local sur CPU, sans aucune dépendance cloud ni quota.
+                      </p>
+                      <ul class="mini-card-features">
+                        <li>Indépendance totale & latence prédictible</li>
+                        <li>Sortie audio WAV sans perte</li>
+                        <li>Qualité dépendante des modèles ONNX (Siwis, UPMC, etc.)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <p class="tab-panel-note">
+                    <strong>Pistes futures identifiées :</strong> Kokoro (82M ONNX, qualité supérieure en local CPU pur) et Chatterbox (clonage vocal sous licence MIT).
+                  </p>
+                </div>
+              </div>
+
+              <!-- Onglet 2 : Aide -->
+              <div class="tab-panel" id="tabPanelHelp" role="tabpanel" aria-labelledby="tabBtnHelp" hidden>
+                <div class="tab-content-block">
+                  <h3 class="tab-panel-title">Guide d'utilisation</h3>
+
+                  <div class="help-steps">
+                    <div class="help-step-item">
+                      <span class="help-step-num">1</span>
+                      <div class="help-step-text">
+                        <strong>Choisir le moteur :</strong> Cliquez sur <span class="badge-inline engine-edge">Edge TTS</span> pour la voix neuronale Microsoft ou <span class="badge-inline engine-piper">Piper</span> pour la synthèse locale sur votre CPU.
+                      </div>
+                    </div>
+
+                    <div class="help-step-item">
+                      <span class="help-step-num">2</span>
+                      <div class="help-step-text">
+                        <strong>Sélectionner une voix :</strong> Cliquez sur l'un des boutons de la grille pour tester différents profils de voix féminines ou masculines.
+                      </div>
+                    </div>
+
+                    <div class="help-step-item">
+                      <span class="help-step-num">3</span>
+                      <div class="help-step-text">
+                        <strong>Ajuster les paramètres :</strong>
+                        <ul class="help-params-list">
+                          <li><em>Edge TTS</em> : vitesse de débit (ex : <code>-20%</code> pour ralentir, <code>+20%</code> pour accélérer).</li>
+                          <li><em>Piper</em> : cadence (durée des phonèmes) et échelle de bruit (expressivité/variabilité).</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div class="help-step-item">
+                      <span class="help-step-num">4</span>
+                      <div class="help-step-text">
+                        <strong>Générer & Comparer :</strong> Cliquez sur <strong>Générer la voix</strong>. L'audio est lu immédiatement et enregistré dans l'historique sur la colonne de droite.
+                      </div>
+                    </div>
+
+                    <div class="help-step-item">
+                      <span class="help-step-num">5</span>
+                      <div class="help-step-text">
+                        <strong>Historique & Favoris :</strong> Utilisez les boutons <span class="badge-inline">⭐</span> pour marquer vos rendus préférés. Filtrez par moteur ou favoris, copiez l'emplacement fichier ou cliquez sur <strong>Réutiliser</strong> pour charger un texte passé.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne Droite : Aperçu et Historique -->
+        <div class="column column-right">
+          <section class="preview-section compact" id="previewSection" aria-label="Aperçu audio">
+            <div class="preview-header">
+              <span class="preview-title">Aperçu audio</span>
+              <div class="preview-header-right">
+                <div class="preview-badges" id="previewInfo" hidden>
+                  <span id="detailEngine" class="card-badge"></span>
+                  <span id="detailVoice" class="card-badge"></span>
+                </div>
+                <button type="button" id="previewUpvoteBtn" class="upvote-btn" title="Ajouter ce TTS aux favoris" hidden>Favori</button>
+              </div>
+            </div>
+
+            <audio id="player" controls></audio>
+            
+            <div id="audioDetails" class="preview-path-row" hidden>
+              <span class="path-label">Fichier :</span>
+              <code id="detailPath" class="path-text" title="Cliquez pour copier"></code>
+              <button type="button" id="copyPathBtn" class="copy-btn">Copier</button>
+            </div>
+          </section>
+
+          <section class="history-section" id="historySection">
+            <div class="history-header">
+              <div class="history-title-row">
+                <h2 class="section-title">Historique</h2>
+                <span id="historyCount" class="badge">0</span>
+              </div>
+              <div class="history-header-actions">
+                <button type="button" id="toggleAllHistoryBtn" class="action-btn" title="Tout replier ou déplier les dropdowns">Tout déplier</button>
+                <button type="button" id="clearHistoryBtn" class="action-btn" title="Vider tout l'historique">Vider</button>
+              </div>
+            </div>
+
+            <div class="history-filters" role="group" aria-label="Filtrer l'historique">
+              <span class="filter-label">Filtres :</span>
+              <div class="filter-buttons" id="historyFilterButtons">
+                <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Tous</button>
+                <button type="button" class="filter-btn filter-edge" data-filter="edge" aria-pressed="false">Edge TTS</button>
+                <button type="button" class="filter-btn filter-piper" data-filter="piper" aria-pressed="false">Piper</button>
+                <button type="button" class="filter-btn filter-fav" data-filter="favorites" aria-pressed="false">Favoris</button>
+              </div>
+            </div>
+
+            <div id="historyList" class="history-list"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "tts-test",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "setup": "bash scripts/setup-piper.sh && npm install --prefix server && npm install --prefix web",
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix web\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
