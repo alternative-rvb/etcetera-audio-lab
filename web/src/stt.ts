@@ -150,6 +150,8 @@ export function initSttModule() {
   let micAudioContext: AudioContext | null = null;
   let micAnalyser: AnalyserNode | null = null;
   let micAnimId: number | null = null;
+  let liveSpeechRecognition: any = null;
+  let liveSpeechTranscript: string = "";
 
   if (micRecordBtnIcon) micRecordBtnIcon.innerHTML = icon("mic", { size: 15 });
 
@@ -158,8 +160,8 @@ export function initSttModule() {
     const ctx = micCanvas.getContext("2d");
     if (!ctx) return;
 
-    const width = micCanvas.width = micCanvas.offsetWidth;
-    const height = micCanvas.height = micCanvas.offsetHeight;
+    const width = (micCanvas.width = micCanvas.offsetWidth);
+    const height = (micCanvas.height = micCanvas.offsetHeight);
 
     const bufferLength = micAnalyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
@@ -197,6 +199,7 @@ export function initSttModule() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
       mediaRecorder = new MediaRecorder(stream);
+      liveSpeechTranscript = "";
 
       micAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const source = micAudioContext.createMediaStreamSource(stream);
@@ -218,6 +221,38 @@ export function initSttModule() {
       mediaRecorder.start();
       isRecording = true;
       recordStartTime = Date.now();
+
+      // Reconnaissance vocale temps réel Web Speech API si active
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (activeSttEngine === "webspeech" && SpeechRec) {
+        try {
+          liveSpeechRecognition = new SpeechRec();
+          liveSpeechRecognition.continuous = true;
+          liveSpeechRecognition.interimResults = true;
+          liveSpeechRecognition.lang =
+            (document.getElementById("webspeechLanguage") as HTMLSelectElement)?.value || "fr-FR";
+
+          liveSpeechRecognition.onresult = (event: any) => {
+            let interim = "";
+            let final = "";
+            for (let i = 0; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                final += event.results[i][0].transcript;
+              } else {
+                interim += event.results[i][0].transcript;
+              }
+            }
+            liveSpeechTranscript = (final + " " + interim).trim();
+            if (transcriptionTextContent && liveSpeechTranscript) {
+              transcriptionTextContent.innerHTML = `<p class="transcription-text">${liveSpeechTranscript}</p>`;
+            }
+          };
+
+          liveSpeechRecognition.start();
+        } catch (recErr) {
+          console.warn("Web Speech API non disponible ou erreur :", recErr);
+        }
+      }
 
       if (micRecordBtn) micRecordBtn.classList.add("is-recording");
       if (micRecordBtnIcon) micRecordBtnIcon.innerHTML = icon("square", { size: 14 });
@@ -242,6 +277,12 @@ export function initSttModule() {
       mediaRecorder.stop();
       isRecording = false;
 
+      if (liveSpeechRecognition) {
+        try {
+          liveSpeechRecognition.stop();
+        } catch {}
+      }
+
       if (micRecordBtn) micRecordBtn.classList.remove("is-recording");
       if (micRecordBtnIcon) micRecordBtnIcon.innerHTML = icon("mic", { size: 15 });
       if (micRecordBtnText) micRecordBtnText.textContent = "Enregistrer à nouveau";
@@ -260,46 +301,48 @@ export function initSttModule() {
     else startRecording();
   });
 
-  // Dropzone File Upload
-  const dropzone = document.getElementById("sttFileDropzone") as HTMLDivElement | null;
-  const fileInput = document.getElementById("sttFileInput") as HTMLInputElement | null;
+  // Dropzone STT
+  const sttDropzone = document.getElementById("sttDropzone") as HTMLDivElement | null;
+  const sttAudioFileInput = document.getElementById("sttAudioFileInput") as HTMLInputElement | null;
+  const sttDropzoneIcon = document.getElementById("sttDropzoneIcon");
   const selectedFileInfo = document.getElementById("selectedFileInfo") as HTMLDivElement | null;
   const selectedFileName = document.getElementById("selectedFileName") as HTMLSpanElement | null;
   const removeSelectedFileBtn = document.getElementById("removeSelectedFileBtn") as HTMLButtonElement | null;
-  const sttDropzoneIcon = document.getElementById("sttDropzoneIcon");
+
   if (sttDropzoneIcon) sttDropzoneIcon.innerHTML = icon("upload", { size: 28 });
 
-  dropzone?.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest("#removeSelectedFileBtn")) return;
-    fileInput?.click();
+  sttDropzone?.addEventListener("click", () => {
+    sttAudioFileInput?.click();
   });
 
-  dropzone?.addEventListener("dragover", (e) => {
+  sttDropzone?.addEventListener("dragover", (e) => {
     e.preventDefault();
-    dropzone.classList.add("drag-over");
+    sttDropzone.classList.add("drag-over");
   });
 
-  dropzone?.addEventListener("dragleave", () => {
-    dropzone.classList.remove("drag-over");
+  sttDropzone?.addEventListener("dragleave", () => {
+    sttDropzone.classList.remove("drag-over");
   });
 
-  dropzone?.addEventListener("drop", (e) => {
+  sttDropzone?.addEventListener("drop", (e) => {
     e.preventDefault();
-    dropzone.classList.remove("drag-over");
-    if (e.dataTransfer?.files.length) {
+    sttDropzone.classList.remove("drag-over");
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       handleFileSelected(e.dataTransfer.files[0]);
     }
   });
 
-  fileInput?.addEventListener("change", () => {
-    if (fileInput.files?.length) {
-      handleFileSelected(fileInput.files[0]);
+  sttAudioFileInput?.addEventListener("change", (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (files && files.length > 0) {
+      handleFileSelected(files[0]);
     }
   });
 
   function handleFileSelected(file: File) {
     activeAudioBlob = file;
     activeAudioFilename = file.name;
+
     if (selectedFileInfo && selectedFileName) {
       selectedFileInfo.hidden = false;
       selectedFileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} Mo)`;
@@ -307,86 +350,76 @@ export function initSttModule() {
     loadAudioIntoSttPlayer(file);
   }
 
-  removeSelectedFileBtn?.addEventListener("click", () => {
+  removeSelectedFileBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
     activeAudioBlob = null;
-    if (fileInput) fileInput.value = "";
+    activeAudioFilename = "";
     if (selectedFileInfo) selectedFileInfo.hidden = true;
+    if (sttAudioFileInput) sttAudioFileInput.value = "";
+    if (sttAudioPlayer) {
+      sttAudioPlayer.src = "";
+    }
   });
 
   // Demo Samples
-  const demoFemaleBtn = document.getElementById("demoSampleFemale");
-  const demoMaleBtn = document.getElementById("demoSampleMale");
+  const demoSampleFemale = document.getElementById("demoSampleFemale");
+  const demoSampleMale = document.getElementById("demoSampleMale");
 
   async function loadDemoSample(type: "female" | "male") {
     try {
-      const filename = type === "female" ? "reference_female.wav" : "reference_male.wav";
-      const res = await fetch(`/api/voices?engine=chatterbox`);
-      // Use direct local reference sample from server
-      const audioRes = await fetch(`/audio/${filename}`).catch(() => fetch(`http://127.0.0.1:5002/references`));
-      
-      // Fallback to synthesizing a clean sample if static path is direct
-      const sampleBlob = await fetch(`/audio/${filename}`).then((r) => r.blob()).catch(async () => {
-        const fallbackRes = await fetch(`${API_BASE}/api/tts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: "Bonjour, ceci est un extrait audio de test pour valider la transcription vocale Whisper.",
-            engine: "edge",
-            voiceId: "fr-FR-DeniseNeural",
-          }),
-        });
-        return fallbackRes.blob();
-      });
-
-      activeAudioBlob = sampleBlob;
+      const filename = type === "female" ? "sample_female_fr.wav" : "sample_male_fr.wav";
+      const res = await fetch(`/samples/${filename}`);
+      if (!res.ok) throw new Error("Échantillon audio introuvable");
+      const blob = await res.blob();
+      activeAudioBlob = blob;
       activeAudioFilename = filename;
-      loadAudioIntoSttPlayer(sampleBlob);
+      loadAudioIntoSttPlayer(blob);
 
-      [demoFemaleBtn, demoMaleBtn].forEach((b) => b?.classList.remove("is-active"));
-      if (type === "female") demoFemaleBtn?.classList.add("is-active");
-      else demoMaleBtn?.classList.add("is-active");
+      if (transcriptionTextContent) {
+        transcriptionTextContent.innerHTML = `<p class="transcription-placeholder">Échantillon ${type === "female" ? "féminin" : "masculin"} chargé. Cliquez sur "Lancer la transcription" pour analyser.</p>`;
+      }
     } catch (err: any) {
-      alert(`Erreur de chargement de l'extrait démo : ${err.message}`);
+      alert(`Impossible de charger l'échantillon : ${err.message}`);
     }
   }
 
-  demoFemaleBtn?.addEventListener("click", () => loadDemoSample("female"));
-  demoMaleBtn?.addEventListener("click", () => loadDemoSample("male"));
+  demoSampleFemale?.addEventListener("click", () => loadDemoSample("female"));
+  demoSampleMale?.addEventListener("click", () => loadDemoSample("male"));
 
-  // Audio Player & Visualizer for STT
+  // Player & Visualizer
   const sttAudioPlayer = document.getElementById("sttAudioPlayer") as HTMLAudioElement | null;
-  const sttFormatBadge = document.getElementById("sttFormatBadge") as HTMLSpanElement | null;
-  const sttEngineBadge = document.getElementById("sttEngineBadge") as HTMLSpanElement | null;
-  const sttDurationBadge = document.getElementById("sttDurationBadge") as HTMLSpanElement | null;
-  const sttRtfBadge = document.getElementById("sttRtfBadge") as HTMLSpanElement | null;
+  const sttVisualizerStatus = document.getElementById("sttVisualizerStatus");
+  const sttAudioVisualizer = document.getElementById("sttAudioVisualizer") as HTMLCanvasElement | null;
+  const sttFormatBadge = document.getElementById("sttFormatBadge");
+  const sttEngineBadge = document.getElementById("sttEngineBadge");
+  const sttDurationBadge = document.getElementById("sttDurationBadge");
+  const sttRtfBadge = document.getElementById("sttRtfBadge");
   const sttVisualizerIcon = document.getElementById("sttVisualizerIcon");
   const sttPreviewDeckIcon = document.getElementById("sttPreviewDeckIcon");
+
   if (sttVisualizerIcon) sttVisualizerIcon.innerHTML = icon("activity", { size: 12 });
   if (sttPreviewDeckIcon) sttPreviewDeckIcon.innerHTML = icon("volume", { size: 13 });
 
-  function loadAudioIntoSttPlayer(blobOrUrl: Blob | string) {
+  function loadAudioIntoSttPlayer(blob: Blob) {
     if (!sttAudioPlayer) return;
-    if (typeof blobOrUrl === "string") {
-      sttAudioPlayer.src = blobOrUrl;
-    } else {
-      sttAudioPlayer.src = URL.createObjectURL(blobOrUrl);
-    }
-    if (sttFormatBadge) sttFormatBadge.textContent = "Audio chargé";
-    sttAudioPlayer.load();
+    const url = URL.createObjectURL(blob);
+    sttAudioPlayer.src = url;
+    if (sttVisualizerStatus) sttVisualizerStatus.textContent = "Prêt à transcrire";
   }
 
   // STT Engine Selector
   const sttEngineSwitch = document.getElementById("sttEngineSwitch") as HTMLDivElement | null;
+  const sttWebSpeechOptions = document.getElementById("sttWebSpeechOptions") as HTMLDivElement | null;
   const sttWhisperOptions = document.getElementById("sttWhisperOptions") as HTMLDivElement | null;
   const sttWhisperBtnIcon = document.getElementById("sttWhisperBtnIcon");
   const sttWebSpeechBtnIcon = document.getElementById("sttWebSpeechBtnIcon");
   const sttSherpaBtnIcon = document.getElementById("sttSherpaBtnIcon");
 
-  if (sttWhisperBtnIcon) sttWhisperBtnIcon.innerHTML = icon("cpu", { size: 14 });
   if (sttWebSpeechBtnIcon) sttWebSpeechBtnIcon.innerHTML = icon("globe", { size: 14 });
+  if (sttWhisperBtnIcon) sttWhisperBtnIcon.innerHTML = icon("cpu", { size: 14 });
   if (sttSherpaBtnIcon) sttSherpaBtnIcon.innerHTML = icon("zap", { size: 14 });
 
-  let activeSttEngine: "whisper" | "webspeech" | "sherpa" = "whisper";
+  let activeSttEngine: "whisper" | "webspeech" | "sherpa" = "webspeech";
 
   sttEngineSwitch?.querySelectorAll<HTMLButtonElement>(".engine-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -397,13 +430,21 @@ export function initSttModule() {
       btn.classList.add("active");
       btn.setAttribute("aria-pressed", "true");
 
-      activeSttEngine = (btn.dataset.sttEngine as "whisper" | "webspeech" | "sherpa") || "whisper";
+      activeSttEngine = (btn.dataset.sttEngine as "whisper" | "webspeech" | "sherpa") || "webspeech";
+      if (sttWebSpeechOptions) {
+        sttWebSpeechOptions.hidden = activeSttEngine !== "webspeech";
+      }
       if (sttWhisperOptions) {
         sttWhisperOptions.hidden = activeSttEngine !== "whisper";
       }
       if (sttEngineBadge) {
         sttEngineBadge.className = `badge engine-${activeSttEngine}`;
-        sttEngineBadge.textContent = activeSttEngine === "whisper" ? "Whisper" : activeSttEngine === "webspeech" ? "Web Speech" : "Sherpa";
+        sttEngineBadge.textContent =
+          activeSttEngine === "webspeech"
+            ? "Web Speech"
+            : activeSttEngine === "whisper"
+            ? "Whisper"
+            : "Sherpa";
       }
     });
   });
