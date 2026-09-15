@@ -16,4 +16,7 @@
 - [x] 13 - Section Speech-to-Text (STT) : Page 2 avec Whisper (Faster-Whisper CUDA/CPU), enregistrement micro, import fichier, métriques RTF et matrice décisionnelle
 - [x] 14 - STT : Système d'évaluation sur 3 étoiles (1/3, 2/3, 3/3) & favoris sur l'aperçu et chaque carte d'historique
 - [x] 15 - Harmonisation des icônes SVG (Heart, Square, RefreshCw, BarChart, Globe, Upload, Cloud, Sparkles, Zap) & cohérence stylistique globale
+- [x] 16 - STT : Historique en dropdowns repliables harmonisé avec TTS (badges, lecteur audio, bouton d'envoi vers TTS)
+- [x] 17 - STT : Support complet de Sherpa-ONNX (CPU), Faster-Whisper et Web Speech API avec auto-transcription micro
+- [x] 18 - UI : Harmonisation du graphique Matrice décisionnelle (Score Y / Vitesse X) et filtres compacts sur TTS et STT
 - [ ] Prioriser les providers dont les voix ont été mis en favoris
