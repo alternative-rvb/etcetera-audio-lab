@@ -732,6 +732,31 @@ export function initSttModule() {
   const sttSettingsChevron = document.getElementById("sttSettingsChevron");
   if (sttSettingsChevron) sttSettingsChevron.innerHTML = icon("chevronRight", { size: 13 });
 
+  let sttHistoryFilter: "all" | "webspeech" | "whisper" | "sherpa" | "favorites" = "all";
+  const sttHistoryFilterButtons = document.getElementById("sttHistoryFilterButtons");
+
+  sttHistoryFilterButtons?.querySelectorAll<HTMLButtonElement>(".filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sttHistoryFilterButtons.querySelectorAll<HTMLButtonElement>(".filter-btn").forEach((b) => {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
+      sttHistoryFilter = (btn.dataset.filter as any) || "all";
+      applySttHistoryFilter();
+    });
+  });
+
+  function applySttHistoryFilter() {
+    const filtered = sttHistoryCache.filter((item) => {
+      if (sttHistoryFilter === "all") return true;
+      if (sttHistoryFilter === "favorites") return !!item.isFavorite;
+      return item.engine === sttHistoryFilter;
+    });
+    renderSttHistory(filtered);
+  }
+
   async function loadSttHistory() {
     try {
       const res = await fetch(`${API_BASE}/api/stt/history`);
@@ -742,7 +767,7 @@ export function initSttModule() {
       if (sttHistoryCount) sttHistoryCount.textContent = String(history.length);
       if (sttStatsBadgeCount) sttStatsBadgeCount.textContent = `${history.length} tests`;
 
-      renderSttHistory(history);
+      applySttHistoryFilter();
       renderSttDecisionMatrix(history);
     } catch (err) {
       console.error("Erreur chargement historique STT:", err);
@@ -752,7 +777,7 @@ export function initSttModule() {
   function renderSttHistory(items: STTHistoryItem[]) {
     if (!sttHistoryList) return;
     if (items.length === 0) {
-      sttHistoryList.innerHTML = `<p class="history-empty">Aucune transcription enregistrée pour le moment.</p>`;
+      sttHistoryList.innerHTML = `<p class="history-empty">${sttHistoryFilter === "favorites" ? "Aucune transcription marquée en favori pour le moment." : sttHistoryCache.length === 0 ? "Aucune transcription enregistrée pour le moment." : "Aucune transcription pour ce filtre."}</p>`;
       return;
     }
 

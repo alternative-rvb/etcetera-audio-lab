@@ -818,6 +818,18 @@
                 <button type="button" id="clearSttHistoryBtn" class="action-btn" title="Vider l'historique STT"><span id="clearSttHistoryIcon"></span> Vider</button>
               </div>
             </div>
+
+            <div class="history-filters" role="group" aria-label="Filtrer l'historique STT">
+              <span class="filter-label">Filtres :</span>
+              <div class="filter-buttons" id="sttHistoryFilterButtons">
+                <button type="button" class="filter-btn" data-filter="all" aria-pressed="true" title="Afficher toutes les transcriptions">Tous</button>
+                <button type="button" class="filter-btn filter-webspeech" data-filter="webspeech" aria-pressed="false" title="Filtrer : Web Speech API">Web Speech</button>
+                <button type="button" class="filter-btn filter-whisper" data-filter="whisper" aria-pressed="false" title="Filtrer : Faster-Whisper">Whisper</button>
+                <button type="button" class="filter-btn filter-sherpa" data-filter="sherpa" aria-pressed="false" title="Filtrer : Sherpa-ONNX">Sherpa</button>
+                <button type="button" class="filter-btn filter-fav" data-filter="favorites" aria-pressed="false" title="Afficher uniquement les favoris">Favoris</button>
+              </div>
+            </div>
+
             <div id="sttHistoryList" class="history-list"></div>
           </section>
         </div>
