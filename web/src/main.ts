@@ -66,6 +66,8 @@ const themeToggleEl = document.getElementById("themeToggle") as HTMLButtonElemen
 
 // Éléments de l'aperçu détaillé
 const previewInfoEl = document.getElementById("previewInfo") as HTMLDivElement;
+const previewFormatBadge = document.getElementById("previewFormatBadge") as HTMLSpanElement | null;
+const previewDeckIcon = document.getElementById("previewDeckIcon") as HTMLSpanElement | null;
 const detailGenTimeEl = document.getElementById("detailGenTime") as HTMLSpanElement;
 const previewRatingEl = document.getElementById("previewRating") as HTMLDivElement;
 const previewUpvoteBtn = document.getElementById("previewUpvoteBtn") as HTMLButtonElement;
@@ -197,6 +199,11 @@ function setupHeroSection() {
   const visualizerIconEl = document.getElementById("visualizerIcon");
   if (visualizerIconEl) {
     visualizerIconEl.innerHTML = icon("activity", { size: 12 });
+  }
+
+  const previewDeckIconEl = document.getElementById("previewDeckIcon");
+  if (previewDeckIconEl) {
+    previewDeckIconEl.innerHTML = icon("volume", { size: 13 });
   }
 }
 
@@ -506,6 +513,16 @@ function loadAudioIntoPreview(
     detailGenTimeEl.hidden = true;
   }
 
+  if (previewFormatBadge) {
+    let fmt = "24kHz";
+    if (item.engine === "edge") fmt = "MP3 • 24kHz";
+    else if (item.engine === "piper") fmt = "WAV • 22.05kHz";
+    else if (item.engine === "kokoro") fmt = "WAV • 24kHz Studio";
+    else if (item.engine === "chatterbox") fmt = "WAV • 24kHz Clonage";
+    previewFormatBadge.textContent = fmt;
+    previewFormatBadge.hidden = false;
+  }
+
   previewInfoEl.hidden = false;
   audioDetailsEl.hidden = false;
 
@@ -528,11 +545,11 @@ function updateHistoryPlayButtons() {
   for (const btn of playButtons) {
     const isThisItem = btn.dataset.itemId === currentPreviewAudioId;
     if (isThisItem && isPlaying) {
-      btn.innerHTML = `${icon("pause", { size: 12 })} <span>Pause</span>`;
+      btn.innerHTML = icon("pause", { size: 12 });
       btn.classList.add("is-playing");
       btn.title = "Mettre en pause";
     } else {
-      btn.innerHTML = `${icon("play", { size: 12 })} <span>Écouter</span>`;
+      btn.innerHTML = icon("play", { size: 12 });
       btn.classList.remove("is-playing");
       btn.title = "Écouter cet enregistrement";
     }
@@ -576,6 +593,21 @@ function initVisualizerAudioContext() {
 function getActiveEngineColors(): { primary: string; secondary: string } {
   const currentItem = currentPreviewAudioId ? historyItems.find((i) => i.id === currentPreviewAudioId) : null;
   const activeEng = currentItem?.engine || engine;
+  const isRetro = document.documentElement.dataset.theme === "retro";
+
+  if (isRetro) {
+    switch (activeEng) {
+      case "piper":
+        return { primary: "#00f0ff", secondary: "#80f7ff" };
+      case "kokoro":
+        return { primary: "#00ff66", secondary: "#80ffaa" };
+      case "chatterbox":
+        return { primary: "#ff007f", secondary: "#ff80bf" };
+      case "edge":
+      default:
+        return { primary: "#c084fc", secondary: "#e9d5ff" };
+    }
+  }
 
   switch (activeEng) {
     case "piper":
@@ -789,11 +821,11 @@ function renderStatsAndChart() {
 
   // Rendu du Graphique SVG
   const width = 540;
-  const height = 210;
+  const height = 220;
   const paddingLeft = 46;
   const paddingRight = 24;
-  const paddingTop = 24;
-  const paddingBottom = 34;
+  const paddingTop = 26;
+  const paddingBottom = 40;
 
   const plotW = width - paddingLeft - paddingRight;
   const plotH = height - paddingTop - paddingBottom;
@@ -814,19 +846,33 @@ function renderStatsAndChart() {
     chatterbox: "#e11d48",
   };
 
-  const optimalW = Math.min(plotW * 0.4, getX(1.0) - paddingLeft);
-  const optimalH = plotH * 0.45;
+  const optimalThresholdSec = Math.min(1.2, maxTime * 0.4);
+  const optimalW = Math.max(70, getX(optimalThresholdSec) - paddingLeft);
+  const qualityW = Math.max(60, (width - paddingRight) - (paddingLeft + optimalW));
+  
+  const zoneTopY = Math.max(8, paddingTop - 8);
+  const optimalH = (getY(2) - zoneTopY) + 12; // Englobe proprement les scores 2/3 et 3/3
+  const qualityH = (getY(3) - zoneTopY) + 20; // Englobe la ligne supérieure score 3/3
 
   let svgContent = `
     <defs>
       <linearGradient id="optimalGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#10b981" stop-opacity="0.18" />
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.22" />
         <stop offset="100%" stop-color="#10b981" stop-opacity="0.04" />
+      </linearGradient>
+      <linearGradient id="qualityGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e11d48" stop-opacity="0.16" />
+        <stop offset="100%" stop-color="#e11d48" stop-opacity="0.03" />
       </linearGradient>
     </defs>
 
-    <rect x="${paddingLeft}" y="${paddingTop}" width="${optimalW}" height="${optimalH}" fill="url(#optimalGrad)" rx="4" />
-    <text x="${paddingLeft + 6}" y="${paddingTop + 14}" fill="#059669" font-size="9" font-weight="600" opacity="0.85">Zone Idéale Prod (Rapide + Studio)</text>
+    <!-- Zone 1 : Idéal Prod (Temps rapide <= ${optimalThresholdSec.toFixed(1)}s & Note >= 2/3) -->
+    <rect x="${paddingLeft}" y="${zoneTopY}" width="${optimalW}" height="${optimalH}" fill="url(#optimalGrad)" stroke="rgba(16, 185, 129, 0.45)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
+    <text x="${paddingLeft + 6}" y="${zoneTopY + 11}" fill="#10b981" font-size="8" font-weight="700">Idéal Prod (≤ ${optimalThresholdSec.toFixed(1)}s)</text>
+
+    <!-- Zone 2 : Qualité Studio / Poids lourd (Note 3/3 • Temps plus long) -->
+    <rect x="${paddingLeft + optimalW}" y="${zoneTopY}" width="${qualityW}" height="${qualityH}" fill="url(#qualityGrad)" stroke="rgba(225, 29, 72, 0.35)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
+    <text x="${width - paddingRight - 6}" y="${zoneTopY + 11}" fill="#e11d48" font-size="8" font-weight="700" text-anchor="end">Qualité Studio (3★)</text>
 
     <line x1="${paddingLeft}" y1="${getY(3)}" x2="${width - paddingRight}" y2="${getY(3)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
     <line x1="${paddingLeft}" y1="${getY(2)}" x2="${width - paddingRight}" y2="${getY(2)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
@@ -840,10 +886,10 @@ function renderStatsAndChart() {
     <text x="${paddingLeft - 8}" y="${getY(1) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">1/3</text>
     <text x="${paddingLeft - 8}" y="${getY(0) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" opacity="0.6">0/3</text>
 
-    <text x="${paddingLeft}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="start">0s</text>
-    <text x="${paddingLeft + plotW / 2}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="middle">${(maxTime / 2).toFixed(1)}s</text>
-    <text x="${width - paddingRight}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="end">${maxTime.toFixed(1)}s</text>
-    <text x="${width / 2}" y="${height - 4}" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="500">← Vitesse (Temps de génération en secondes) →</text>
+    <text x="${paddingLeft}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="start">0s</text>
+    <text x="${paddingLeft + plotW / 2}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="middle">${(maxTime / 2).toFixed(1)}s</text>
+    <text x="${width - paddingRight}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="end">${maxTime.toFixed(1)}s</text>
+    <text x="${width / 2}" y="${height - 6}" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="500">← Vitesse (Temps de génération en secondes) →</text>
   `;
 
   historyItems.forEach((item, index) => {
@@ -996,10 +1042,10 @@ function renderHistory() {
             <button type="button" class="rating-star ${item.score && item.score >= 3 ? 'active' : ''}" data-item-id="${item.id}" data-score="3" title="Note 3/3">${icon("star", { size: 12, fill: item.score && item.score >= 3 ? "currentColor" : "none" })}</button>
           </div>
           <button type="button" class="card-play-btn" data-item-id="${item.id}" title="Écouter cet enregistrement" aria-label="Écouter">
-            ${icon("play", { size: 12 })} <span>Écouter</span>
+            ${icon("play", { size: 12 })}
           </button>
-          <button type="button" class="upvote-btn item-upvote-btn ${favClass}" title="Marquer comme favori">
-            ${starIcon} <span>Favori</span>
+          <button type="button" class="upvote-btn item-upvote-btn ${favClass}" title="Marquer comme favori" aria-label="Favori">
+            ${starIcon}
           </button>
           <button type="button" class="card-delete-btn" title="Supprimer cet enregistrement" aria-label="Supprimer">${icon("trash", { size: 13 })}</button>
         </div>
@@ -1261,11 +1307,6 @@ function setupStaticIcons() {
 
   generateBtn.innerHTML = `${icon("sparkles", { size: 16 })} <span>Générer la voix</span>`;
 
-  const previewTitle = document.querySelector(".preview-title");
-  if (previewTitle) {
-    previewTitle.innerHTML = `${icon("volume", { size: 14 })} <span>Aperçu audio</span>`;
-  }
-
   copyPathBtn.innerHTML = `${icon("copy", { size: 12 })} <span>Copier</span>`;
 
   const historyTitle = document.querySelector(".history-title-row .section-title");
@@ -1312,17 +1353,36 @@ function setupStaticIcons() {
   }
 }
 
-// Thème : préférence système par défaut, bascule manuelle mémorisée en localStorage.
-function applyTheme(theme: "light" | "dark") {
+type ThemeMode = "light" | "dark" | "retro";
+
+// Thème : Clair / Sombre / Rétro Y2K Cyber, bascule mémorisée en localStorage.
+function applyTheme(theme: ThemeMode) {
   document.documentElement.dataset.theme = theme;
-  themeToggleEl.innerHTML = icon(theme === "dark" ? "sun" : "moon", { size: 18 });
-  themeToggleEl.title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+  let iconName = "moon";
+  let title = "Passer en mode sombre";
+
+  if (theme === "light") {
+    iconName = "moon";
+    title = "Passer en mode sombre";
+  } else if (theme === "dark") {
+    iconName = "terminal";
+    title = "Passer en mode Rétro Y2K Cyber";
+  } else if (theme === "retro") {
+    iconName = "sun";
+    title = "Passer en mode clair";
+  }
+
+  themeToggleEl.innerHTML = icon(iconName, { size: 18 });
+  themeToggleEl.title = title;
+
+  // Actualiser le spectre audio avec la palette active
+  drawVisualizer();
 }
 
 function initTheme() {
   try {
-    const stored = localStorage.getItem("tts-test-theme");
-    if (stored === "light" || stored === "dark") {
+    const stored = localStorage.getItem("tts-test-theme") as ThemeMode | null;
+    if (stored === "light" || stored === "dark" || stored === "retro") {
       applyTheme(stored);
       return;
     }
@@ -1334,7 +1394,12 @@ function initTheme() {
 }
 
 themeToggleEl.addEventListener("click", () => {
-  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  const current = (document.documentElement.dataset.theme as ThemeMode) || "light";
+  let next: ThemeMode = "dark";
+  if (current === "light") next = "dark";
+  else if (current === "dark") next = "retro";
+  else next = "light";
+
   applyTheme(next);
   try {
     localStorage.setItem("tts-test-theme", next);

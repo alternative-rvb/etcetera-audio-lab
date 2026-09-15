@@ -5,7 +5,7 @@
 - [x] 3 - Il faut donner des détails sur la stack technique et prerequis de chaque model dans "Banc d'essai Text-to-Speech (TTS)"
 - [x] 4 - Corriger le wrap du textes dans les boutons de filtre
 - [x] 5 - Historique : Ajouter le temps de génération
-- [ ] 7 - CSS: Style nostalgie rétro-numérique & Y2K
+- [x] 7 - CSS: Style nostalgie rétro-numérique & Y2K
 - [x] 8 - Ajouter Header
 - [x] 9 - Ajouter Section Hero : 
     "Banc d'essai Text-to-Speech (TTS)
