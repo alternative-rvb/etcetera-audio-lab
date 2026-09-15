@@ -946,38 +946,46 @@ export function initSttModule() {
   function renderSttDecisionMatrix(items: STTHistoryItem[]) {
     const chart = document.getElementById("sttDecisionMatrixChart") as SVGSVGElement | null;
     const summaryGrid = document.getElementById("sttStatsSummaryGrid") as HTMLDivElement | null;
+    const chartTooltip = document.getElementById("sttChartTooltip") as HTMLElement | null;
     if (!chart) return;
 
     if (summaryGrid) {
-      const whisperItems = items.filter((i) => i.engine === "whisper");
-      const avgRtf =
-        whisperItems.length > 0
-          ? (whisperItems.reduce((acc, i) => acc + i.rtf, 0) / whisperItems.length).toFixed(2)
-          : "--";
-      const avgTime =
-        whisperItems.length > 0
-          ? (whisperItems.reduce((acc, i) => acc + i.processingTimeMs, 0) / whisperItems.length).toFixed(0)
-          : "--";
+      const sttEngines: Array<{ id: "webspeech" | "whisper" | "sherpa"; label: string; cardClass: string }> = [
+        { id: "webspeech", label: "Web Speech", cardClass: "card-webspeech" },
+        { id: "whisper", label: "Whisper", cardClass: "card-whisper" },
+        { id: "sherpa", label: "Sherpa-ONNX", cardClass: "card-sherpa" },
+      ];
 
-      const itemsWithScore = whisperItems.filter((i) => typeof i.score === "number" && i.score > 0);
-      const avgScore =
-        itemsWithScore.length > 0
-          ? (itemsWithScore.reduce((acc, i) => acc + (i.score || 0), 0) / itemsWithScore.length).toFixed(1)
-          : "--";
+      const summaryHtml = sttEngines
+        .map(({ id, label, cardClass }) => {
+          const engItems = items.filter((i) => i.engine === id);
+          const count = engItems.length;
+          const avgTime =
+            count > 0
+              ? (engItems.reduce((acc, i) => acc + (i.processingTimeMs || 0), 0) / (count * 1000)).toFixed(2)
+              : "--";
+          const scoredItems = engItems.filter((i) => typeof i.score === "number" && i.score > 0);
+          const avgScore =
+            scoredItems.length > 0
+              ? (scoredItems.reduce((acc, i) => acc + (i.score || 0), 0) / scoredItems.length).toFixed(1)
+              : "--";
 
-      summaryGrid.innerHTML = `
-        <div class="stat-summary-card card-whisper">
-          <div class="stat-card-title">
-            <span>Whisper STT</span>
-            <span class="badge badge-subtle">${whisperItems.length}</span>
-          </div>
-          <div class="stat-card-values">
-            <span>${icon("timer", { size: 11 })} Traitement : <strong>${avgTime}ms</strong></span>
-            <span>${icon("zap", { size: 11 })} Facteur RTF : <strong>${avgRtf}x</strong></span>
-            <span>${icon("star", { size: 11, fill: "currentColor" })} Précision : <strong>${avgScore}${avgScore !== "--" ? "/3" : ""}</strong></span>
-          </div>
-        </div>
-      `;
+          return `
+            <div class="stat-summary-card ${cardClass}">
+              <div class="stat-card-title">
+                <span>${label}</span>
+                <span class="badge badge-subtle">${count}</span>
+              </div>
+              <div class="stat-card-values">
+                <span>${icon("timer", { size: 11 })} Tps : <strong>${avgTime}${avgTime !== "--" ? "s" : ""}</strong></span>
+                <span>${icon("star", { size: 11, fill: "currentColor" })} Note : <strong>${avgScore}${avgScore !== "--" ? "/3" : ""}</strong></span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      summaryGrid.innerHTML = summaryHtml;
     }
 
     const width = 540;
@@ -990,46 +998,151 @@ export function initSttModule() {
     const plotW = width - paddingLeft - paddingRight;
     const plotH = height - paddingTop - paddingBottom;
 
-    const maxDuration = Math.max(10, Math.ceil(Math.max(0, ...items.map((i) => i.durationSec)) * 1.2));
-    const maxRtf = 1.0;
+    const times = items.map((i) => (i.processingTimeMs ? i.processingTimeMs / 1000 : 0.3));
+    const maxTime = Math.max(2.5, Math.ceil(Math.max(0, ...times) * 1.15));
 
-    const getX = (dur: number) => paddingLeft + Math.min(plotW, (dur / maxDuration) * plotW);
-    const getY = (rtf: number) => paddingTop + Math.min(plotH, (rtf / maxRtf) * plotH);
+    const getX = (tSec: number) => paddingLeft + Math.min(plotW, (tSec / maxTime) * plotW);
+    const getY = (score: number = 0) => {
+      const normalized = score / 3;
+      return paddingTop + (1 - normalized) * plotH;
+    };
 
-    let svg = `
-      <line x1="${paddingLeft}" y1="${getY(0.25)}" x2="${width - paddingRight}" y2="${getY(0.25)}" stroke="#10b981" stroke-dasharray="3,3" opacity="0.6" />
-      <line x1="${paddingLeft}" y1="${getY(0.5)}" x2="${width - paddingRight}" y2="${getY(0.5)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.5" />
-      <line x1="${paddingLeft}" y1="${getY(1.0)}" x2="${width - paddingRight}" y2="${getY(1.0)}" stroke="var(--border)" stroke-width="1.2" opacity="0.9" />
+    const sttEngineColors: Record<string, string> = {
+      webspeech: "#0d9488",
+      whisper: "#2563eb",
+      sherpa: "#ea580c",
+    };
+
+    const optimalThresholdSec = Math.min(1.0, maxTime * 0.4);
+    const optimalW = Math.max(70, getX(optimalThresholdSec) - paddingLeft);
+    const qualityW = Math.max(60, width - paddingRight - (paddingLeft + optimalW));
+    const zoneTopY = Math.max(8, paddingTop - 8);
+    const optimalH = getY(2) - zoneTopY + 12;
+    const qualityH = getY(3) - zoneTopY + 20;
+
+    let svgContent = `
+      <defs>
+        <linearGradient id="sttOptimalGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#10b981" stop-opacity="0.22" />
+          <stop offset="100%" stop-color="#10b981" stop-opacity="0.04" />
+        </linearGradient>
+        <linearGradient id="sttQualityGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#2563eb" stop-opacity="0.18" />
+          <stop offset="100%" stop-color="#2563eb" stop-opacity="0.03" />
+        </linearGradient>
+      </defs>
+
+      <!-- Zone 1 : Idéal Prod (Temps rapide <= ${optimalThresholdSec.toFixed(1)}s & Note >= 2/3) -->
+      <rect x="${paddingLeft}" y="${zoneTopY}" width="${optimalW}" height="${optimalH}" fill="url(#sttOptimalGrad)" stroke="rgba(16, 185, 129, 0.45)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
+
+      <!-- Zone 2 : Précision Maximale (Note 3/3) -->
+      <rect x="${paddingLeft + optimalW}" y="${zoneTopY}" width="${qualityW}" height="${qualityH}" fill="url(#sttQualityGrad)" stroke="rgba(37, 99, 235, 0.35)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
+
+      <line x1="${paddingLeft}" y1="${getY(3)}" x2="${width - paddingRight}" y2="${getY(3)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+      <line x1="${paddingLeft}" y1="${getY(2)}" x2="${width - paddingRight}" y2="${getY(2)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+      <line x1="${paddingLeft}" y1="${getY(1)}" x2="${width - paddingRight}" y2="${getY(1)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+      <line x1="${paddingLeft}" y1="${getY(0)}" x2="${width - paddingRight}" y2="${getY(0)}" stroke="var(--border)" stroke-width="1.2" opacity="0.9" />
 
       <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="var(--border)" stroke-width="1.2" />
 
-      <text x="${paddingLeft - 8}" y="${getY(0.25) + 3}" fill="#10b981" font-size="8.5" text-anchor="end" font-weight="700">0.25x</text>
-      <text x="${paddingLeft - 8}" y="${getY(0.5) + 3}" fill="var(--text-muted)" font-size="8.5" text-anchor="end">0.50x</text>
-      <text x="${paddingLeft - 8}" y="${getY(1.0) + 3}" fill="var(--text-muted)" font-size="8.5" text-anchor="end">1.0x</text>
+      <text x="${paddingLeft - 8}" y="${getY(3) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">3/3</text>
+      <text x="${paddingLeft - 8}" y="${getY(2) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">2/3</text>
+      <text x="${paddingLeft - 8}" y="${getY(1) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">1/3</text>
+      <text x="${paddingLeft - 8}" y="${getY(0) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" opacity="0.6">0/3</text>
 
       <text x="${paddingLeft}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="start">0s</text>
-      <text x="${paddingLeft + plotW / 2}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="middle">${(maxDuration / 2).toFixed(0)}s</text>
-      <text x="${width - paddingRight}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="end">${maxDuration.toFixed(0)}s</text>
-      <text x="${width / 2}" y="${height - 6}" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="500">← Durée audio en secondes (Axe X) • RTF (Axe Y) →</text>
+      <text x="${paddingLeft + plotW / 2}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="middle">${(maxTime / 2).toFixed(1)}s</text>
+      <text x="${width - paddingRight}" y="${height - paddingBottom + 14}" fill="var(--text-muted)" font-size="9" text-anchor="end">${maxTime.toFixed(1)}s</text>
+      <text x="${width / 2}" y="${height - 6}" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="500">← Vitesse (Temps de traitement en secondes) →</text>
     `;
 
-    items.forEach((item) => {
-      const cx = getX(item.durationSec);
-      const cy = getY(item.rtf);
-      svg += `
+    items.forEach((item, index) => {
+      const tSec = item.processingTimeMs ? item.processingTimeMs / 1000 : 0.3;
+      const score = item.score ?? 0;
+      const cx = getX(tSec);
+      const cy = getY(score);
+      const color = sttEngineColors[item.engine] || "var(--accent)";
+
+      const jitterX = Math.sin(index * 7) * 4;
+      const jitterY = Math.cos(index * 5) * 3;
+
+      const safeText = (item.text || "").substring(0, 45).replace(/"/g, "&quot;");
+
+      svgContent += `
         <circle
-          cx="${cx}"
-          cy="${cy}"
+          class="chart-node"
+          cx="${cx + jitterX}"
+          cy="${cy + jitterY}"
           r="5.5"
-          fill="#d946ef"
+          fill="${color}"
           stroke="var(--surface)"
           stroke-width="1.5"
-          data-id="${item.id}"
+          data-item-id="${item.id}"
+          data-engine="${item.engine.toUpperCase()}"
+          data-model="${item.modelSize || 'base'}"
+          data-time="${tSec.toFixed(2)}s"
+          data-rtf="${item.rtf}x"
+          data-score="${score > 0 ? score + '/3' : 'Non noté'}"
+          data-text="${safeText}..."
         />
       `;
     });
 
-    chart.innerHTML = svg;
+    chart.innerHTML = svgContent;
+
+    const nodes = Array.from(chart.querySelectorAll<SVGCircleElement>(".chart-node"));
+    nodes.forEach((node) => {
+      node.addEventListener("mouseenter", () => {
+        if (!chartTooltip) return;
+        const rect = chart.getBoundingClientRect();
+        const nodeX = (node.cx.baseVal.value / width) * rect.width;
+        const nodeY = (node.cy.baseVal.value / height) * rect.height;
+
+        chartTooltip.innerHTML = `
+          <div style="font-weight:600;margin-bottom:2px">${node.dataset.engine} • ${node.dataset.model}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <span style="display:inline-flex;align-items:center;gap:3px">${icon("timer", { size: 11 })} ${node.dataset.time} (RTF: ${node.dataset.rtf})</span>
+            <span style="display:inline-flex;align-items:center;gap:3px">${icon("star", { size: 11, fill: "currentColor" })} ${node.dataset.score}</span>
+          </div>
+          <div style="font-style:italic;opacity:0.75;font-size:0.68rem">${node.dataset.text}</div>
+          <div style="display:inline-flex;align-items:center;gap:3px;margin-top:3px;font-size:0.65rem;color:var(--accent)">${icon("play", { size: 10, fill: "currentColor" })} Cliquer pour charger l'audio</div>
+        `;
+        chartTooltip.style.left = `${nodeX}px`;
+        chartTooltip.style.top = `${nodeY}px`;
+        chartTooltip.hidden = false;
+      });
+
+      node.addEventListener("mouseleave", () => {
+        if (chartTooltip) chartTooltip.hidden = true;
+      });
+
+      node.addEventListener("click", () => {
+        const id = node.dataset.itemId;
+        const item = items.find((i) => i.id === id);
+        if (item) {
+          currentSttId = item.id;
+          lastTranscriptionText = item.text;
+          if (transcriptionTextContent) {
+            transcriptionTextContent.innerHTML = `<p class="transcription-text">${item.text}</p>`;
+          }
+          if (sttDurationBadge) sttDurationBadge.textContent = `${item.durationSec.toFixed(1)}s`;
+          if (sttRtfBadge) sttRtfBadge.textContent = `RTF: ${item.rtf}x (${item.processingTimeMs}ms)`;
+          if (sttFormatBadge) sttFormatBadge.textContent = `${(item.modelSize || "base").toUpperCase()} • ${(item.device || "cpu").toUpperCase()}`;
+          if (sttPreviewRating) {
+            sttPreviewRating.hidden = false;
+            updateSttPreviewRating(item.score || 0);
+          }
+          if (sttPreviewUpvoteBtn) {
+            sttPreviewUpvoteBtn.hidden = false;
+            updateSttPreviewFavorite(Boolean(item.isFavorite));
+          }
+          if (item.url && sttAudioPlayer) {
+            sttAudioPlayer.src = item.url;
+            sttAudioPlayer.play();
+          }
+        }
+      });
+    });
   }
 
   clearSttHistoryBtn?.addEventListener("click", async () => {

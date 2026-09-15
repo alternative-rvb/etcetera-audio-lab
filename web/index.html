@@ -788,17 +788,18 @@
               <div class="stats-summary-grid" id="sttStatsSummaryGrid"></div>
               <div class="chart-container">
                 <div class="chart-zone-indicators">
-                  <span class="zone-tag zone-optimal" id="sttZoneOptimalTag"><span class="zone-icon" id="sttZoneOptimalIcon"></span> RTF ≤ 0.25 (Temps réel éclair)</span>
-                  <span class="zone-tag zone-quality" id="sttZoneQualityTag"><span class="zone-icon" id="sttZoneQualityIcon"></span> Haute Précision (Modèle Medium/Small)</span>
+                  <span class="zone-tag zone-optimal" id="sttZoneOptimalTag"><span class="zone-icon" id="sttZoneOptimalIcon"></span> Idéal Prod (≤ 1.0s • Note ≥ 2/3)</span>
+                  <span class="zone-tag zone-quality" id="sttZoneQualityTag"><span class="zone-icon" id="sttZoneQualityIcon"></span> Précision Maximale (Note 3/3)</span>
                 </div>
                 <div class="chart-svg-wrapper" id="sttChartSvgWrapper">
                   <svg id="sttDecisionMatrixChart" class="decision-chart" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
+                  <div id="sttChartTooltip" class="chart-tooltip" hidden></div>
                 </div>
                 <div class="chart-legend">
-                  <span class="legend-item"><span class="legend-dot engine-whisper"></span> Whisper</span>
                   <span class="legend-item"><span class="legend-dot engine-webspeech"></span> Web Speech</span>
+                  <span class="legend-item"><span class="legend-dot engine-whisper"></span> Whisper</span>
                   <span class="legend-item"><span class="legend-dot engine-sherpa"></span> Sherpa</span>
-                  <span class="legend-hint"><span class="legend-hint-icon" id="sttLegendHintIcon"></span> Cliquez pour recharger l'enregistrement</span>
+                  <span class="legend-hint"><span class="legend-hint-icon" id="sttLegendHintIcon"></span> Cliquez sur un point pour charger l'audio</span>
                 </div>
               </div>
             </div>
