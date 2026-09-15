@@ -597,11 +597,12 @@ export function initSttModule() {
 
   function updateSttPreviewFavorite(isFav: boolean = false) {
     if (!sttPreviewUpvoteBtn) return;
+    sttPreviewUpvoteBtn.classList.toggle("is-favorite", isFav);
     sttPreviewUpvoteBtn.classList.toggle("active", isFav);
-    sttPreviewUpvoteBtn.innerHTML = `${icon("heart", {
+    sttPreviewUpvoteBtn.innerHTML = `${icon("star", {
       size: 13,
       fill: isFav ? "currentColor" : "none",
-    })} <span>${isFav ? "Favori" : "Favori"}</span>`;
+    })} <span>Favori</span>`;
   }
 
   async function setSttScore(id: string, score: number) {
@@ -726,7 +727,7 @@ export function initSttModule() {
             : "";
 
         const favBadge = item.isFavorite
-          ? `<span class="history-card-fav" title="Favori">${icon("heart", { size: 11, fill: "currentColor" })}</span>`
+          ? `<span class="history-card-fav" title="Favori">${icon("star", { size: 11, fill: "currentColor" })}</span>`
           : "";
 
         return `
@@ -750,14 +751,14 @@ export function initSttModule() {
                 <button type="button" class="rating-star ${item.score && item.score >= 3 ? 'active' : ''}" data-item-id="${item.id}" data-score="3" title="Note 3/3">${icon("star", { size: 12, fill: item.score && item.score >= 3 ? "currentColor" : "none" })}</button>
               </div>
               <div class="history-card-actions">
-                <button type="button" class="history-action-btn stt-fav-btn ${item.isFavorite ? 'active' : ''}" data-id="${item.id}" title="${item.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${icon("heart", { size: 12, fill: item.isFavorite ? "currentColor" : "none" })}</button>
+                <button type="button" class="history-action-btn stt-fav-btn ${item.isFavorite ? 'active' : ''}" data-id="${item.id}" title="${item.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${icon("star", { size: 13, fill: item.isFavorite ? "currentColor" : "none" })}</button>
                 ${
                   item.url
-                    ? `<button type="button" class="history-action-btn stt-play-btn" data-id="${item.id}" data-url="${item.url}" title="Écouter l'audio source">${icon("play", { size: 12 })}</button>`
+                    ? `<button type="button" class="history-action-btn stt-play-btn" data-id="${item.id}" data-url="${item.url}" title="Écouter l'audio source">${icon("play", { size: 13 })}</button>`
                     : ""
                 }
-                <button type="button" class="history-action-btn stt-copy-btn" data-text="${encodeURIComponent(item.text)}" title="Copier le texte">${icon("copy", { size: 12 })}</button>
-                <button type="button" class="history-action-btn stt-delete-btn" data-id="${item.id}" title="Supprimer">${icon("trash", { size: 12 })}</button>
+                <button type="button" class="history-action-btn stt-copy-btn" data-text="${encodeURIComponent(item.text)}" title="Copier le texte">${icon("copy", { size: 13 })}</button>
+                <button type="button" class="history-action-btn stt-delete-btn" data-id="${item.id}" title="Supprimer">${icon("trash", { size: 13 })}</button>
               </div>
             </div>
           </div>
