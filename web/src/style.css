@@ -201,9 +201,11 @@ body {
 }
 
 .field-label {
+  display: block;
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
+  margin-bottom: 0.45rem;
 }
 
 .app-header {
@@ -2883,6 +2885,13 @@ audio::-webkit-media-controls-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+}
+
+.stt-engine-selection,
+.stt-source-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 /* Onglets de Source Audio */
