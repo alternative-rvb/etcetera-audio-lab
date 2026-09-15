@@ -1597,7 +1597,9 @@ audio::-webkit-media-controls-panel {
   gap: 0.85rem;
 }
 
-.history-list {
+.history-list,
+#historyList,
+#sttHistoryList {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -1612,11 +1614,15 @@ audio::-webkit-media-controls-panel {
   overscroll-behavior: contain;
 }
 
-:root[data-theme="dark"] .history-list {
+:root[data-theme="dark"] .history-list,
+:root[data-theme="dark"] #historyList,
+:root[data-theme="dark"] #sttHistoryList {
   scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.04);
 }
 
-:root[data-theme="retro"] .history-list {
+:root[data-theme="retro"] .history-list,
+:root[data-theme="retro"] #historyList,
+:root[data-theme="retro"] #sttHistoryList {
   scrollbar-color: #00f0ff rgba(0, 240, 255, 0.1);
 }
 
