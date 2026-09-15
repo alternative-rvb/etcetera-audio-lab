@@ -1599,6 +1599,7 @@ audio::-webkit-media-controls-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  max-height: 480px;
 }
 
 .history-list,
@@ -1607,13 +1608,14 @@ audio::-webkit-media-controls-panel {
   display: flex !important;
   flex-direction: column !important;
   gap: 0.55rem !important;
-  max-height: 380px !important;
-  overflow-y: auto !important;
+  max-height: 320px !important;
+  min-height: 80px;
+  overflow-y: scroll !important;
   overflow-x: hidden !important;
   padding-right: 0.45rem !important;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(140, 140, 160, 0.55) rgba(0, 0, 0, 0.08);
+  scrollbar-color: rgba(140, 140, 160, 0.6) rgba(0, 0, 0, 0.08);
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
@@ -1621,13 +1623,13 @@ audio::-webkit-media-controls-panel {
 :root[data-theme="dark"] .history-list,
 :root[data-theme="dark"] #historyList,
 :root[data-theme="dark"] #sttHistoryList {
-  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.08);
 }
 
 :root[data-theme="retro"] .history-list,
 :root[data-theme="retro"] #historyList,
 :root[data-theme="retro"] #sttHistoryList {
-  scrollbar-color: #00f0ff rgba(0, 240, 255, 0.15);
+  scrollbar-color: #00f0ff rgba(0, 240, 255, 0.2);
 }
 
 /* Custom Sleek & Highly Visible Scrollbars */
