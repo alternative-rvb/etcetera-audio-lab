@@ -1604,16 +1604,16 @@ audio::-webkit-media-controls-panel {
 .history-list,
 #historyList,
 #sttHistoryList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  max-height: 360px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 0.35rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.55rem !important;
+  max-height: 380px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 0.45rem !important;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(140, 140, 160, 0.5) rgba(0, 0, 0, 0.05);
+  scrollbar-color: rgba(140, 140, 160, 0.55) rgba(0, 0, 0, 0.08);
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
@@ -1621,65 +1621,79 @@ audio::-webkit-media-controls-panel {
 :root[data-theme="dark"] .history-list,
 :root[data-theme="dark"] #historyList,
 :root[data-theme="dark"] #sttHistoryList {
-  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05);
 }
 
 :root[data-theme="retro"] .history-list,
 :root[data-theme="retro"] #historyList,
 :root[data-theme="retro"] #sttHistoryList {
-  scrollbar-color: #00f0ff rgba(0, 240, 255, 0.1);
+  scrollbar-color: #00f0ff rgba(0, 240, 255, 0.15);
 }
 
 /* Custom Sleek & Highly Visible Scrollbars */
 .history-list::-webkit-scrollbar,
+#historyList::-webkit-scrollbar,
+#sttHistoryList::-webkit-scrollbar,
 .history-card-text::-webkit-scrollbar,
 .transcription-result-box::-webkit-scrollbar,
 .transcription-segments-container::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 }
 
 .history-list::-webkit-scrollbar-track,
+#historyList::-webkit-scrollbar-track,
+#sttHistoryList::-webkit-scrollbar-track,
 .history-card-text::-webkit-scrollbar-track,
 .transcription-result-box::-webkit-scrollbar-track,
 .transcription-segments-container::-webkit-scrollbar-track {
-  background: rgba(120, 120, 120, 0.08);
+  background: rgba(120, 120, 120, 0.12);
   border-radius: 999px;
 }
 
 .history-list::-webkit-scrollbar-thumb,
+#historyList::-webkit-scrollbar-thumb,
+#sttHistoryList::-webkit-scrollbar-thumb,
 .history-card-text::-webkit-scrollbar-thumb,
 .transcription-result-box::-webkit-scrollbar-thumb,
 .transcription-segments-container::-webkit-scrollbar-thumb {
-  background: rgba(140, 140, 160, 0.45);
+  background: rgba(140, 140, 160, 0.55);
   border-radius: 999px;
   border: 1px solid transparent;
 }
 
 .history-list::-webkit-scrollbar-thumb:hover,
+#historyList::-webkit-scrollbar-thumb:hover,
+#sttHistoryList::-webkit-scrollbar-thumb:hover,
 .history-card-text::-webkit-scrollbar-thumb:hover,
 .transcription-result-box::-webkit-scrollbar-thumb:hover,
 .transcription-segments-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 140, 160, 0.75);
+  background: rgba(140, 140, 160, 0.85);
 }
 
 :root[data-theme="dark"] .history-list::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] #historyList::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] #sttHistoryList::-webkit-scrollbar-thumb,
 :root[data-theme="dark"] .history-card-text::-webkit-scrollbar-thumb,
 :root[data-theme="dark"] .transcription-result-box::-webkit-scrollbar-thumb,
 :root[data-theme="dark"] .transcription-segments-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 :root[data-theme="dark"] .history-list::-webkit-scrollbar-thumb:hover,
+:root[data-theme="dark"] #historyList::-webkit-scrollbar-thumb:hover,
+:root[data-theme="dark"] #sttHistoryList::-webkit-scrollbar-thumb:hover,
 :root[data-theme="dark"] .history-card-text::-webkit-scrollbar-thumb:hover,
 :root[data-theme="dark"] .transcription-result-box::-webkit-scrollbar-thumb:hover,
 :root[data-theme="dark"] .transcription-segments-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.6);
 }
 
-:root[data-theme="retro"] .history-list::-webkit-scrollbar-thumb {
+:root[data-theme="retro"] .history-list::-webkit-scrollbar-thumb,
+:root[data-theme="retro"] #historyList::-webkit-scrollbar-thumb,
+:root[data-theme="retro"] #sttHistoryList::-webkit-scrollbar-thumb {
   background: #00f0ff;
-  box-shadow: 0 0 6px #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
 }
 
 .history-header {
