@@ -195,6 +195,10 @@ body {
 }
 
 .input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -519,7 +523,7 @@ textarea {
   line-height: 1.55;
   font-family: inherit;
   color: var(--text);
-  background: var(--surface);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.9rem 1rem;
