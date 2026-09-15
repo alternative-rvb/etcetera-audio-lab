@@ -685,6 +685,22 @@ export function initSttModule() {
   if (sttZoneQualityIcon) sttZoneQualityIcon.innerHTML = icon("trophy", { size: 12 });
   if (sttLegendHintIcon) sttLegendHintIcon.innerHTML = icon("target", { size: 11 });
 
+  let allSttExpanded = false;
+  const toggleAllSttHistoryBtn = document.getElementById("toggleAllSttHistoryBtn") as HTMLButtonElement | null;
+  const toggleAllSttHistoryIcon = document.getElementById("toggleAllSttHistoryIcon");
+  if (toggleAllSttHistoryIcon) toggleAllSttHistoryIcon.innerHTML = icon("chevrons-up-down", { size: 13 });
+
+  toggleAllSttHistoryBtn?.addEventListener("click", () => {
+    allSttExpanded = !allSttExpanded;
+    const detailsList = Array.from(sttHistoryList?.querySelectorAll<HTMLDetailsElement>("details.history-item-dropdown") || []);
+    detailsList.forEach((d) => {
+      d.open = allSttExpanded;
+    });
+    if (toggleAllSttHistoryBtn) {
+      toggleAllSttHistoryBtn.innerHTML = `${icon("chevrons-up-down", { size: 13 })} <span>${allSttExpanded ? "Tout replier" : "Tout déplier"}</span>`;
+    }
+  });
+
   const clearSttHistoryIcon = document.getElementById("clearSttHistoryIcon");
   if (clearSttHistoryIcon) clearSttHistoryIcon.innerHTML = icon("trash", { size: 13 });
 
@@ -730,38 +746,55 @@ export function initSttModule() {
           ? `<span class="history-card-fav" title="Favori">${icon("star", { size: 11, fill: "currentColor" })}</span>`
           : "";
 
+        const favClass = item.isFavorite ? "is-favorite" : "";
+        const starFavIcon = icon("star", { size: 13, fill: item.isFavorite ? "currentColor" : "none" });
+
         return `
-          <div class="stt-history-card card-${item.engine} ${item.isFavorite ? 'is-favorite' : ''}" data-id="${item.id}">
-            <div class="stt-history-header">
-              <div class="stt-history-meta">
-                <span class="badge engine-${item.engine}">${item.engine.toUpperCase()}</span>
-                <span class="badge badge-subtle">${item.modelSize || "base"}</span>
-                <span class="badge badge-subtle">${item.durationSec.toFixed(1)}s</span>
-                <span class="badge badge-subtle">RTF: ${item.rtf}x</span>
+          <details class="history-item-dropdown card-${item.engine} ${favClass}" data-id="${item.id}" ${allSttExpanded ? "open" : ""}>
+            <summary class="history-summary">
+              <span class="dropdown-chevron">${icon("chevron-right", { size: 13 })}</span>
+              <div class="history-summary-badges">
+                <span class="card-badge engine-${item.engine}">
+                  ${item.engine.toUpperCase()}
+                </span>
+                <span class="card-badge">${item.modelSize || "base"}</span>
+                <span class="card-badge">${item.durationSec.toFixed(1)}s</span>
+                <span class="card-badge history-card-gentime">RTF: ${item.rtf}x</span>
                 ${scoreBadge}
                 ${favBadge}
+                <span class="history-card-time">${timeAgo}</span>
               </div>
-              <span class="history-time">${timeAgo}</span>
-            </div>
-            <p class="stt-history-text">${item.text}</p>
-            <div class="stt-history-footer">
-              <div class="history-card-rating-group" title="Noter la transcription (1 à 3)">
-                <button type="button" class="rating-star ${item.score && item.score >= 1 ? 'active' : ''}" data-item-id="${item.id}" data-score="1" title="Note 1/3">${icon("star", { size: 12, fill: item.score && item.score >= 1 ? "currentColor" : "none" })}</button>
-                <button type="button" class="rating-star ${item.score && item.score >= 2 ? 'active' : ''}" data-item-id="${item.id}" data-score="2" title="Note 2/3">${icon("star", { size: 12, fill: item.score && item.score >= 2 ? "currentColor" : "none" })}</button>
-                <button type="button" class="rating-star ${item.score && item.score >= 3 ? 'active' : ''}" data-item-id="${item.id}" data-score="3" title="Note 3/3">${icon("star", { size: 12, fill: item.score && item.score >= 3 ? "currentColor" : "none" })}</button>
-              </div>
+              <span class="history-summary-text" title="${item.text}">${item.text}</span>
               <div class="history-card-actions">
-                <button type="button" class="history-action-btn stt-fav-btn ${item.isFavorite ? 'active' : ''}" data-id="${item.id}" title="${item.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${icon("star", { size: 13, fill: item.isFavorite ? "currentColor" : "none" })}</button>
+                <div class="history-card-stars-action history-card-rating-group" title="Noter la transcription (1 à 3)">
+                  <button type="button" class="rating-star ${item.score && item.score >= 1 ? 'active' : ''}" data-item-id="${item.id}" data-score="1" title="Note 1/3">${icon("star", { size: 12, fill: item.score && item.score >= 1 ? "currentColor" : "none" })}</button>
+                  <button type="button" class="rating-star ${item.score && item.score >= 2 ? 'active' : ''}" data-item-id="${item.id}" data-score="2" title="Note 2/3">${icon("star", { size: 12, fill: item.score && item.score >= 2 ? "currentColor" : "none" })}</button>
+                  <button type="button" class="rating-star ${item.score && item.score >= 3 ? 'active' : ''}" data-item-id="${item.id}" data-score="3" title="Note 3/3">${icon("star", { size: 12, fill: item.score && item.score >= 3 ? "currentColor" : "none" })}</button>
+                </div>
                 ${
                   item.url
-                    ? `<button type="button" class="history-action-btn stt-play-btn" data-id="${item.id}" data-url="${item.url}" title="Écouter l'audio source">${icon("play", { size: 13 })}</button>`
+                    ? `<button type="button" class="card-play-btn history-action-btn stt-play-btn" data-id="${item.id}" data-url="${item.url}" title="Écouter l'audio source">${icon("play", { size: 13 })}</button>`
                     : ""
                 }
-                <button type="button" class="history-action-btn stt-copy-btn" data-text="${encodeURIComponent(item.text)}" title="Copier le texte">${icon("copy", { size: 13 })}</button>
-                <button type="button" class="history-action-btn stt-delete-btn" data-id="${item.id}" title="Supprimer">${icon("trash", { size: 13 })}</button>
+                <button type="button" class="upvote-btn item-upvote-btn history-action-btn stt-fav-btn ${favClass}" data-id="${item.id}" title="${item.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${starFavIcon}</button>
+                <button type="button" class="card-delete-btn history-action-btn stt-delete-btn" data-id="${item.id}" title="Supprimer">${icon("trash", { size: 13 })}</button>
+              </div>
+            </summary>
+
+            <div class="history-details-body">
+              <p class="history-card-text" title="${item.text}">${item.text}</p>
+
+              <div class="history-card-path">
+                <span class="history-path-text">${item.filePath || item.url || (item.fileName ? 'Fichier: ' + item.fileName : 'Enregistrement direct micro')}</span>
+                <button type="button" class="copy-btn copy-stt-text-btn" data-text="${encodeURIComponent(item.text)}">${icon("copy", { size: 12 })} <span>Copier texte</span></button>
+              </div>
+
+              <div class="history-card-footer">
+                ${item.url ? `<audio controls src="${item.url}" preload="none"></audio>` : `<span style="font-size:0.75rem;color:var(--text-muted)">Audio source micro</span>`}
+                <button type="button" class="use-text-btn use-stt-text-btn" data-text="${encodeURIComponent(item.text)}" title="Placer ce texte dans l'éditeur TTS">${icon("rotate-ccw", { size: 12 })} <span>Utiliser dans TTS</span></button>
               </div>
             </div>
-          </div>
+          </details>
         `;
       })
       .join("");
@@ -769,6 +802,7 @@ export function initSttModule() {
     // Bind Star Ratings in Cards
     sttHistoryList.querySelectorAll<HTMLButtonElement>(".history-card-rating-group .rating-star").forEach((star) => {
       star.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const id = star.dataset.itemId;
         if (!id) return;
@@ -800,6 +834,7 @@ export function initSttModule() {
     // Bind Favorite in Cards
     sttHistoryList.querySelectorAll<HTMLButtonElement>(".stt-fav-btn").forEach((b) => {
       b.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const id = b.dataset.id;
         if (!id) return;
@@ -807,9 +842,11 @@ export function initSttModule() {
       });
     });
 
-    // Bind History Events
+    // Bind History Play Buttons
     sttHistoryList.querySelectorAll<HTMLButtonElement>(".stt-play-btn").forEach((b) => {
-      b.addEventListener("click", () => {
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const id = b.dataset.id;
         const url = b.dataset.url;
         const item = items.find((i) => i.id === id);
@@ -838,19 +875,44 @@ export function initSttModule() {
       });
     });
 
-    sttHistoryList.querySelectorAll<HTMLButtonElement>(".stt-copy-btn").forEach((b) => {
-      b.addEventListener("click", async () => {
+    // Bind Copy Buttons inside dropdown
+    sttHistoryList.querySelectorAll<HTMLButtonElement>(".copy-stt-text-btn").forEach((b) => {
+      b.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const text = decodeURIComponent(b.dataset.text || "");
         await navigator.clipboard.writeText(text);
-        b.innerHTML = icon("check", { size: 12 });
+        const originalHtml = b.innerHTML;
+        b.innerHTML = `${icon("check", { size: 12 })} <span>Copié !</span>`;
         setTimeout(() => {
-          b.innerHTML = icon("copy", { size: 12 });
+          b.innerHTML = originalHtml;
         }, 1500);
       });
     });
 
+    // Bind Use Text in TTS
+    sttHistoryList.querySelectorAll<HTMLButtonElement>(".use-stt-text-btn").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = decodeURIComponent(b.dataset.text || "");
+        const ttsTextEl = document.getElementById("text") as HTMLTextAreaElement | null;
+        if (ttsTextEl) {
+          ttsTextEl.value = text;
+          ttsTextEl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        const tabNavTts = document.getElementById("tabNavTts");
+        if (tabNavTts) {
+          tabNavTts.click();
+        }
+      });
+    });
+
+    // Bind Delete Buttons
     sttHistoryList.querySelectorAll<HTMLButtonElement>(".stt-delete-btn").forEach((b) => {
-      b.addEventListener("click", async () => {
+      b.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const id = b.dataset.id;
         if (!id) return;
         await fetch(`${API_BASE}/api/stt/history/${id}`, { method: "DELETE" });
