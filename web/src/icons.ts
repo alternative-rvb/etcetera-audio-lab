@@ -36,6 +36,8 @@ import {
   Palette,
   Headphones,
   Activity,
+  Radio,
+  Terminal,
   type IconNode,
 } from "lucide";
 
@@ -77,6 +79,8 @@ const iconMap: Record<string, IconNode> = {
   palette: Palette,
   headphones: Headphones,
   activity: Activity,
+  radio: Radio,
+  terminal: Terminal,
 };
 
 interface IconOptions {
