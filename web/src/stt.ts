@@ -216,11 +216,18 @@ export function initSttModule() {
         activeAudioFilename = `enregistrement_${new Date().toISOString().slice(11, 19).replace(/:/g, "-")}.wav`;
         loadAudioIntoSttPlayer(activeAudioBlob);
         stream.getTracks().forEach((t) => t.stop());
+
+        // Déclenchement automatique de la transcription dès la fin de l'enregistrement micro
+        handleTranscribe();
       };
 
       mediaRecorder.start();
       isRecording = true;
       recordStartTime = Date.now();
+
+      if (transcriptionTextContent && activeSttEngine !== "webspeech") {
+        transcriptionTextContent.innerHTML = `<p class="transcription-placeholder"><span class="recording-pulse-dot"></span> Écoute en cours... Parlez dans votre micro, la transcription ${activeSttEngine.toUpperCase()} sera générée automatiquement dès l'arrêt.</p>`;
+      }
 
       // Reconnaissance vocale temps réel Web Speech API si active
       const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;

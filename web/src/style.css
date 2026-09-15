@@ -2919,6 +2919,22 @@ audio::-webkit-media-controls-panel {
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
+.recording-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  margin-right: 6px;
+  animation: pulseRecordingDot 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseRecordingDot {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
 :root[data-theme="dark"] .record-btn {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.12);
