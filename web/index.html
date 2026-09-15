@@ -26,11 +26,13 @@
             <div class="engine-switch" id="engineSwitch" role="group" aria-label="Moteur TTS">
               <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true">Edge TTS (Microsoft)</button>
               <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false">Piper (local)</button>
+              <button type="button" class="engine-btn engine-kokoro" data-engine="kokoro" aria-pressed="false">Kokoro (ONNX)</button>
+              <button type="button" class="engine-btn engine-chatterbox" data-engine="chatterbox" aria-pressed="false">Chatterbox (Clonage)</button>
             </div>
 
             <div class="voice-selection">
               <div class="voice-selection-header">
-                <span class="label-text">Modèle de voix (France)</span>
+                <span class="label-text" id="voiceSelectionTitle">Modèle de voix (France)</span>
                 <span id="voiceCountBadge" class="voice-count"></span>
               </div>
               <div id="voiceButtons" class="voice-grid" role="radiogroup" aria-label="Modèle de voix"></div>
@@ -63,6 +65,27 @@
                 <span id="noiseWValue">0.80</span>
               </label>
             </div>
+
+            <div id="kokoroControls" class="engine-controls" hidden>
+              <label>
+                Vitesse de débit (speed)
+                <input id="kokoroSpeed" type="range" min="0.5" max="2.0" step="0.05" value="1.0" />
+                <span id="kokoroSpeedValue">1.00x</span>
+              </label>
+            </div>
+
+            <div id="chatterboxControls" class="engine-controls" hidden>
+              <label>
+                Exagération émotionnelle
+                <input id="chatterboxExaggeration" type="range" min="0.0" max="1.5" step="0.05" value="0.5" />
+                <span id="chatterboxExaggerationValue">0.50</span>
+              </label>
+              <label>
+                Température créative
+                <input id="chatterboxTemperature" type="range" min="0.1" max="1.2" step="0.05" value="0.8" />
+                <span id="chatterboxTemperatureValue">0.80</span>
+              </label>
+            </div>
           </div>
 
           <div class="action-row">
@@ -87,7 +110,7 @@
                 <div class="tab-content-block">
                   <h3 class="tab-panel-title">Banc d'essai Text-to-Speech (TTS)</h3>
                   <p class="tab-panel-intro">
-                    Ce projet évalue et compare différents moteurs de synthèse vocale pour le français (<code>fr-FR</code>), en vue d'une intégration dans l'application NextJS (NowWeAct) et d'un déploiement auto-hébergé sur VPS OVH.
+                    Ce projet évalue et compare 4 moteurs de synthèse vocale pour le français (<code>fr-FR</code>), en vue d'une intégration dans l'application NextJS (NowWeAct) et d'un déploiement auto-hébergé sur VPS OVH.
                   </p>
                   
                   <div class="tab-grid-compare">
@@ -100,9 +123,9 @@
                         Voix neurales Microsoft Edge via endpoint gratuit sans clé API. Moteur de référence actuellement en production dans NowWeAct.
                       </p>
                       <ul class="mini-card-features">
-                        <li>Excellente fluidité et naturel (Denise, Henri, etc.)</li>
-                        <li>Format MP3 léger & contrôle du débit (pitch/rate)</li>
-                        <li>Dépendance réseau vers les serveurs Microsoft</li>
+                        <li>Excellente fluidité et naturel (Denise, Henri)</li>
+                        <li>Format MP3 léger & contrôle du débit</li>
+                        <li>Dépendance réseau vers Microsoft</li>
                       </ul>
                     </div>
 
@@ -117,13 +140,43 @@
                       <ul class="mini-card-features">
                         <li>Indépendance totale & latence prédictible</li>
                         <li>Sortie audio WAV sans perte</li>
-                        <li>Qualité dépendante des modèles ONNX (Siwis, UPMC, etc.)</li>
+                        <li>Qualité dépendante des modèles ONNX</li>
+                      </ul>
+                    </div>
+
+                    <div class="tab-mini-card card-kokoro">
+                      <div class="mini-card-header">
+                        <span class="card-badge engine-kokoro">Kokoro</span>
+                        <span class="mini-card-tag">82M ONNX (CPU/GPU)</span>
+                      </div>
+                      <p class="mini-card-desc">
+                        Modèle compact de 82M paramètres (Apache 2.0) offrant un timbre studio et un naturel nettement supérieur à Piper.
+                      </p>
+                      <ul class="mini-card-features">
+                        <li>Qualité acoustique premium en local</li>
+                        <li>Exécutable en Node.js via ONNX Runtime</li>
+                        <li>Voix française Siwis et voix US/UK</li>
+                      </ul>
+                    </div>
+
+                    <div class="tab-mini-card card-chatterbox">
+                      <div class="mini-card-header">
+                        <span class="card-badge engine-chatterbox">Chatterbox</span>
+                        <span class="mini-card-tag">Clonage Zéro-Shot MIT</span>
+                      </div>
+                      <p class="mini-card-desc">
+                        Moteur de clonage vocal (Resemble AI, licence MIT commerciale libre), capable d'imiter un timbre à partir d'un échantillon audio.
+                      </p>
+                      <ul class="mini-card-features">
+                        <li>Clonage expressif immédiat</li>
+                        <li>Contrôle de l'émotion et de l'exagération</li>
+                        <li>Accélération CUDA (RTX 3070 8GB)</li>
                       </ul>
                     </div>
                   </div>
 
                   <p class="tab-panel-note">
-                    <strong>Pistes futures identifiées :</strong> Kokoro (82M ONNX, qualité supérieure en local CPU pur) et Chatterbox (clonage vocal sous licence MIT).
+                    <strong>Synthèse des moteurs :</strong> Edge TTS pour la simplicité immédiate, Piper pour la légèreté CPU, Kokoro pour le compromis parfait qualité/poids local, et Chatterbox pour la personnalisation vocale.
                   </p>
                 </div>
               </div>
@@ -220,6 +273,8 @@
                 <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Tous</button>
                 <button type="button" class="filter-btn filter-edge" data-filter="edge" aria-pressed="false">Edge TTS</button>
                 <button type="button" class="filter-btn filter-piper" data-filter="piper" aria-pressed="false">Piper</button>
+                <button type="button" class="filter-btn filter-kokoro" data-filter="kokoro" aria-pressed="false">Kokoro</button>
+                <button type="button" class="filter-btn filter-chatterbox" data-filter="chatterbox" aria-pressed="false">Chatterbox</button>
                 <button type="button" class="filter-btn filter-fav" data-filter="favorites" aria-pressed="false">Favoris</button>
               </div>
             </div>

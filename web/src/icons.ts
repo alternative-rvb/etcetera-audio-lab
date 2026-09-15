@@ -21,6 +21,10 @@ import {
   X,
   Play,
   History,
+  Zap,
+  Mic,
+  AudioLines,
+  Gauge,
   type IconNode,
 } from "lucide";
 
@@ -47,6 +51,10 @@ const iconMap: Record<string, IconNode> = {
   close: X,
   play: Play,
   history: History,
+  zap: Zap,
+  mic: Mic,
+  audiolines: AudioLines,
+  gauge: Gauge,
 };
 
 interface IconOptions {

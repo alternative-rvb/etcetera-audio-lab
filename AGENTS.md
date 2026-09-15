@@ -4,17 +4,12 @@ Projet de test de moteurs de synthèse vocale (text-to-speech), en vue d'une int
 
 ## Portée actuelle
 
-Deux moteurs implémentés et sélectionnables dans l'interface :
+Quatre moteurs implémentés et sélectionnables dans l'interface :
 
-- **Piper** (rhasspy/piper) : moteur local, binaire natif via `child_process`.
-- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0) : endpoint gratuit non-officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur déjà utilisé en production dans l'app NextJS de Nicolas (NowWeAct, `app/api/tts/speak/route.ts`) — implémenté ici à l'identique (même lib, même approche `EdgeTTS(text, voice, { rate })`) pour comparer sa qualité face aux autres pistes.
-
-XTTS-v2 (Coqui) a été évalué et repoussé : aucune implémentation Node n'existe (modèle PyTorch), le quota gratuit de l'API HuggingFace Inference est quasi inexploitable (0,10 $/mois), et les Spaces publics gratuits testés étaient hors service au moment de l'évaluation. À réévaluer plus tard.
-
-Deux alternatives identifiées en 2026, toutes deux gratuites et sans quota en auto-hébergement (contrairement à l'API HuggingFace Inference utilisée pour évaluer XTTS-v2) :
-
-- **Kokoro** (82M paramètres, licence Apache 2.0) : qualité nettement supérieure à Piper, tourne en CPU pur (environ 4 Go RAM) via ONNX, et dispose d'une implémentation JS native (`kokoro-js`, Xenova/transformers.js) qui s'intègre directement dans le stack Node/TypeScript existant sans binaire externe ni service Python. Limite : pas de clonage de voix, 54 voix fixes sur 8 langues. Candidat sérieux pour succéder à Piper ou s'ajouter à côté.
-- **Chatterbox** (Resemble AI, licence MIT) : alternative directe à XTTS-v2 pour le clonage de voix, sans la contrainte de licence non-commerciale CPML (Coqui l'entreprise a fermé en janvier 2024, la licence XTTS-v2 reste bloquée en non-commercial). Reste un modèle PyTorch nécessitant un mini-service Python séparé (ex. `Chatterbox-TTS-Server`, compatible API OpenAI, CPU ou GPU).
+- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0) : endpoint gratuit non-officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur déjà utilisé en production dans l'app NextJS de Nicolas (NowWeAct, `app/api/tts/speak/route.ts`).
+- **Piper** (rhasspy/piper) : moteur local, binaire natif via `child_process`, voix ONNX (Siwis, UPMC, etc.).
+- **Kokoro** (82M paramètres, licence Apache 2.0) : qualité studio supérieure à Piper, exécuté localement en Node.js via ONNX Runtime (`kokoro-js`). Supporte la voix française Siwis (`ff_siwis`) et des voix anglaises expressives.
+- **Chatterbox** (Resemble AI, licence MIT) : clonage vocal zéro-shot sous licence commerciale permissive libre, exécuté via un micro-service Python (FastAPI + PyTorch CUDA sur GPU RTX 3070), permettant d'ajuster l'exagération émotionnelle et de synthétiser à partir d'échantillons audios de référence.
 
 ## Architecture
 
@@ -22,9 +17,17 @@ Deux alternatives identifiées en 2026, toutes deux gratuites et sans quota en a
   - `src/piper.ts` : exécute le binaire natif Piper via `child_process`, enveloppe le PCM brut (`--output_raw`) en WAV.
   - `src/voices.ts` : liste les voix Piper disponibles (scan de `server/voices/*.onnx.json`).
   - `src/edgeTts.ts` : appelle `edge-tts-universal` (liste de voix fixe `EDGE_VOICES`), renvoie du MP3.
-  - `src/index.ts` : routes `GET /api/voices?engine=piper|edge` et `POST /api/tts` (`{ text, voiceId, engine, ... }`), dispatch vers le bon moteur.
-- `web/` : frontend TypeScript + Vite. Sélecteur de moteur en tête, qui bascule les contrôles affichés (réglages Piper vs vitesse Edge TTS) et recharge la liste de voix correspondante.
-- `scripts/setup-piper.sh` : télécharge le binaire Piper (release archivée MIT `rhasspy/piper`, pas le fork GPL `OHF-Voice/piper1-gpl`) et des voix depuis `huggingface.co/rhasspy/piper-voices`.
+  - `src/kokoro.ts` : charge Kokoro-82M ONNX via `kokoro-js`, génère un WAV 24kHz.
+  - `src/chatterbox.ts` : client HTTP appelant le micro-service Python Chatterbox sur `http://127.0.0.1:5002`.
+  - `src/history.ts` : gestion de l'historique et sauvegarde des fichiers audio dans `server/output/`.
+  - `src/index.ts` : routes `GET /api/voices?engine=...` et `POST /api/tts` dispatchant vers les 4 moteurs.
+- `server/python/` :
+  - `chatterbox_service.py` : micro-service FastAPI exposant `/health`, `/references`, et `/tts` (génération PyTorch CUDA 24kHz).
+  - `references/` : échantillons audios de référence pour le clonage vocal.
+  - `requirements.txt` : dépendances Python (`torch`, `torchaudio`, `chatterbox-tts`, `fastapi`, `uvicorn`).
+- `web/` : frontend TypeScript + Vite. Sélecteur à 4 moteurs avec code couleur persistant (Edge: violet, Piper: bleu, Kokoro: vert émeraude, Chatterbox: rose framboise), réglages dédiés, badges, onglets d'explication et filtres d'historique.
+- `scripts/setup-piper.sh` : télécharge le binaire Piper et les modèles de voix.
+- `scripts/setup-chatterbox.sh` : initialise le virtualenv Python et installe les dépendances Chatterbox.
 
 Le binaire (`server/bin/`) et les voix (`server/voices/`) sont téléchargés par le script, pas commités (voir `.gitignore`).
 

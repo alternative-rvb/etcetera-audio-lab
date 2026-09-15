@@ -4,3 +4,7 @@ server/bin/
 server/voices/
 server/output/
 *.log
+.venv/
+venv/
+__pycache__/
+*.pyc

@@ -19,6 +19,18 @@
   --edge-bg: rgba(124, 58, 237, 0.08);
   --edge-border: #a78bfa;
   --edge-badge-bg: rgba(124, 58, 237, 0.12);
+
+  /* Code couleur Kokoro (82M ONNX local CPU/GPU) : Vert émeraude */
+  --kokoro-primary: #059669;
+  --kokoro-bg: rgba(5, 150, 105, 0.08);
+  --kokoro-border: #34d399;
+  --kokoro-badge-bg: rgba(5, 150, 105, 0.12);
+
+  /* Code couleur Chatterbox (Resemble AI clonage zéro-shot) : Rose framboise */
+  --chatterbox-primary: #e11d48;
+  --chatterbox-bg: rgba(225, 29, 72, 0.08);
+  --chatterbox-border: #fb7185;
+  --chatterbox-badge-bg: rgba(225, 29, 72, 0.12);
 }
 
 :root[data-theme="dark"] {
@@ -39,6 +51,16 @@
   --edge-bg: rgba(167, 139, 250, 0.12);
   --edge-border: rgba(167, 139, 250, 0.5);
   --edge-badge-bg: rgba(167, 139, 250, 0.18);
+
+  --kokoro-primary: #34d399;
+  --kokoro-bg: rgba(52, 211, 153, 0.12);
+  --kokoro-border: rgba(52, 211, 153, 0.5);
+  --kokoro-badge-bg: rgba(52, 211, 153, 0.18);
+
+  --chatterbox-primary: #fb7185;
+  --chatterbox-bg: rgba(251, 113, 133, 0.12);
+  --chatterbox-border: rgba(251, 113, 133, 0.5);
+  --chatterbox-badge-bg: rgba(251, 113, 133, 0.18);
 }
 
 * {
@@ -158,14 +180,20 @@ textarea:focus-visible {
 }
 
 .engine-switch {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
 }
 
+@media (min-width: 600px) {
+  .engine-switch {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .engine-btn {
-  flex: 1;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.6rem 0.65rem;
+  font-size: 0.82rem;
   font-family: inherit;
   border-radius: 6px;
   cursor: pointer;
@@ -173,7 +201,10 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Code couleur moteur visible MÊME HORS SÉLECTION */
@@ -215,6 +246,44 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
+.engine-btn.engine-kokoro {
+  border: 1.5px solid var(--kokoro-border);
+  background: var(--kokoro-bg);
+  color: var(--kokoro-primary);
+}
+
+.engine-btn.engine-kokoro:hover {
+  background: rgba(5, 150, 105, 0.12);
+  border-color: var(--kokoro-primary);
+}
+
+.engine-btn.engine-kokoro[aria-pressed="true"] {
+  border-color: var(--kokoro-primary);
+  color: #ffffff;
+  background: var(--kokoro-primary);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+  font-weight: 700;
+}
+
+.engine-btn.engine-chatterbox {
+  border: 1.5px solid var(--chatterbox-border);
+  background: var(--chatterbox-bg);
+  color: var(--chatterbox-primary);
+}
+
+.engine-btn.engine-chatterbox:hover {
+  background: rgba(225, 29, 72, 0.12);
+  border-color: var(--chatterbox-primary);
+}
+
+.engine-btn.engine-chatterbox[aria-pressed="true"] {
+  border-color: var(--chatterbox-primary);
+  color: #ffffff;
+  background: var(--chatterbox-primary);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35);
+  font-weight: 700;
+}
+
 .engine-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -239,6 +308,14 @@ body[data-active-engine="piper"] .controls input[type="range"] {
 
 body[data-active-engine="edge"] .controls input[type="range"] {
   accent-color: var(--edge-primary);
+}
+
+body[data-active-engine="kokoro"] .controls input[type="range"] {
+  accent-color: var(--kokoro-primary);
+}
+
+body[data-active-engine="chatterbox"] .controls input[type="range"] {
+  accent-color: var(--chatterbox-primary);
 }
 
 .voice-selection {
@@ -349,6 +426,50 @@ body[data-active-engine="edge"] .voice-btn[aria-checked="true"] {
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
 }
 
+/* Code couleur Kokoro : visible HORS SÉLECTION + accentué quand sélectionné */
+body[data-active-engine="kokoro"] .voice-btn {
+  border: 1.5px solid rgba(5, 150, 105, 0.25);
+  background: rgba(5, 150, 105, 0.03);
+}
+
+body[data-active-engine="kokoro"] .voice-btn .voice-tag {
+  background: var(--kokoro-badge-bg);
+  color: var(--kokoro-primary);
+}
+
+body[data-active-engine="kokoro"] .voice-btn:hover {
+  border-color: var(--kokoro-primary);
+  background: rgba(5, 150, 105, 0.07);
+}
+
+body[data-active-engine="kokoro"] .voice-btn[aria-checked="true"] {
+  border: 2px solid var(--kokoro-primary);
+  background: var(--kokoro-bg);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
+}
+
+/* Code couleur Chatterbox : visible HORS SÉLECTION + accentué quand sélectionné */
+body[data-active-engine="chatterbox"] .voice-btn {
+  border: 1.5px solid rgba(225, 29, 72, 0.25);
+  background: rgba(225, 29, 72, 0.03);
+}
+
+body[data-active-engine="chatterbox"] .voice-btn .voice-tag {
+  background: var(--chatterbox-badge-bg);
+  color: var(--chatterbox-primary);
+}
+
+body[data-active-engine="chatterbox"] .voice-btn:hover {
+  border-color: var(--chatterbox-primary);
+  background: rgba(225, 29, 72, 0.07);
+}
+
+body[data-active-engine="chatterbox"] .voice-btn[aria-checked="true"] {
+  border: 2px solid var(--chatterbox-primary);
+  background: var(--chatterbox-bg);
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25);
+}
+
 /* Nom de la voix : pleine largeur, jamais coupé en deux au milieu d'un mot */
 .voice-btn-name {
   font-weight: 600;
@@ -432,6 +553,16 @@ body[data-active-engine="piper"] button#generate {
 body[data-active-engine="edge"] button#generate {
   background: var(--edge-primary);
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+body[data-active-engine="kokoro"] button#generate {
+  background: var(--kokoro-primary);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+body[data-active-engine="chatterbox"] button#generate {
+  background: var(--chatterbox-primary);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3);
 }
 
 button#generate:hover {
@@ -703,6 +834,44 @@ audio {
   font-weight: 700;
 }
 
+.filter-btn.filter-kokoro {
+  border: 1.5px solid rgba(5, 150, 105, 0.35);
+  color: var(--kokoro-primary);
+  background: rgba(5, 150, 105, 0.04);
+}
+
+.filter-btn.filter-kokoro:hover {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: var(--kokoro-primary);
+}
+
+.filter-btn.filter-kokoro[aria-pressed="true"] {
+  border-color: var(--kokoro-primary);
+  color: #ffffff;
+  background: var(--kokoro-primary);
+  box-shadow: 0 1px 6px rgba(5, 150, 105, 0.3);
+  font-weight: 700;
+}
+
+.filter-btn.filter-chatterbox {
+  border: 1.5px solid rgba(225, 29, 72, 0.35);
+  color: var(--chatterbox-primary);
+  background: rgba(225, 29, 72, 0.04);
+}
+
+.filter-btn.filter-chatterbox:hover {
+  background: rgba(225, 29, 72, 0.1);
+  border-color: var(--chatterbox-primary);
+}
+
+.filter-btn.filter-chatterbox[aria-pressed="true"] {
+  border-color: var(--chatterbox-primary);
+  color: #ffffff;
+  background: var(--chatterbox-primary);
+  box-shadow: 0 1px 6px rgba(225, 29, 72, 0.3);
+  font-weight: 700;
+}
+
 .filter-btn.filter-fav {
   border: 1.5px solid rgba(245, 158, 11, 0.4);
   color: #d97706;
@@ -746,6 +915,18 @@ audio {
   border-left: 4px solid var(--edge-primary);
   border-color: rgba(124, 58, 237, 0.25);
   background: rgba(124, 58, 237, 0.02);
+}
+
+.history-item-dropdown.card-kokoro {
+  border-left: 4px solid var(--kokoro-primary);
+  border-color: rgba(5, 150, 105, 0.25);
+  background: rgba(5, 150, 105, 0.02);
+}
+
+.history-item-dropdown.card-chatterbox {
+  border-left: 4px solid var(--chatterbox-primary);
+  border-color: rgba(225, 29, 72, 0.25);
+  background: rgba(225, 29, 72, 0.02);
 }
 
 .history-item-dropdown:hover {
@@ -852,6 +1033,16 @@ audio {
 .card-badge.engine-edge {
   color: var(--edge-primary);
   background: var(--edge-badge-bg);
+}
+
+.card-badge.engine-kokoro {
+  color: var(--kokoro-primary);
+  background: var(--kokoro-badge-bg);
+}
+
+.card-badge.engine-chatterbox {
+  color: var(--chatterbox-primary);
+  background: var(--chatterbox-badge-bg);
 }
 
 .history-card-time {
@@ -1051,6 +1242,14 @@ audio {
   border-left: 3px solid var(--piper-primary);
 }
 
+.tab-mini-card.card-kokoro {
+  border-left: 3px solid var(--kokoro-primary);
+}
+
+.tab-mini-card.card-chatterbox {
+  border-left: 3px solid var(--chatterbox-primary);
+}
+
 .mini-card-header {
   display: flex;
   align-items: center;
@@ -1145,6 +1344,18 @@ audio {
   color: var(--piper-primary);
   border-color: rgba(2, 132, 199, 0.35);
   background: rgba(2, 132, 199, 0.06);
+}
+
+.badge-inline.engine-kokoro {
+  color: var(--kokoro-primary);
+  border-color: rgba(5, 150, 105, 0.35);
+  background: rgba(5, 150, 105, 0.06);
+}
+
+.badge-inline.engine-chatterbox {
+  color: var(--chatterbox-primary);
+  border-color: rgba(225, 29, 72, 0.35);
+  background: rgba(225, 29, 72, 0.06);
 }
 
 .help-params-list {

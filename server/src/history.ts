@@ -5,7 +5,7 @@ export interface AudioHistoryEntry {
   id: string;
   createdAt: string;
   text: string;
-  engine: "piper" | "edge";
+  engine: "piper" | "edge" | "kokoro" | "chatterbox";
   voiceId: string;
   voiceName: string;
   filePath: string;
@@ -54,7 +54,7 @@ export function saveAudio(
   buffer: Buffer,
   meta: {
     text: string;
-    engine: "piper" | "edge";
+    engine: "piper" | "edge" | "kokoro" | "chatterbox";
     voiceId: string;
     voiceName: string;
     format: "wav" | "mp3";

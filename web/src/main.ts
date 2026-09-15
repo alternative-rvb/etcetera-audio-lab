@@ -3,16 +3,16 @@ import { icon } from "./icons.js";
 interface VoiceInfo {
   id: string;
   name: string;
-  language: string;
-  gender: "female" | "male" | "unknown";
-  quality: string;
+  language?: string;
+  gender?: "female" | "male" | "unknown";
+  quality?: string;
 }
 
 interface AudioHistoryItem {
   id: string;
   createdAt: string;
   text: string;
-  engine: "piper" | "edge";
+  engine: "piper" | "edge" | "kokoro" | "chatterbox";
   voiceId: string;
   voiceName: string;
   filePath: string;
@@ -24,15 +24,20 @@ interface AudioHistoryItem {
   isFavorite?: boolean;
 }
 
-type Engine = "piper" | "edge";
-type HistoryFilter = "all" | "edge" | "piper" | "favorites";
+type Engine = "piper" | "edge" | "kokoro" | "chatterbox";
+type HistoryFilter = "all" | "edge" | "piper" | "kokoro" | "chatterbox" | "favorites";
 
 const textEl = document.getElementById("text") as HTMLTextAreaElement;
 const engineSwitchEl = document.getElementById("engineSwitch") as HTMLDivElement;
 const voiceButtonsEl = document.getElementById("voiceButtons") as HTMLDivElement;
 const voiceCountBadgeEl = document.getElementById("voiceCountBadge") as HTMLSpanElement;
+const voiceSelectionTitleEl = document.getElementById("voiceSelectionTitle") as HTMLSpanElement;
+
 const piperControlsEl = document.getElementById("piperControls") as HTMLDivElement;
 const edgeControlsEl = document.getElementById("edgeControls") as HTMLDivElement;
+const kokoroControlsEl = document.getElementById("kokoroControls") as HTMLDivElement;
+const chatterboxControlsEl = document.getElementById("chatterboxControls") as HTMLDivElement;
+
 const lengthScaleEl = document.getElementById("lengthScale") as HTMLInputElement;
 const lengthScaleValueEl = document.getElementById("lengthScaleValue") as HTMLSpanElement;
 const noiseScaleEl = document.getElementById("noiseScale") as HTMLInputElement;
@@ -41,6 +46,15 @@ const noiseWEl = document.getElementById("noiseW") as HTMLInputElement;
 const noiseWValueEl = document.getElementById("noiseWValue") as HTMLSpanElement;
 const ratePercentEl = document.getElementById("ratePercent") as HTMLInputElement;
 const ratePercentValueEl = document.getElementById("ratePercentValue") as HTMLSpanElement;
+
+const kokoroSpeedEl = document.getElementById("kokoroSpeed") as HTMLInputElement;
+const kokoroSpeedValueEl = document.getElementById("kokoroSpeedValue") as HTMLSpanElement;
+
+const chatterboxExaggerationEl = document.getElementById("chatterboxExaggeration") as HTMLInputElement;
+const chatterboxExaggerationValueEl = document.getElementById("chatterboxExaggerationValue") as HTMLSpanElement;
+const chatterboxTemperatureEl = document.getElementById("chatterboxTemperature") as HTMLInputElement;
+const chatterboxTemperatureValueEl = document.getElementById("chatterboxTemperatureValue") as HTMLSpanElement;
+
 const generateBtn = document.getElementById("generate") as HTMLButtonElement;
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const playerEl = document.getElementById("player") as HTMLAudioElement;
@@ -110,11 +124,25 @@ bindRangeDisplay(lengthScaleEl, lengthScaleValueEl, (n) => n.toFixed(2));
 bindRangeDisplay(noiseScaleEl, noiseScaleValueEl, (n) => n.toFixed(2));
 bindRangeDisplay(noiseWEl, noiseWValueEl, (n) => n.toFixed(2));
 bindRangeDisplay(ratePercentEl, ratePercentValueEl, (n) => `${n >= 0 ? "+" : ""}${n}%`);
+bindRangeDisplay(kokoroSpeedEl, kokoroSpeedValueEl, (n) => `${n.toFixed(2)}x`);
+bindRangeDisplay(chatterboxExaggerationEl, chatterboxExaggerationValueEl, (n) => n.toFixed(2));
+bindRangeDisplay(chatterboxTemperatureEl, chatterboxTemperatureValueEl, (n) => n.toFixed(2));
 
 function updateControlsVisibility() {
   document.body.dataset.activeEngine = engine;
   piperControlsEl.hidden = engine !== "piper";
   edgeControlsEl.hidden = engine !== "edge";
+  kokoroControlsEl.hidden = engine !== "kokoro";
+  chatterboxControlsEl.hidden = engine !== "chatterbox";
+
+  if (voiceSelectionTitleEl) {
+    if (engine === "chatterbox") {
+      voiceSelectionTitleEl.textContent = "Échantillon de voix (Clonage)";
+    } else {
+      voiceSelectionTitleEl.textContent = "Modèle de voix (France)";
+    }
+  }
+
   for (const btn of Array.from(engineSwitchEl.querySelectorAll<HTMLButtonElement>(".engine-btn"))) {
     btn.setAttribute("aria-pressed", String(btn.dataset.engine === engine));
   }
@@ -132,11 +160,12 @@ function selectVoice(voiceId: string) {
 
 function renderVoiceButtons(voices: VoiceInfo[]) {
   voiceButtonsEl.innerHTML = "";
-  voiceCountBadgeEl.textContent = `${voices.length} modèle${voices.length > 1 ? "s" : ""}`;
+  const unitName = engine === "chatterbox" ? "échantillon" : "modèle";
+  voiceCountBadgeEl.textContent = `${voices.length} ${unitName}${voices.length > 1 ? "s" : ""}`;
 
   if (voices.length === 0) {
     selectedVoiceId = "";
-    voiceButtonsEl.innerHTML = '<span class="voice-count">Aucun modèle disponible</span>';
+    voiceButtonsEl.innerHTML = `<span class="voice-count">Aucun ${unitName} disponible</span>`;
     return;
   }
 
@@ -272,11 +301,25 @@ function updatePreviewUpvoteButton(isFav?: boolean) {
   previewUpvoteBtn.innerHTML = `${star} <span>${isFav ? "Favori ✓" : "Favori"}</span>`;
 }
 
+function getEngineDetails(eng: Engine) {
+  switch (eng) {
+    case "piper":
+      return { label: "Piper", iconName: "cpu", badgeClass: "engine-piper", cardClass: "card-piper" };
+    case "kokoro":
+      return { label: "Kokoro", iconName: "zap", badgeClass: "engine-kokoro", cardClass: "card-kokoro" };
+    case "chatterbox":
+      return { label: "Chatterbox", iconName: "mic", badgeClass: "engine-chatterbox", cardClass: "card-chatterbox" };
+    case "edge":
+    default:
+      return { label: "Edge TTS", iconName: "cloud", badgeClass: "engine-edge", cardClass: "card-edge" };
+  }
+}
+
 // Fonction centrale de synchronisation de l'aperçu audio
 function loadAudioIntoPreview(
   item: {
     id: string;
-    engine: "piper" | "edge";
+    engine: Engine;
     voiceName: string;
     voiceId?: string;
     filePath: string;
@@ -286,9 +329,10 @@ function loadAudioIntoPreview(
   autoPlay = false
 ) {
   currentPreviewAudioId = item.id;
-  const isPiper = item.engine === "piper";
-  detailEngineEl.innerHTML = `${icon(isPiper ? "cpu" : "cloud", { size: 12 })} <span>${isPiper ? "Piper" : "Edge TTS"}</span>`;
-  detailEngineEl.className = `card-badge ${isPiper ? "engine-piper" : "engine-edge"}`;
+  const engDetails = getEngineDetails(item.engine);
+
+  detailEngineEl.innerHTML = `${icon(engDetails.iconName, { size: 12 })} <span>${engDetails.label}</span>`;
+  detailEngineEl.className = `card-badge ${engDetails.badgeClass}`;
   detailVoiceEl.textContent = item.voiceName || item.voiceId || "Voix";
   detailPathEl.textContent = item.filePath || "";
   detailPathEl.title = item.filePath ? `Cliquer pour copier : ${item.filePath}` : "";
@@ -349,7 +393,8 @@ function renderHistory() {
 
   for (const item of filtered) {
     const details = document.createElement("details");
-    details.className = `history-item-dropdown ${item.engine === "piper" ? "card-piper" : "card-edge"}`;
+    const engDetails = getEngineDetails(item.engine);
+    details.className = `history-item-dropdown ${engDetails.cardClass}`;
     if (allExpanded) {
       details.open = true;
     }
@@ -360,10 +405,7 @@ function renderHistory() {
       second: "2-digit",
     });
 
-    const isPiper = item.engine === "piper";
-    const engineLabel = isPiper ? "Piper" : "Edge TTS";
-    const engineIcon = isPiper ? icon("cpu", { size: 12 }) : icon("cloud", { size: 12 });
-    const engineBadgeClass = isPiper ? "engine-piper" : "engine-edge";
+    const engineIcon = icon(engDetails.iconName, { size: 12 });
     const favClass = item.isFavorite ? "is-favorite" : "";
     const starIcon = icon("star", { size: 13, fill: item.isFavorite ? "currentColor" : "none" });
 
@@ -371,7 +413,7 @@ function renderHistory() {
       <summary class="history-summary">
         <span class="dropdown-chevron">${icon("chevron-right", { size: 13 })}</span>
         <div class="history-summary-badges">
-          <span class="card-badge ${engineBadgeClass}">${engineIcon} <span>${engineLabel}</span></span>
+          <span class="card-badge ${engDetails.badgeClass}">${engineIcon} <span>${engDetails.label}</span></span>
           <span class="card-badge">${item.voiceName || item.voiceId}</span>
           <span class="history-card-time">${dateStr}</span>
         </div>
@@ -527,8 +569,13 @@ async function generate() {
       body.lengthScale = Number(lengthScaleEl.value);
       body.noiseScale = Number(noiseScaleEl.value);
       body.noiseW = Number(noiseWEl.value);
-    } else {
+    } else if (engine === "edge") {
       body.ratePercent = Number(ratePercentEl.value);
+    } else if (engine === "kokoro") {
+      body.speed = Number(kokoroSpeedEl.value);
+    } else if (engine === "chatterbox") {
+      body.exaggeration = Number(chatterboxExaggerationEl.value);
+      body.temperature = Number(chatterboxTemperatureEl.value);
     }
 
     const res = await fetch("/api/tts", {
@@ -588,6 +635,14 @@ function setupStaticIcons() {
   if (piperBtn) {
     piperBtn.innerHTML = `${icon("cpu", { size: 15 })} <span>Piper (local)</span>`;
   }
+  const kokoroBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-kokoro");
+  if (kokoroBtn) {
+    kokoroBtn.innerHTML = `${icon("zap", { size: 15 })} <span>Kokoro (ONNX)</span>`;
+  }
+  const chatterboxBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-chatterbox");
+  if (chatterboxBtn) {
+    chatterboxBtn.innerHTML = `${icon("mic", { size: 15 })} <span>Chatterbox (Clonage)</span>`;
+  }
 
   generateBtn.innerHTML = `${icon("sparkles", { size: 16 })} <span>Générer la voix</span>`;
 
@@ -620,6 +675,12 @@ function setupStaticIcons() {
 
   const filterPiper = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="piper"]');
   if (filterPiper) filterPiper.innerHTML = `${icon("cpu", { size: 13 })} <span>Piper</span>`;
+
+  const filterKokoro = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="kokoro"]');
+  if (filterKokoro) filterKokoro.innerHTML = `${icon("zap", { size: 13 })} <span>Kokoro</span>`;
+
+  const filterChatterbox = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="chatterbox"]');
+  if (filterChatterbox) filterChatterbox.innerHTML = `${icon("mic", { size: 13 })} <span>Chatterbox</span>`;
 
   const filterFav = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="favorites"]');
   if (filterFav) filterFav.innerHTML = `${icon("star", { size: 13, fill: "currentColor" })} <span>Favoris</span>`;
