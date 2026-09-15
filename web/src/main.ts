@@ -50,6 +50,7 @@ const ratePercentValueEl = document.getElementById("ratePercentValue") as HTMLSp
 const kokoroSpeedEl = document.getElementById("kokoroSpeed") as HTMLInputElement;
 const kokoroSpeedValueEl = document.getElementById("kokoroSpeedValue") as HTMLSpanElement;
 
+const chatterboxDeviceEl = document.getElementById("chatterboxDevice") as HTMLSelectElement;
 const chatterboxExaggerationEl = document.getElementById("chatterboxExaggeration") as HTMLInputElement;
 const chatterboxExaggerationValueEl = document.getElementById("chatterboxExaggerationValue") as HTMLSpanElement;
 const chatterboxTemperatureEl = document.getElementById("chatterboxTemperature") as HTMLInputElement;
@@ -304,14 +305,38 @@ function updatePreviewUpvoteButton(isFav?: boolean) {
 function getEngineDetails(eng: Engine) {
   switch (eng) {
     case "piper":
-      return { label: "Piper", iconName: "cpu", badgeClass: "engine-piper", cardClass: "card-piper" };
+      return {
+        label: "Piper",
+        iconName: "cpu",
+        badgeClass: "engine-piper",
+        cardClass: "card-piper",
+        tooltip: "Moteur local (CPU)",
+      };
     case "kokoro":
-      return { label: "Kokoro", iconName: "zap", badgeClass: "engine-kokoro", cardClass: "card-kokoro" };
+      return {
+        label: "Kokoro",
+        iconName: "cpu",
+        badgeClass: "engine-kokoro",
+        cardClass: "card-kokoro",
+        tooltip: "Moteur local (ONNX)",
+      };
     case "chatterbox":
-      return { label: "Chatterbox", iconName: "mic", badgeClass: "engine-chatterbox", cardClass: "card-chatterbox" };
+      return {
+        label: "Chatterbox",
+        iconName: "cpu",
+        badgeClass: "engine-chatterbox",
+        cardClass: "card-chatterbox",
+        tooltip: "Moteur local (GPU / PyTorch)",
+      };
     case "edge":
     default:
-      return { label: "Edge TTS", iconName: "cloud", badgeClass: "engine-edge", cardClass: "card-edge" };
+      return {
+        label: "Edge TTS",
+        iconName: "cloud",
+        badgeClass: "engine-edge",
+        cardClass: "card-edge",
+        tooltip: "API Cloud (Microsoft)",
+      };
   }
 }
 
@@ -333,6 +358,7 @@ function loadAudioIntoPreview(
 
   detailEngineEl.innerHTML = `${icon(engDetails.iconName, { size: 12 })} <span>${engDetails.label}</span>`;
   detailEngineEl.className = `card-badge ${engDetails.badgeClass}`;
+  detailEngineEl.title = `${engDetails.label} — ${engDetails.tooltip}`;
   detailVoiceEl.textContent = item.voiceName || item.voiceId || "Voix";
   detailPathEl.textContent = item.filePath || "";
   detailPathEl.title = item.filePath ? `Cliquer pour copier : ${item.filePath}` : "";
@@ -347,7 +373,29 @@ function loadAudioIntoPreview(
   if (autoPlay) {
     playerEl.play().catch(() => {});
   }
+  updateHistoryPlayButtons();
 }
+
+function updateHistoryPlayButtons() {
+  const isPlaying = !playerEl.paused && !playerEl.ended;
+  const playButtons = Array.from(historyListEl.querySelectorAll<HTMLButtonElement>(".card-play-btn"));
+  for (const btn of playButtons) {
+    const isThisItem = btn.dataset.itemId === currentPreviewAudioId;
+    if (isThisItem && isPlaying) {
+      btn.innerHTML = `${icon("pause", { size: 12 })} <span>Pause</span>`;
+      btn.classList.add("is-playing");
+      btn.title = "Mettre en pause";
+    } else {
+      btn.innerHTML = `${icon("play", { size: 12 })} <span>Écouter</span>`;
+      btn.classList.remove("is-playing");
+      btn.title = "Écouter cet enregistrement";
+    }
+  }
+}
+
+playerEl.addEventListener("play", updateHistoryPlayButtons);
+playerEl.addEventListener("pause", updateHistoryPlayButtons);
+playerEl.addEventListener("ended", updateHistoryPlayButtons);
 
 previewUpvoteBtn.addEventListener("click", () => {
   if (currentPreviewAudioId) {
@@ -413,12 +461,17 @@ function renderHistory() {
       <summary class="history-summary">
         <span class="dropdown-chevron">${icon("chevron-right", { size: 13 })}</span>
         <div class="history-summary-badges">
-          <span class="card-badge ${engDetails.badgeClass}">${engineIcon} <span>${engDetails.label}</span></span>
+          <span class="card-badge ${engDetails.badgeClass}" title="${engDetails.label} — ${engDetails.tooltip}">
+            ${engineIcon} <span>${engDetails.label}</span>
+          </span>
           <span class="card-badge">${item.voiceName || item.voiceId}</span>
           <span class="history-card-time">${dateStr}</span>
         </div>
         <span class="history-summary-text" title="${item.text}">${item.text}</span>
         <div class="history-card-actions">
+          <button type="button" class="card-play-btn" data-item-id="${item.id}" title="Écouter cet enregistrement" aria-label="Écouter">
+            ${icon("play", { size: 12 })} <span>Écouter</span>
+          </button>
           <button type="button" class="upvote-btn item-upvote-btn ${favClass}" title="Marquer comme favori">
             ${starIcon} <span>Favori</span>
           </button>
@@ -442,6 +495,21 @@ function renderHistory() {
     `;
 
     // Événements de la carte
+    const playBtn = details.querySelector<HTMLButtonElement>(".card-play-btn");
+    playBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentPreviewAudioId === item.id) {
+        if (playerEl.paused) {
+          playerEl.play().catch(() => {});
+        } else {
+          playerEl.pause();
+        }
+      } else {
+        loadAudioIntoPreview(item, true);
+      }
+    });
+
     const upvoteBtn = details.querySelector<HTMLButtonElement>(".item-upvote-btn");
     upvoteBtn?.addEventListener("click", (e) => {
       e.preventDefault();
@@ -475,6 +543,7 @@ function renderHistory() {
 
     historyListEl.appendChild(details);
   }
+  updateHistoryPlayButtons();
 }
 
 // Bouton tout déplier / replier
@@ -574,6 +643,7 @@ async function generate() {
     } else if (engine === "kokoro") {
       body.speed = Number(kokoroSpeedEl.value);
     } else if (engine === "chatterbox") {
+      body.device = chatterboxDeviceEl ? chatterboxDeviceEl.value : "cuda";
       body.exaggeration = Number(chatterboxExaggerationEl.value);
       body.temperature = Number(chatterboxTemperatureEl.value);
     }
@@ -629,19 +699,23 @@ generateBtn.addEventListener("click", generate);
 function setupStaticIcons() {
   const edgeBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-edge");
   if (edgeBtn) {
-    edgeBtn.innerHTML = `${icon("cloud", { size: 15 })} <span>Edge TTS (Microsoft)</span>`;
+    edgeBtn.innerHTML = `${icon("cloud", { size: 14 })} <span>Edge TTS</span>`;
+    edgeBtn.title = "Edge TTS — API Cloud (Microsoft)";
   }
   const piperBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-piper");
   if (piperBtn) {
-    piperBtn.innerHTML = `${icon("cpu", { size: 15 })} <span>Piper (local)</span>`;
+    piperBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Piper</span>`;
+    piperBtn.title = "Piper — Moteur local (CPU)";
   }
   const kokoroBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-kokoro");
   if (kokoroBtn) {
-    kokoroBtn.innerHTML = `${icon("zap", { size: 15 })} <span>Kokoro (ONNX)</span>`;
+    kokoroBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Kokoro</span>`;
+    kokoroBtn.title = "Kokoro — Moteur local (ONNX)";
   }
   const chatterboxBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-chatterbox");
   if (chatterboxBtn) {
-    chatterboxBtn.innerHTML = `${icon("mic", { size: 15 })} <span>Chatterbox (Clonage)</span>`;
+    chatterboxBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Chatterbox</span>`;
+    chatterboxBtn.title = "Chatterbox — Moteur local (GPU / Clonage)";
   }
 
   generateBtn.innerHTML = `${icon("sparkles", { size: 16 })} <span>Générer la voix</span>`;
@@ -668,22 +742,40 @@ function setupStaticIcons() {
   clearHistoryBtn.innerHTML = `${icon("trash", { size: 13 })} <span>Vider</span>`;
 
   const filterAll = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="all"]');
-  if (filterAll) filterAll.innerHTML = `${icon("filter", { size: 13 })} <span>Tous</span>`;
+  if (filterAll) {
+    filterAll.innerHTML = `${icon("filter", { size: 13 })} <span>Tous</span>`;
+    filterAll.title = "Afficher tous les enregistrements";
+  }
 
   const filterEdge = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="edge"]');
-  if (filterEdge) filterEdge.innerHTML = `${icon("cloud", { size: 13 })} <span>Edge TTS</span>`;
+  if (filterEdge) {
+    filterEdge.innerHTML = `${icon("cloud", { size: 13 })} <span>Edge TTS</span>`;
+    filterEdge.title = "Filtrer : Edge TTS (API Cloud)";
+  }
 
   const filterPiper = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="piper"]');
-  if (filterPiper) filterPiper.innerHTML = `${icon("cpu", { size: 13 })} <span>Piper</span>`;
+  if (filterPiper) {
+    filterPiper.innerHTML = `${icon("cpu", { size: 13 })} <span>Piper</span>`;
+    filterPiper.title = "Filtrer : Piper (Local)";
+  }
 
   const filterKokoro = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="kokoro"]');
-  if (filterKokoro) filterKokoro.innerHTML = `${icon("zap", { size: 13 })} <span>Kokoro</span>`;
+  if (filterKokoro) {
+    filterKokoro.innerHTML = `${icon("cpu", { size: 13 })} <span>Kokoro</span>`;
+    filterKokoro.title = "Filtrer : Kokoro (Local)";
+  }
 
   const filterChatterbox = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="chatterbox"]');
-  if (filterChatterbox) filterChatterbox.innerHTML = `${icon("mic", { size: 13 })} <span>Chatterbox</span>`;
+  if (filterChatterbox) {
+    filterChatterbox.innerHTML = `${icon("cpu", { size: 13 })} <span>Chatterbox</span>`;
+    filterChatterbox.title = "Filtrer : Chatterbox (Local)";
+  }
 
   const filterFav = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="favorites"]');
-  if (filterFav) filterFav.innerHTML = `${icon("star", { size: 13, fill: "currentColor" })} <span>Favoris</span>`;
+  if (filterFav) {
+    filterFav.innerHTML = `${icon("star", { size: 13, fill: "currentColor" })} <span>Favoris</span>`;
+    filterFav.title = "Afficher uniquement les favoris";
+  }
 }
 
 // Thème : préférence système par défaut, bascule manuelle mémorisée en localStorage.

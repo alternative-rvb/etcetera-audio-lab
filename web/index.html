@@ -24,10 +24,10 @@
 
           <div class="controls">
             <div class="engine-switch" id="engineSwitch" role="group" aria-label="Moteur TTS">
-              <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true">Edge TTS (Microsoft)</button>
-              <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false">Piper (local)</button>
-              <button type="button" class="engine-btn engine-kokoro" data-engine="kokoro" aria-pressed="false">Kokoro (ONNX)</button>
-              <button type="button" class="engine-btn engine-chatterbox" data-engine="chatterbox" aria-pressed="false">Chatterbox (Clonage)</button>
+              <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true" title="Edge TTS — API Cloud Microsoft Neural">Edge TTS</button>
+              <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false" title="Piper — Moteur local natif (CPU)">Piper</button>
+              <button type="button" class="engine-btn engine-kokoro" data-engine="kokoro" aria-pressed="false" title="Kokoro — Moteur local ONNX (Node.js)">Kokoro</button>
+              <button type="button" class="engine-btn engine-chatterbox" data-engine="chatterbox" aria-pressed="false" title="Chatterbox — Clonage vocal local (GPU)">Chatterbox</button>
             </div>
 
             <div class="voice-selection">
@@ -76,6 +76,13 @@
 
             <div id="chatterboxControls" class="engine-controls" hidden>
               <label>
+                Matériel d'inférence
+                <select id="chatterboxDevice" class="engine-select">
+                  <option value="cuda" selected>🚀 GPU CUDA (RTX 3070 - Rapide ~2-3s)</option>
+                  <option value="cpu">🐢 CPU seul (Simulation VPS sans GPU ~15-20s)</option>
+                </select>
+              </label>
+              <label>
                 Exagération émotionnelle
                 <input id="chatterboxExaggeration" type="range" min="0.0" max="1.5" step="0.05" value="0.5" />
                 <span id="chatterboxExaggerationValue">0.50</span>
@@ -117,16 +124,23 @@
                     <div class="tab-mini-card card-edge">
                       <div class="mini-card-header">
                         <span class="card-badge engine-edge">Edge TTS</span>
-                        <span class="mini-card-tag">Cloud Neural</span>
+                        <span class="mini-card-tag">API Cloud Microsoft</span>
                       </div>
                       <p class="mini-card-desc">
                         Voix neurales Microsoft Edge via endpoint gratuit sans clé API. Moteur de référence actuellement en production dans NowWeAct.
                       </p>
-                      <ul class="mini-card-features">
-                        <li>Excellente fluidité et naturel (Denise, Henri)</li>
-                        <li>Format MP3 léger & contrôle du débit</li>
-                        <li>Dépendance réseau vers Microsoft</li>
-                      </ul>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Stack technique :</span>
+                        <span class="mini-card-code-line">edge-tts-universal • Node.js (ESM) • WebSocket</span>
+                      </div>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
+                        <ul class="mini-card-features">
+                          <li>Connexion Internet requise (port HTTPS/WSS)</li>
+                          <li>Zéro clé API • Empreinte mémoire minime (~15 Mo)</li>
+                          <li>Licence lib : AGPL-3.0 • Sortie : MP3 24kHz</li>
+                        </ul>
+                      </div>
                     </div>
 
                     <div class="tab-mini-card card-piper">
@@ -135,43 +149,64 @@
                         <span class="mini-card-tag">100% Local CPU</span>
                       </div>
                       <p class="mini-card-desc">
-                        Moteur open-source (binaire natif C++ + ONNX) tournant entièrement en local sur CPU, sans aucune dépendance cloud ni quota.
+                        Moteur ultra-rapide et léger tournant entièrement en local sur CPU sans GPU ni dépendance réseau.
                       </p>
-                      <ul class="mini-card-features">
-                        <li>Indépendance totale & latence prédictible</li>
-                        <li>Sortie audio WAV sans perte</li>
-                        <li>Qualité dépendante des modèles ONNX</li>
-                      </ul>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Stack technique :</span>
+                        <span class="mini-card-code-line">Binaire C++ natif • child_process • ONNX models</span>
+                      </div>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
+                        <ul class="mini-card-features">
+                          <li>100% Hors-ligne • CPU x86_64 standard (sans GPU)</li>
+                          <li>Modèles dans <code>server/voices/</code> (~60 Mo RAM)</li>
+                          <li>Licence : MIT/GPL-3.0 • Sortie : WAV 22.05kHz</li>
+                        </ul>
+                      </div>
                     </div>
 
                     <div class="tab-mini-card card-kokoro">
                       <div class="mini-card-header">
                         <span class="card-badge engine-kokoro">Kokoro</span>
-                        <span class="mini-card-tag">82M ONNX (CPU/GPU)</span>
+                        <span class="mini-card-tag">Local ONNX 82M</span>
                       </div>
                       <p class="mini-card-desc">
-                        Modèle compact de 82M paramètres (Apache 2.0) offrant un timbre studio et un naturel nettement supérieur à Piper.
+                        Modèle neuronal compact 82M paramètres StyleTTS2 offrant un timbre studio naturel supérieur à Piper.
                       </p>
-                      <ul class="mini-card-features">
-                        <li>Qualité acoustique premium en local</li>
-                        <li>Exécutable en Node.js via ONNX Runtime</li>
-                        <li>Voix française Siwis et voix US/UK</li>
-                      </ul>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Stack technique :</span>
+                        <span class="mini-card-code-line">kokoro-js • onnxruntime-node (q8) • espeak-ng IPA</span>
+                      </div>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
+                        <ul class="mini-card-features">
+                          <li>100% Hors-ligne • CPU moderne (AVX2) ou GPU</li>
+                          <li>Binaire <code>server/bin/espeak-ng</code> pour phonèmes fr</li>
+                          <li>Licence : Apache 2.0 • Sortie : WAV 24kHz studio</li>
+                        </ul>
+                      </div>
                     </div>
 
                     <div class="tab-mini-card card-chatterbox">
                       <div class="mini-card-header">
                         <span class="card-badge engine-chatterbox">Chatterbox</span>
-                        <span class="mini-card-tag">Clonage Zéro-Shot MIT</span>
+                        <span class="mini-card-tag">Clonage Vocal Local</span>
                       </div>
                       <p class="mini-card-desc">
-                        Moteur de clonage vocal (Resemble AI, licence MIT commerciale libre), capable d'imiter un timbre à partir d'un échantillon audio.
+                        Moteur de clonage vocal zéro-shot (Resemble AI) pour synthétiser avec le timbre exact d'un échantillon audio.
                       </p>
-                      <ul class="mini-card-features">
-                        <li>Clonage expressif immédiat</li>
-                        <li>Contrôle de l'émotion et de l'exagération</li>
-                        <li>Accélération CUDA (RTX 3070 8GB)</li>
-                      </ul>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Stack technique :</span>
+                        <span class="mini-card-code-line">FastAPI • PyTorch 2.6 • CUDA 12.4 • chatterbox-tts</span>
+                      </div>
+                      <div class="mini-card-section">
+                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
+                        <ul class="mini-card-features">
+                          <li>GPU NVIDIA recommandé (CUDA, ~2-3 Go VRAM)</li>
+                          <li>Virtualenv Python <code>server/python/.venv/</code></li>
+                          <li>Licence : MIT commerciale • Sortie : WAV 24kHz</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
@@ -270,12 +305,12 @@
             <div class="history-filters" role="group" aria-label="Filtrer l'historique">
               <span class="filter-label">Filtres :</span>
               <div class="filter-buttons" id="historyFilterButtons">
-                <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Tous</button>
-                <button type="button" class="filter-btn filter-edge" data-filter="edge" aria-pressed="false">Edge TTS</button>
-                <button type="button" class="filter-btn filter-piper" data-filter="piper" aria-pressed="false">Piper</button>
-                <button type="button" class="filter-btn filter-kokoro" data-filter="kokoro" aria-pressed="false">Kokoro</button>
-                <button type="button" class="filter-btn filter-chatterbox" data-filter="chatterbox" aria-pressed="false">Chatterbox</button>
-                <button type="button" class="filter-btn filter-fav" data-filter="favorites" aria-pressed="false">Favoris</button>
+                <button type="button" class="filter-btn" data-filter="all" aria-pressed="true" title="Afficher tous les enregistrements">Tous</button>
+                <button type="button" class="filter-btn filter-edge" data-filter="edge" aria-pressed="false" title="Filtrer : Edge TTS (API Cloud)">Edge TTS</button>
+                <button type="button" class="filter-btn filter-piper" data-filter="piper" aria-pressed="false" title="Filtrer : Piper (Local CPU)">Piper</button>
+                <button type="button" class="filter-btn filter-kokoro" data-filter="kokoro" aria-pressed="false" title="Filtrer : Kokoro (Local ONNX)">Kokoro</button>
+                <button type="button" class="filter-btn filter-chatterbox" data-filter="chatterbox" aria-pressed="false" title="Filtrer : Chatterbox (Local GPU)">Chatterbox</button>
+                <button type="button" class="filter-btn filter-fav" data-filter="favorites" aria-pressed="false" title="Afficher uniquement les favoris">Favoris</button>
               </div>
             </div>
 

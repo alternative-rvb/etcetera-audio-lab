@@ -85,6 +85,7 @@ app.post("/api/tts", async (req, res) => {
     noiseW,
     ratePercent,
     speed,
+    device: chatterboxDeviceRaw,
     exaggeration,
     temperature,
     repetitionPenalty,
@@ -121,10 +122,12 @@ app.post("/api/tts", async (req, res) => {
       const parsedExagg = typeof exaggeration === "number" ? exaggeration : 0.5;
       const parsedTemp = typeof temperature === "number" ? temperature : 0.8;
       const parsedRep = typeof repetitionPenalty === "number" ? repetitionPenalty : 2.0;
+      const parsedDevice = chatterboxDeviceRaw === "cpu" ? "cpu" : "cuda";
 
       audioBuffer = await synthesizeChatterbox(text, {
         referenceName: voiceId,
         language: "fr",
+        device: parsedDevice,
         exaggeration: parsedExagg,
         temperature: parsedTemp,
         repetitionPenalty: parsedRep,

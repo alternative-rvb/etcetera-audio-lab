@@ -1,4 +1,34 @@
 import { KokoroTTS } from "kokoro-js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { join } from "node:path";
+import { existsSync, chmodSync } from "node:fs";
+
+const execFileAsync = promisify(execFile);
+const BIN_DIR = join(import.meta.dirname, "..", "bin");
+const ESPEAK_BIN = join(BIN_DIR, "espeak-ng");
+
+async function phonemizeFrench(text: string): Promise<string> {
+  if (existsSync(ESPEAK_BIN)) {
+    try {
+      chmodSync(ESPEAK_BIN, 0o755);
+    } catch {
+      // Ignorer si déjà exécutable
+    }
+    const { stdout } = await execFileAsync(
+      ESPEAK_BIN,
+      ["--path=" + BIN_DIR, "-v", "fr", "-q", "--ipa=3", text],
+      {
+        env: {
+          ...process.env,
+          LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH ? `${BIN_DIR}:${process.env.LD_LIBRARY_PATH}` : BIN_DIR,
+        },
+      }
+    );
+    return stdout.trim().replace(/\n+/g, " ");
+  }
+  throw new Error("espeak-ng introuvable dans server/bin pour la phonémisation française de Kokoro.");
+}
 
 export interface KokoroVoiceInfo {
   id: string;
@@ -48,11 +78,23 @@ export async function synthesizeKokoro(
   const tts = await getKokoroInstance();
   const speed = options.speed ?? 1.0;
   const targetVoice = KOKORO_VOICES.some((v) => v.id === voiceId) ? voiceId : "ff_siwis";
+  const voiceInfo = getKokoroVoice(targetVoice);
+  const isFrench = targetVoice.startsWith("f") || (voiceInfo && voiceInfo.language.startsWith("fr"));
 
-  const audio = await tts.generate(text, {
-    voice: targetVoice,
-    speed,
-  });
+  let audio: any;
+  if (isFrench) {
+    const phonemes = await phonemizeFrench(text);
+    const { input_ids } = tts.tokenizer(phonemes, { truncation: true });
+    audio = await tts.generate_from_ids(input_ids, {
+      voice: targetVoice,
+      speed,
+    });
+  } else {
+    audio = await tts.generate(text, {
+      voice: targetVoice,
+      speed,
+    });
+  }
 
   const wavArrayBuffer = audio.toWav();
   return Buffer.from(wavArrayBuffer);

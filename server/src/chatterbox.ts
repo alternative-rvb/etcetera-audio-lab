@@ -49,6 +49,7 @@ export async function getChatterboxReferences(): Promise<ChatterboxReference[]> 
 export interface ChatterboxOptions {
   referenceName?: string;
   language?: string;
+  device?: "cuda" | "cpu";
   exaggeration?: number;
   temperature?: number;
   repetitionPenalty?: number;
@@ -62,18 +63,29 @@ export async function synthesizeChatterbox(
     text,
     language: options.language || "fr",
     reference_name: options.referenceName || "reference_female.wav",
+    device: options.device || "cuda",
     exaggeration: options.exaggeration ?? 0.5,
     temperature: options.temperature ?? 0.8,
     repetition_penalty: options.repetitionPenalty ?? 2.0,
   };
 
-  const res = await fetch(`${CHATTERBOX_URL}/tts`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    // synthèse peut prendre 5-10 secondes
-    signal: AbortSignal.timeout(60000),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${CHATTERBOX_URL}/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      // synthèse ou téléchargement initial
+      signal: AbortSignal.timeout(300000),
+    });
+  } catch (err: any) {
+    if (err?.cause?.code === "ECONNREFUSED" || err?.message?.includes("fetch failed")) {
+      throw new Error(
+        `Le micro-service Python Chatterbox n'est pas démarré (http://127.0.0.1:5002). Lancez 'npm run chatterbox' dans un terminal séparé.`
+      );
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");

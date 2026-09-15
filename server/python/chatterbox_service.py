@@ -16,21 +16,45 @@ model = None
 REFERENCES_DIR = os.path.join(os.path.dirname(__file__), "references")
 os.makedirs(REFERENCES_DIR, exist_ok=True)
 
-def get_model():
-    global model
-    if model is None:
-        print(f"[Chatterbox] Loading ChatterboxMultilingualTTS on {device}...")
-        model = ChatterboxMultilingualTTS.from_pretrained(device=device)
-        print("[Chatterbox] Model loaded successfully!")
-    return model
+models = {}
+
+def get_model(target_device_str: str = "cuda"):
+    global models
+    # Fallback to cpu if cuda is requested but not available
+    if target_device_str == "cuda" and not torch.cuda.is_available():
+        target_device_str = "cpu"
+    
+    if target_device_str not in models or models[target_device_str] is None:
+        print(f"[Chatterbox] Loading ChatterboxMultilingualTTS on device: '{target_device_str}'...")
+        dev = torch.device(target_device_str)
+        models[target_device_str] = ChatterboxMultilingualTTS.from_pretrained(device=dev)
+        print(f"[Chatterbox] Model on '{target_device_str}' loaded successfully!")
+    return models[target_device_str]
 
 class TTSRequest(BaseModel):
     text: str
     language: str = "fr"
     reference_name: str | None = None
+    device: str = "cuda" # "cuda" ou "cpu"
     exaggeration: float = 0.5
     temperature: float = 0.8
     repetition_penalty: float = 2.0
+
+import threading
+import time
+
+def load_model_background():
+    try:
+        dev_str = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"[Chatterbox Service] Preloading model on {dev_str} in background...")
+        get_model(dev_str)
+        print("[Chatterbox Service] Model preloaded and ready!")
+    except Exception as e:
+        print(f"[Chatterbox Service] Warning during model preload: {e}")
+
+@app.on_event("startup")
+def on_startup():
+    threading.Thread(target=load_model_background, daemon=True).start()
 
 @app.get("/health")
 def health():
@@ -38,7 +62,8 @@ def health():
         "status": "ok",
         "device": str(device),
         "cuda_available": torch.cuda.is_available(),
-        "model_loaded": model is not None
+        "loaded_devices": list(models.keys()),
+        "model_loaded": len(models) > 0
     }
 
 @app.get("/references")
@@ -58,7 +83,8 @@ def list_references():
 @app.post("/tts")
 def generate_tts(req: TTSRequest):
     try:
-        m = get_model()
+        req_dev = req.device.lower().strip() if req.device else "cuda"
+        m = get_model(req_dev)
         ref_path = None
         if req.reference_name:
             candidate = os.path.join(REFERENCES_DIR, req.reference_name)

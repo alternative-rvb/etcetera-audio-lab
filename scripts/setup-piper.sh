@@ -25,9 +25,10 @@ if [ ! -x "$BIN_DIR/piper" ]; then
   curl -sL "$PIPER_ARCHIVE_URL" -o "$TMP_ARCHIVE"
   tar -xzf "$TMP_ARCHIVE" -C "$BIN_DIR" --strip-components=1
   rm -f "$TMP_ARCHIVE"
-  chmod +x "$BIN_DIR/piper"
-  echo "Binaire Piper installé dans $BIN_DIR/piper"
+  chmod +x "$BIN_DIR/piper" "$BIN_DIR/espeak-ng" "$BIN_DIR/piper_phonemize" 2>/dev/null || chmod +x "$BIN_DIR/piper"
+  echo "Binaire Piper et utilitaires installés dans $BIN_DIR"
 else
+  chmod +x "$BIN_DIR/piper" "$BIN_DIR/espeak-ng" "$BIN_DIR/piper_phonemize" 2>/dev/null || true
   echo "Binaire Piper déjà présent, on passe."
 fi
 

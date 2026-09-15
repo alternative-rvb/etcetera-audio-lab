@@ -6,7 +6,8 @@
     "setup": "bash scripts/setup-piper.sh && npm install --prefix server && npm install --prefix web",
     "setup:chatterbox": "bash scripts/setup-chatterbox.sh",
     "chatterbox": "./server/python/.venv/bin/python server/python/chatterbox_service.py",
-    "dev": "concurrently -n server,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix web\""
+    "dev": "concurrently -k -n server,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix web\"",
+    "dev:all": "concurrently -k -n server,web,chatterbox -c blue,green,magenta \"npm run dev --prefix server\" \"npm run dev --prefix web\" \"npm run chatterbox\""
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

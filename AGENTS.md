@@ -44,8 +44,10 @@ Tout se pilote depuis la racine (`package.json` racine + `concurrently`) :
 
 ```bash
 npm install
-npm run setup   # télécharge le binaire piper + voix fr/en, installe server/ et web/
-npm run dev      # lance API (http://localhost:3001) et frontend (http://localhost:5173) en parallèle
+npm run setup            # télécharge le binaire piper + voix fr/en, installe server/ et web/
+npm run setup:chatterbox # (optionnel) installe l'environnement Python PyTorch pour Chatterbox
+npm run dev              # lance API (3001) et frontend (5173) en parallèle
+npm run dev:all          # lance tout en 1 commande : API (3001), frontend (5173) et Chatterbox (5002)
 ```
 
 ## Suite envisagée

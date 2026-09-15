@@ -20,11 +20,14 @@ import {
   ListFilter,
   X,
   Play,
+  Pause,
   History,
   Zap,
   Mic,
   AudioLines,
   Gauge,
+  Server,
+  HardDrive,
   type IconNode,
 } from "lucide";
 
@@ -50,11 +53,14 @@ const iconMap: Record<string, IconNode> = {
   filter: ListFilter,
   close: X,
   play: Play,
+  pause: Pause,
   history: History,
   zap: Zap,
   mic: Mic,
   audiolines: AudioLines,
   gauge: Gauge,
+  server: Server,
+  "hard-drive": HardDrive,
 };
 
 interface IconOptions {
