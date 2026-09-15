@@ -613,6 +613,25 @@
                     </label>
                   </div>
                 </div>
+
+                <!-- Options Sherpa-ONNX -->
+                <div class="stt-engine-options" id="sttSherpaOptions" hidden>
+                  <div class="options-grid">
+                    <label>
+                      Modèle Sherpa-ONNX
+                      <select id="sherpaModel" class="engine-select">
+                        <option value="tiny" selected>Whisper-Tiny ONNX (Ultra-léger ~0.15s)</option>
+                        <option value="base">Whisper-Base ONNX (Standard ~0.35s)</option>
+                      </select>
+                    </label>
+                    <label>
+                      Moteur d'exécution
+                      <select id="sherpaDevice" class="engine-select">
+                        <option value="cpu" selected>CPU (ONNX Runtime C++ • 0 VRAM)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
               </div>
             </details>
 

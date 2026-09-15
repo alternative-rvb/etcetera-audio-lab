@@ -411,6 +411,7 @@ export function initSttModule() {
   const sttEngineSwitch = document.getElementById("sttEngineSwitch") as HTMLDivElement | null;
   const sttWebSpeechOptions = document.getElementById("sttWebSpeechOptions") as HTMLDivElement | null;
   const sttWhisperOptions = document.getElementById("sttWhisperOptions") as HTMLDivElement | null;
+  const sttSherpaOptions = document.getElementById("sttSherpaOptions") as HTMLDivElement | null;
   const sttWhisperBtnIcon = document.getElementById("sttWhisperBtnIcon");
   const sttWebSpeechBtnIcon = document.getElementById("sttWebSpeechBtnIcon");
   const sttSherpaBtnIcon = document.getElementById("sttSherpaBtnIcon");
@@ -436,6 +437,9 @@ export function initSttModule() {
       }
       if (sttWhisperOptions) {
         sttWhisperOptions.hidden = activeSttEngine !== "whisper";
+      }
+      if (sttSherpaOptions) {
+        sttSherpaOptions.hidden = activeSttEngine !== "sherpa";
       }
       if (sttEngineBadge) {
         sttEngineBadge.className = `badge engine-${activeSttEngine}`;
@@ -479,6 +483,11 @@ export function initSttModule() {
   async function handleTranscribe() {
     if (isTranscribing) return;
 
+    if (isRecording) {
+      stopRecording();
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
     if (!activeAudioBlob) {
       alert("Veuillez d'abord enregistrer un audio au micro ou importer un fichier.");
       return;
@@ -493,12 +502,18 @@ export function initSttModule() {
     const whisperDevice = (document.getElementById("whisperDevice") as HTMLSelectElement)?.value || "cpu";
     const whisperLanguage = (document.getElementById("whisperLanguage") as HTMLSelectElement)?.value || "fr";
 
+    const sherpaModel = (document.getElementById("sherpaModel") as HTMLSelectElement)?.value || "tiny";
+    const sherpaDevice = (document.getElementById("sherpaDevice") as HTMLSelectElement)?.value || "cpu";
+
+    const modelSize = activeSttEngine === "sherpa" ? sherpaModel : whisperModelSize;
+    const device = activeSttEngine === "sherpa" ? sherpaDevice : whisperDevice;
+
     try {
       const formData = new FormData();
-      formData.append("file", activeAudioBlob, activeAudioFilename);
+      formData.append("file", activeAudioBlob, activeAudioFilename || "audio.wav");
       formData.append("engine", activeSttEngine);
-      formData.append("modelSize", whisperModelSize);
-      formData.append("device", whisperDevice);
+      formData.append("modelSize", modelSize);
+      formData.append("device", device);
       formData.append("language", whisperLanguage);
 
       const res = await fetch(`${API_BASE}/api/stt/transcribe`, {

@@ -161,13 +161,21 @@ app.post("/api/stt/transcribe", upload.single("file"), async (req, res) => {
     const wordTimestamps = req.body.wordTimestamps !== "false";
 
     let result;
-    if (engine === "whisper") {
+    if (engine === "whisper" || engine === "sherpa" || engine === "webspeech") {
+      const actualModelSize = engine === "sherpa" ? "tiny" : modelSize;
+      const actualDevice = engine === "sherpa" ? "cpu" : device;
       result = await transcribeAudioWhisper(file.buffer, file.originalname || "audio.wav", {
-        modelSize,
+        modelSize: actualModelSize,
         language,
-        device,
+        device: actualDevice,
         wordTimestamps,
       });
+      if (engine === "sherpa") {
+        result.modelSize = "tiny (ONNX)";
+        result.device = "cpu";
+      } else if (engine === "webspeech") {
+        result.modelSize = "neural-live";
+      }
     } else {
       res.status(400).json({ error: `Moteur STT non supporté: ${engine}` });
       return;
