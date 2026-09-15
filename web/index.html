@@ -8,18 +8,152 @@
   </head>
   <body>
     <main class="app-container">
-      <header class="top-bar">
-        <h1>Test TTS</h1>
-        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Changer de thème">🌙</button>
+      <!-- Header de l'application -->
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="brand-icon-box">
+            <span id="headerBrandIcon"></span>
+          </div>
+          <div class="brand-text">
+            <div class="brand-title-row">
+              <h1 class="brand-title">TTS Studio</h1>
+              <span class="badge badge-header">Banc d'essai</span>
+            </div>
+            <p class="brand-subtitle">Comparateur & banc de test Text-to-Speech multi-moteurs</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="header-meta-tags">
+            <span class="meta-tag"><span class="status-dot"></span> 4 moteurs</span>
+            <span class="meta-tag">fr-FR</span>
+            <span class="meta-tag">Local & Cloud</span>
+          </div>
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="Changer de thème"></button>
+        </div>
       </header>
+
+      <!-- Section Hero : Objectif du banc d'essai TTS -->
+      <section class="hero-section" id="heroSection">
+        <div class="hero-header-row">
+          <div class="hero-title-area">
+            <div class="hero-badge">
+              <span id="heroTargetIcon"></span>
+              <span>Objectif du projet</span>
+            </div>
+            <h2 class="hero-title">Banc d'essai Text-to-Speech (TTS)</h2>
+            <p class="hero-desc">
+              Ce projet évalue et compare différents moteurs de synthèse vocale pour le français (<code>fr-FR</code>), en vue d'une intégration dans l'application NextJS (<strong>NowWeAct</strong>) et d'un déploiement auto-hébergé sur VPS OVH.
+            </p>
+          </div>
+          <button type="button" class="hero-toggle-btn" id="heroToggleBtn" title="Masquer ou afficher les spécifications des moteurs">
+            <span id="heroToggleIcon"></span>
+            <span id="heroToggleText">Masquer les specs</span>
+          </button>
+        </div>
+
+        <div class="hero-grid-compare" id="heroGridCompare">
+          <div class="tab-mini-card card-edge">
+            <div class="mini-card-header">
+              <span class="card-badge engine-edge">Edge TTS</span>
+              <span class="mini-card-tag">API Cloud Microsoft</span>
+            </div>
+            <p class="mini-card-desc">
+              Voix neurales Microsoft Edge via endpoint gratuit sans clé API. Moteur de référence actuellement en production dans NowWeAct.
+            </p>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Stack technique :</span>
+              <span class="mini-card-code-line">edge-tts-universal • Node.js (ESM) • WebSocket</span>
+            </div>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Prérequis & Ressources :</span>
+              <ul class="mini-card-features">
+                <li>Connexion Internet requise (port HTTPS/WSS)</li>
+                <li>Zéro clé API • Empreinte mémoire minime (~15 Mo)</li>
+                <li>Licence lib : AGPL-3.0 • Sortie : MP3 24kHz</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tab-mini-card card-piper">
+            <div class="mini-card-header">
+              <span class="card-badge engine-piper">Piper</span>
+              <span class="mini-card-tag">100% Local CPU</span>
+            </div>
+            <p class="mini-card-desc">
+              Moteur ultra-rapide et léger tournant entièrement en local sur CPU sans GPU ni dépendance réseau.
+            </p>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Stack technique :</span>
+              <span class="mini-card-code-line">Binaire C++ natif • child_process • ONNX models</span>
+            </div>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Prérequis & Ressources :</span>
+              <ul class="mini-card-features">
+                <li>100% Hors-ligne • CPU x86_64 standard (sans GPU)</li>
+                <li>Modèles dans <code>server/voices/</code> (~60 Mo RAM)</li>
+                <li>Licence : MIT/GPL-3.0 • Sortie : WAV 22.05kHz</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tab-mini-card card-kokoro">
+            <div class="mini-card-header">
+              <span class="card-badge engine-kokoro">Kokoro</span>
+              <span class="mini-card-tag">Local ONNX 82M</span>
+            </div>
+            <p class="mini-card-desc">
+              Modèle neuronal compact 82M paramètres StyleTTS2 offrant un timbre studio naturel supérieur à Piper.
+            </p>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Stack technique :</span>
+              <span class="mini-card-code-line">kokoro-js • onnxruntime-node (q8) • espeak-ng IPA</span>
+            </div>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Prérequis & Ressources :</span>
+              <ul class="mini-card-features">
+                <li>100% Hors-ligne • CPU moderne (AVX2) ou GPU</li>
+                <li>Binaire <code>server/bin/espeak-ng</code> pour phonèmes fr</li>
+                <li>Licence : Apache 2.0 • Sortie : WAV 24kHz studio</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tab-mini-card card-chatterbox">
+            <div class="mini-card-header">
+              <span class="card-badge engine-chatterbox">Chatterbox</span>
+              <span class="mini-card-tag">Clonage Vocal Local</span>
+            </div>
+            <p class="mini-card-desc">
+              Moteur de clonage vocal zéro-shot (Resemble AI) pour synthétiser avec le timbre exact d'un échantillon audio.
+            </p>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Stack technique :</span>
+              <span class="mini-card-code-line">FastAPI • PyTorch 2.6 • CUDA 12.4 • chatterbox-tts</span>
+            </div>
+            <div class="mini-card-section">
+              <span class="mini-card-section-title">Prérequis & Ressources :</span>
+              <ul class="mini-card-features">
+                <li>GPU NVIDIA recommandé (CUDA, ~2-3 Go VRAM)</li>
+                <li>Virtualenv Python <code>server/python/.venv/</code></li>
+                <li>Licence : MIT commerciale • Sortie : WAV 24kHz</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <p class="hero-footer-note">
+          <strong>Synthèse des moteurs :</strong> Edge TTS pour la simplicité immédiate, Piper pour la légèreté CPU, Kokoro pour le compromis parfait qualité/poids local, et Chatterbox pour la personnalisation vocale.
+        </p>
+      </section>
 
       <div class="layout-grid">
         <!-- Colonne Gauche : Saisie, Moteur, Voix, Paramètres -->
         <div class="column column-left">
           <div class="input-card">
-            <h1 class="">Paramètres</h1>
+            <h2 class="card-title">Paramètres de synthèse</h2>
             <label for="text" class="field-label">Texte à synthétiser</label>
-            <textarea id="text" placeholder="Entrez le texte à synthétiser..." rows="5">Le chat s'assit près du grand vieil arbre et observa les oiseaux exécuter leur ballet aérien. « Quelle heure est-il ? » demanda-t-elle en fronçant les sourcils, avant d'ajouter : « Nous avons rendez-vous à neuf heures et quart, pas à dix-neuf heures ! » Malgré la pluie battante et les rafales de vent, ils décidèrent de traverser les Champs-Élysées à pied, un peu essoufflés mais résolument heureux.</textarea>
+            <textarea id="text" placeholder="Entrez le texte à synthétiser..." rows="4">Le chat s'assit près du grand vieil arbre et observa les oiseaux exécuter leur ballet aérien. « Quelle heure est-il ? » demanda-t-elle en fronçant les sourcils, avant d'ajouter : « Nous avons rendez-vous à neuf heures et quart, pas à dix-neuf heures ! » Malgré la pluie battante et les rafales de vent, ils décidèrent de traverser les Champs-Élysées à pied, un peu essoufflés mais résolument heureux.</textarea>
           </div>
 
           <div class="controls">
@@ -78,8 +212,8 @@
               <label>
                 Matériel d'inférence
                 <select id="chatterboxDevice" class="engine-select">
-                  <option value="cuda" selected>🚀 GPU CUDA (RTX 3070 - Rapide ~2-3s)</option>
-                  <option value="cpu">🐢 CPU seul (Simulation VPS sans GPU ~15-20s)</option>
+                  <option value="cpu" selected>CPU seul (Simulation VPS sans GPU ~15-20s)</option>
+                  <option value="cuda">GPU CUDA (Accélération matérielle ~2-3s)</option>
                 </select>
               </label>
               <label>
@@ -100,174 +234,57 @@
             <p id="status"></p>
           </div>
 
-          <!-- Section d'information à onglets : Expliquer l'objectif | Aide -->
-          <div class="info-section">
-            <div class="tab-nav" role="tablist" aria-label="Informations et aide">
-              <button type="button" class="tab-nav-btn active" id="tabBtnGoal" role="tab" aria-selected="true" aria-controls="tabPanelGoal">
-                Expliquer l'objectif
-              </button>
-              <button type="button" class="tab-nav-btn" id="tabBtnHelp" role="tab" aria-selected="false" aria-controls="tabPanelHelp">
-                Aide
-              </button>
-            </div>
-
-            <div class="tab-panels">
-              <!-- Onglet 1 : Expliquer l'objectif -->
-              <div class="tab-panel active" id="tabPanelGoal" role="tabpanel" aria-labelledby="tabBtnGoal">
-                <div class="tab-content-block">
-                  <h3 class="tab-panel-title">Banc d'essai Text-to-Speech (TTS)</h3>
-                  <p class="tab-panel-intro">
-                    Ce projet évalue et compare 4 moteurs de synthèse vocale pour le français (<code>fr-FR</code>), en vue d'une intégration dans l'application NextJS (NowWeAct) et d'un déploiement auto-hébergé sur VPS OVH.
-                  </p>
-                  
-                  <div class="tab-grid-compare">
-                    <div class="tab-mini-card card-edge">
-                      <div class="mini-card-header">
-                        <span class="card-badge engine-edge">Edge TTS</span>
-                        <span class="mini-card-tag">API Cloud Microsoft</span>
-                      </div>
-                      <p class="mini-card-desc">
-                        Voix neurales Microsoft Edge via endpoint gratuit sans clé API. Moteur de référence actuellement en production dans NowWeAct.
-                      </p>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Stack technique :</span>
-                        <span class="mini-card-code-line">edge-tts-universal • Node.js (ESM) • WebSocket</span>
-                      </div>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
-                        <ul class="mini-card-features">
-                          <li>Connexion Internet requise (port HTTPS/WSS)</li>
-                          <li>Zéro clé API • Empreinte mémoire minime (~15 Mo)</li>
-                          <li>Licence lib : AGPL-3.0 • Sortie : MP3 24kHz</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div class="tab-mini-card card-piper">
-                      <div class="mini-card-header">
-                        <span class="card-badge engine-piper">Piper</span>
-                        <span class="mini-card-tag">100% Local CPU</span>
-                      </div>
-                      <p class="mini-card-desc">
-                        Moteur ultra-rapide et léger tournant entièrement en local sur CPU sans GPU ni dépendance réseau.
-                      </p>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Stack technique :</span>
-                        <span class="mini-card-code-line">Binaire C++ natif • child_process • ONNX models</span>
-                      </div>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
-                        <ul class="mini-card-features">
-                          <li>100% Hors-ligne • CPU x86_64 standard (sans GPU)</li>
-                          <li>Modèles dans <code>server/voices/</code> (~60 Mo RAM)</li>
-                          <li>Licence : MIT/GPL-3.0 • Sortie : WAV 22.05kHz</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div class="tab-mini-card card-kokoro">
-                      <div class="mini-card-header">
-                        <span class="card-badge engine-kokoro">Kokoro</span>
-                        <span class="mini-card-tag">Local ONNX 82M</span>
-                      </div>
-                      <p class="mini-card-desc">
-                        Modèle neuronal compact 82M paramètres StyleTTS2 offrant un timbre studio naturel supérieur à Piper.
-                      </p>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Stack technique :</span>
-                        <span class="mini-card-code-line">kokoro-js • onnxruntime-node (q8) • espeak-ng IPA</span>
-                      </div>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
-                        <ul class="mini-card-features">
-                          <li>100% Hors-ligne • CPU moderne (AVX2) ou GPU</li>
-                          <li>Binaire <code>server/bin/espeak-ng</code> pour phonèmes fr</li>
-                          <li>Licence : Apache 2.0 • Sortie : WAV 24kHz studio</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div class="tab-mini-card card-chatterbox">
-                      <div class="mini-card-header">
-                        <span class="card-badge engine-chatterbox">Chatterbox</span>
-                        <span class="mini-card-tag">Clonage Vocal Local</span>
-                      </div>
-                      <p class="mini-card-desc">
-                        Moteur de clonage vocal zéro-shot (Resemble AI) pour synthétiser avec le timbre exact d'un échantillon audio.
-                      </p>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Stack technique :</span>
-                        <span class="mini-card-code-line">FastAPI • PyTorch 2.6 • CUDA 12.4 • chatterbox-tts</span>
-                      </div>
-                      <div class="mini-card-section">
-                        <span class="mini-card-section-title">Prérequis & Ressources :</span>
-                        <ul class="mini-card-features">
-                          <li>GPU NVIDIA recommandé (CUDA, ~2-3 Go VRAM)</li>
-                          <li>Virtualenv Python <code>server/python/.venv/</code></li>
-                          <li>Licence : MIT commerciale • Sortie : WAV 24kHz</li>
-                        </ul>
-                      </div>
-                    </div>
+          <!-- Section Guide & Aide -->
+          <details class="help-card" id="helpCard">
+            <summary class="help-card-summary">
+              <span class="help-summary-title">
+                <span id="helpIcon"></span>
+                <span>Guide d'utilisation & Aide rapide</span>
+              </span>
+              <span class="dropdown-chevron" id="helpChevron"></span>
+            </summary>
+            <div class="help-content-block">
+              <div class="help-steps">
+                <div class="help-step-item">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-text">
+                    <strong>Choisir le moteur :</strong> Cliquez sur <span class="badge-inline engine-edge">Edge TTS</span> pour le cloud Microsoft, <span class="badge-inline engine-piper">Piper</span> pour le local CPU, <span class="badge-inline engine-kokoro">Kokoro</span> pour la qualité studio ONNX, ou <span class="badge-inline engine-chatterbox">Chatterbox</span> pour le clonage vocal.
                   </div>
-
-                  <p class="tab-panel-note">
-                    <strong>Synthèse des moteurs :</strong> Edge TTS pour la simplicité immédiate, Piper pour la légèreté CPU, Kokoro pour le compromis parfait qualité/poids local, et Chatterbox pour la personnalisation vocale.
-                  </p>
                 </div>
-              </div>
 
-              <!-- Onglet 2 : Aide -->
-              <div class="tab-panel" id="tabPanelHelp" role="tabpanel" aria-labelledby="tabBtnHelp" hidden>
-                <div class="tab-content-block">
-                  <h3 class="tab-panel-title">Guide d'utilisation</h3>
+                <div class="help-step-item">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-text">
+                    <strong>Sélectionner une voix :</strong> Cliquez sur l'un des profils de voix disponibles (féminine, masculine, référence audio).
+                  </div>
+                </div>
 
-                  <div class="help-steps">
-                    <div class="help-step-item">
-                      <span class="help-step-num">1</span>
-                      <div class="help-step-text">
-                        <strong>Choisir le moteur :</strong> Cliquez sur <span class="badge-inline engine-edge">Edge TTS</span> pour la voix neuronale Microsoft ou <span class="badge-inline engine-piper">Piper</span> pour la synthèse locale sur votre CPU.
-                      </div>
-                    </div>
+                <div class="help-step-item">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-text">
+                    <strong>Ajuster les paramètres :</strong> Réglez la vitesse, la cadence ou l'exagération émotionnelle selon le moteur.
+                  </div>
+                </div>
 
-                    <div class="help-step-item">
-                      <span class="help-step-num">2</span>
-                      <div class="help-step-text">
-                        <strong>Sélectionner une voix :</strong> Cliquez sur l'un des boutons de la grille pour tester différents profils de voix féminines ou masculines.
-                      </div>
-                    </div>
+                <div class="help-step-item">
+                  <span class="help-step-num">4</span>
+                  <div class="help-step-text">
+                    <strong>Générer & Comparer :</strong> Cliquez sur <strong>Générer la voix</strong>. L'audio se lance directement avec son temps de calcul affiché.
+                  </div>
+                </div>
 
-                    <div class="help-step-item">
-                      <span class="help-step-num">3</span>
-                      <div class="help-step-text">
-                        <strong>Ajuster les paramètres :</strong>
-                        <ul class="help-params-list">
-                          <li><em>Edge TTS</em> : vitesse de débit (ex : <code>-20%</code> pour ralentir, <code>+20%</code> pour accélérer).</li>
-                          <li><em>Piper</em> : cadence (durée des phonèmes) et échelle de bruit (expressivité/variabilité).</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div class="help-step-item">
-                      <span class="help-step-num">4</span>
-                      <div class="help-step-text">
-                        <strong>Générer & Comparer :</strong> Cliquez sur <strong>Générer la voix</strong>. L'audio est lu immédiatement et enregistré dans l'historique sur la colonne de droite.
-                      </div>
-                    </div>
-
-                    <div class="help-step-item">
-                      <span class="help-step-num">5</span>
-                      <div class="help-step-text">
-                        <strong>Historique & Favoris :</strong> Utilisez les boutons <span class="badge-inline">⭐</span> pour marquer vos rendus préférés. Filtrez par moteur ou favoris, copiez l'emplacement fichier ou cliquez sur <strong>Réutiliser</strong> pour charger un texte passé.
-                      </div>
-                    </div>
+                <div class="help-step-item">
+                  <span class="help-step-num">5</span>
+                  <div class="help-step-text">
+                    <strong>Historique & Favoris :</strong> Marquez avec le bouton <span class="badge-inline" id="helpStarBadge"></span> vos rendus favoris, copiez le chemin du fichier ou réutilisez le texte en 1 clic.
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </details>
         </div>
 
-        <!-- Colonne Droite : Aperçu et Historique -->
+        <!-- Colonne Droite : Aperçu Audio -->
         <div class="column column-right">
           <section class="preview-section compact" id="previewSection" aria-label="Aperçu audio">
             <div class="preview-header">
@@ -276,20 +293,96 @@
                 <div class="preview-badges" id="previewInfo" hidden>
                   <span id="detailEngine" class="card-badge"></span>
                   <span id="detailVoice" class="card-badge"></span>
+                  <span id="detailGenTime" class="card-badge history-card-gentime" hidden></span>
+                </div>
+                <div class="rating-group" id="previewRating" title="Évaluer la qualité (Score sur 3)" hidden>
+                  <span class="rating-label">Note :</span>
+                  <button type="button" class="rating-star" data-score="1" title="Note 1/3 — Passable"></button>
+                  <button type="button" class="rating-star" data-score="2" title="Note 2/3 — Bon"></button>
+                  <button type="button" class="rating-star" data-score="3" title="Note 3/3 — Excellent / Studio"></button>
                 </div>
                 <button type="button" id="previewUpvoteBtn" class="upvote-btn" title="Ajouter ce TTS aux favoris" hidden>Favori</button>
               </div>
             </div>
 
-            <audio id="player" controls></audio>
+            <audio id="player" controls crossorigin="anonymous"></audio>
             
+            <!-- Spectre audio en direct -->
+            <div class="audio-visualizer-card" id="visualizerContainer">
+              <div class="visualizer-header">
+                <span class="visualizer-label">
+                  <span id="visualizerIcon"></span>
+                  <span>Spectre audio</span>
+                </span>
+                <span class="visualizer-status" id="visualizerStatus">En attente</span>
+              </div>
+              <div class="visualizer-canvas-wrapper">
+                <canvas id="audioVisualizer" class="audio-visualizer-canvas"></canvas>
+              </div>
+              <div class="visualizer-freq-scale" aria-label="Échelle des fréquences audio">
+                <span>20 Hz</span>
+                <span>100 Hz</span>
+                <span>500 Hz</span>
+                <span>2 kHz</span>
+                <span>8 kHz</span>
+                <span>20 kHz</span>
+              </div>
+            </div>
+
             <div id="audioDetails" class="preview-path-row" hidden>
               <span class="path-label">Fichier :</span>
               <code id="detailPath" class="path-text" title="Cliquez pour copier"></code>
               <button type="button" id="copyPathBtn" class="copy-btn">Copier</button>
             </div>
           </section>
+        </div>
+      </div>
 
+      <!-- Section Inférieure : Graphique/Matrice à gauche, Historique à droite -->
+      <div class="layout-grid layout-bottom">
+        <!-- Colonne Inférieure Gauche : Graphique & Matrice Décisionnelle -->
+        <div class="column column-stats">
+          <section class="stats-section" id="statsSection">
+            <div class="stats-header">
+              <div class="stats-title-row">
+                <span class="stats-title-icon" id="statsTitleIcon"></span>
+                <h2 class="section-title">Matrice Qualité / Vitesse</h2>
+                <span class="badge badge-subtle" id="statsBadgeCount">0 tests</span>
+              </div>
+              <button type="button" class="stats-toggle-btn" id="statsToggleBtn" title="Masquer ou afficher le graphique">
+                <span id="statsToggleIcon"></span>
+                <span id="statsToggleText">Masquer le graphique</span>
+              </button>
+            </div>
+
+            <div class="stats-body" id="statsBody">
+              <!-- Résumé synthétique des moyennes par moteur -->
+              <div class="stats-summary-grid" id="statsSummaryGrid"></div>
+
+              <!-- Graphique interactif SVG croisant Score (Y) et Temps (X) -->
+              <div class="chart-container">
+                <div class="chart-zone-indicators">
+                  <span class="zone-tag zone-optimal"><span class="zone-icon" id="zoneOptimalIcon"></span> Idéal Prod (Rapide & Haute Qualité)</span>
+                  <span class="zone-tag zone-quality"><span class="zone-icon" id="zoneQualityIcon"></span> Qualité Studio / Poids lourd</span>
+                </div>
+                <div class="chart-svg-wrapper" id="chartSvgWrapper">
+                  <svg id="decisionMatrixChart" class="decision-chart" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
+                  <div id="chartTooltip" class="chart-tooltip" hidden></div>
+                </div>
+                <div class="chart-legend">
+                  <span class="legend-item"><span class="legend-dot engine-edge"></span> Edge TTS</span>
+                  <span class="legend-item"><span class="legend-dot engine-piper"></span> Piper</span>
+                  <span class="legend-item"><span class="legend-dot engine-kokoro"></span> Kokoro</span>
+                  <span class="legend-item"><span class="legend-dot engine-chatterbox"></span> Chatterbox</span>
+                  <span class="legend-hint"><span class="legend-hint-icon" id="legendHintIcon"></span> Cliquez sur un point pour écouter l'audio</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Colonne Inférieure Droite : Historique -->
+        <div class="column column-history">
           <section class="history-section" id="historySection">
             <div class="history-header">
               <div class="history-title-row">
@@ -318,6 +411,27 @@
           </section>
         </div>
       </div>
+
+      <!-- Footer de l'application -->
+      <footer class="app-footer">
+        <div class="footer-inner">
+          <div class="footer-left">
+            <a href="https://www.alternative-rvb.com" target="_blank" rel="noopener noreferrer" class="footer-brand-link" title="Visiter Alternative RVB - Nicolas Malet">
+              <div class="footer-arvb-box">
+                <img src="/logo-arvb.svg" alt="Alternative RVB Logo" class="footer-arvb-logo" width="22" height="22" />
+              </div>
+              <div class="footer-brand-text">
+                <span class="footer-brand-title">Alternative RVB</span>
+                <span class="footer-brand-sub">Développeur Web & Formateur Digital</span>
+              </div>
+            </a>
+          </div>
+
+          <div class="footer-right">
+            <span class="footer-tagline">Banc d'essai multi-moteurs TTS pour <strong>NowWeAct</strong></span>
+          </div>
+        </div>
+      </footer>
     </main>
 
     <script type="module" src="/src/main.ts"></script>

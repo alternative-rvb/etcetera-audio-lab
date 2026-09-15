@@ -22,6 +22,8 @@ interface AudioHistoryItem {
   sizeBytes: number;
   upvotes: number;
   isFavorite?: boolean;
+  score?: number;
+  generationTimeMs?: number;
 }
 
 type Engine = "piper" | "edge" | "kokoro" | "chatterbox";
@@ -44,6 +46,7 @@ const noiseScaleEl = document.getElementById("noiseScale") as HTMLInputElement;
 const noiseScaleValueEl = document.getElementById("noiseScaleValue") as HTMLSpanElement;
 const noiseWEl = document.getElementById("noiseW") as HTMLInputElement;
 const noiseWValueEl = document.getElementById("noiseWValue") as HTMLSpanElement;
+
 const ratePercentEl = document.getElementById("ratePercent") as HTMLInputElement;
 const ratePercentValueEl = document.getElementById("ratePercentValue") as HTMLSpanElement;
 
@@ -63,12 +66,33 @@ const themeToggleEl = document.getElementById("themeToggle") as HTMLButtonElemen
 
 // Éléments de l'aperçu détaillé
 const previewInfoEl = document.getElementById("previewInfo") as HTMLDivElement;
+const detailGenTimeEl = document.getElementById("detailGenTime") as HTMLSpanElement;
+const previewRatingEl = document.getElementById("previewRating") as HTMLDivElement;
 const previewUpvoteBtn = document.getElementById("previewUpvoteBtn") as HTMLButtonElement;
 const audioDetailsEl = document.getElementById("audioDetails") as HTMLDivElement;
 const detailEngineEl = document.getElementById("detailEngine") as HTMLSpanElement;
 const detailVoiceEl = document.getElementById("detailVoice") as HTMLSpanElement;
 const detailPathEl = document.getElementById("detailPath") as HTMLElement;
 const copyPathBtn = document.getElementById("copyPathBtn") as HTMLButtonElement;
+
+// Éléments du Spectre Audio
+const visualizerContainer = document.getElementById("visualizerContainer") as HTMLDivElement | null;
+const visualizerCanvas = document.getElementById("audioVisualizer") as HTMLCanvasElement | null;
+const visualizerStatus = document.getElementById("visualizerStatus") as HTMLSpanElement | null;
+const visualizerIcon = document.getElementById("visualizerIcon") as HTMLSpanElement | null;
+
+// Éléments des Stats & Graphique
+const statsTitleIcon = document.getElementById("statsTitleIcon") as HTMLElement;
+const statsBadgeCount = document.getElementById("statsBadgeCount") as HTMLElement;
+const statsToggleBtn = document.getElementById("statsToggleBtn") as HTMLButtonElement;
+const statsToggleIcon = document.getElementById("statsToggleIcon") as HTMLElement;
+const statsToggleText = document.getElementById("statsToggleText") as HTMLElement;
+const statsBody = document.getElementById("statsBody") as HTMLElement;
+const statsSummaryGrid = document.getElementById("statsSummaryGrid") as HTMLElement;
+const decisionMatrixChart = document.getElementById("decisionMatrixChart") as unknown as SVGSVGElement;
+const chartTooltip = document.getElementById("chartTooltip") as HTMLElement;
+
+let statsCollapsed = false;
 
 // Éléments de l'historique
 const historyCountEl = document.getElementById("historyCount") as HTMLSpanElement;
@@ -77,32 +101,106 @@ const clearHistoryBtn = document.getElementById("clearHistoryBtn") as HTMLButton
 const historyFilterButtonsEl = document.getElementById("historyFilterButtons") as HTMLDivElement;
 const historyListEl = document.getElementById("historyList") as HTMLDivElement;
 
-// Éléments des onglets d'information
-const tabBtnGoal = document.getElementById("tabBtnGoal") as HTMLButtonElement;
-const tabBtnHelp = document.getElementById("tabBtnHelp") as HTMLButtonElement;
-const tabPanelGoal = document.getElementById("tabPanelGoal") as HTMLDivElement;
-const tabPanelHelp = document.getElementById("tabPanelHelp") as HTMLDivElement;
+// Éléments du Hero et Guide
+const heroToggleBtn = document.getElementById("heroToggleBtn") as HTMLButtonElement | null;
+const heroGridCompare = document.getElementById("heroGridCompare") as HTMLDivElement | null;
+const heroToggleIcon = document.getElementById("heroToggleIcon") as HTMLSpanElement | null;
+const heroToggleText = document.getElementById("heroToggleText") as HTMLSpanElement | null;
 
-function setupInfoTabs() {
-  const tabs = [
-    { btn: tabBtnGoal, panel: tabPanelGoal },
-    { btn: tabBtnHelp, panel: tabPanelHelp },
-  ];
+let heroSpecsCollapsed = false;
 
-  for (const { btn, panel } of tabs) {
-    if (!btn || !panel) continue;
-    btn.addEventListener("click", () => {
-      for (const t of tabs) {
-        const isActive = t.btn === btn;
-        t.btn.classList.toggle("active", isActive);
-        t.btn.setAttribute("aria-selected", String(isActive));
-        t.panel.hidden = !isActive;
+function setupHeroSection() {
+  const headerBrandIcon = document.getElementById("headerBrandIcon");
+  if (headerBrandIcon) {
+    headerBrandIcon.innerHTML = icon("audiolines", { size: 19, color: "#ffffff" });
+  }
+
+  const heroTargetIcon = document.getElementById("heroTargetIcon");
+  if (heroTargetIcon) {
+    heroTargetIcon.innerHTML = icon("target", { size: 13 });
+  }
+
+  const helpIcon = document.getElementById("helpIcon");
+  if (helpIcon) {
+    helpIcon.innerHTML = icon("help", { size: 14 });
+  }
+
+  const helpChevron = document.getElementById("helpChevron");
+  if (helpChevron) {
+    helpChevron.innerHTML = icon("chevron-right", { size: 13 });
+  }
+
+  if (heroToggleBtn && heroGridCompare) {
+    const updateHeroToggleState = () => {
+      heroGridCompare.classList.toggle("collapsed", heroSpecsCollapsed);
+      if (heroToggleIcon) {
+        heroToggleIcon.innerHTML = icon(heroSpecsCollapsed ? "chevron-down" : "chevrons-up-down", { size: 13 });
       }
+      if (heroToggleText) {
+        heroToggleText.textContent = heroSpecsCollapsed ? "Afficher les specs" : "Masquer les specs";
+      }
+      heroToggleBtn.title = heroSpecsCollapsed ? "Afficher les spécifications des moteurs" : "Masquer les spécifications des moteurs";
+    };
+
+    heroToggleBtn.addEventListener("click", () => {
+      heroSpecsCollapsed = !heroSpecsCollapsed;
+      updateHeroToggleState();
     });
+
+    updateHeroToggleState();
+  }
+
+  if (statsTitleIcon) {
+    statsTitleIcon.innerHTML = icon("gauge", { size: 15 });
+  }
+
+  if (statsToggleBtn && statsBody) {
+    const updateStatsToggleState = () => {
+      statsBody.hidden = statsCollapsed;
+      if (statsToggleIcon) {
+        statsToggleIcon.innerHTML = icon(statsCollapsed ? "chevron-down" : "chevrons-up-down", { size: 13 });
+      }
+      if (statsToggleText) {
+        statsToggleText.textContent = statsCollapsed ? "Afficher le graphique" : "Masquer le graphique";
+      }
+      statsToggleBtn.title = statsCollapsed ? "Afficher le graphique" : "Masquer le graphique";
+    };
+
+    statsToggleBtn.addEventListener("click", () => {
+      statsCollapsed = !statsCollapsed;
+      updateStatsToggleState();
+    });
+
+    updateStatsToggleState();
+  }
+
+  const zoneOptimalIcon = document.getElementById("zoneOptimalIcon");
+  if (zoneOptimalIcon) {
+    zoneOptimalIcon.innerHTML = icon("trophy", { size: 12 });
+  }
+
+  const zoneQualityIcon = document.getElementById("zoneQualityIcon");
+  if (zoneQualityIcon) {
+    zoneQualityIcon.innerHTML = icon("palette", { size: 12 });
+  }
+
+  const legendHintIcon = document.getElementById("legendHintIcon");
+  if (legendHintIcon) {
+    legendHintIcon.innerHTML = icon("headphones", { size: 12 });
+  }
+
+  const helpStarBadge = document.getElementById("helpStarBadge");
+  if (helpStarBadge) {
+    helpStarBadge.innerHTML = `${icon("star", { size: 11, fill: "currentColor" })} Favori`;
+  }
+
+  const visualizerIconEl = document.getElementById("visualizerIcon");
+  if (visualizerIconEl) {
+    visualizerIconEl.innerHTML = icon("activity", { size: 12 });
   }
 }
 
-setupInfoTabs();
+setupHeroSection();
 
 let allExpanded = false;
 
@@ -296,10 +394,44 @@ async function toggleItemUpvote(id: string) {
   }
 }
 
+async function setAudioScore(id: string, score: number) {
+  try {
+    const res = await fetch(`/api/history/${id}/score`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ score }),
+    });
+    if (!res.ok) throw new Error(res.statusText);
+    const updated: AudioHistoryItem = await res.json();
+    const idx = historyItems.findIndex((i) => i.id === id);
+    if (idx !== -1) {
+      historyItems[idx] = updated;
+    }
+    if (currentPreviewAudioId === id) {
+      updatePreviewRating(updated.score || 0);
+    }
+    renderHistory();
+    renderStatsAndChart();
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour du score :", err);
+  }
+}
+
+function updatePreviewRating(score: number = 0) {
+  if (!previewRatingEl) return;
+  const stars = Array.from(previewRatingEl.querySelectorAll<HTMLButtonElement>(".rating-star"));
+  stars.forEach((star) => {
+    const starScore = Number(star.dataset.score);
+    const isActive = starScore <= score;
+    star.classList.toggle("active", isActive);
+    star.innerHTML = icon("star", { size: 14, fill: isActive ? "currentColor" : "none" });
+  });
+}
+
 function updatePreviewUpvoteButton(isFav?: boolean) {
   previewUpvoteBtn.classList.toggle("is-favorite", !!isFav);
   const star = icon("star", { size: 13, fill: isFav ? "currentColor" : "none" });
-  previewUpvoteBtn.innerHTML = `${star} <span>${isFav ? "Favori ✓" : "Favori"}</span>`;
+  previewUpvoteBtn.innerHTML = `${star} <span>Favori</span>`;
 }
 
 function getEngineDetails(eng: Engine) {
@@ -350,6 +482,8 @@ function loadAudioIntoPreview(
     filePath: string;
     url: string;
     isFavorite?: boolean;
+    score?: number;
+    generationTimeMs?: number;
   },
   autoPlay = false
 ) {
@@ -363,8 +497,20 @@ function loadAudioIntoPreview(
   detailPathEl.textContent = item.filePath || "";
   detailPathEl.title = item.filePath ? `Cliquer pour copier : ${item.filePath}` : "";
 
+  if (item.generationTimeMs && item.generationTimeMs > 0) {
+    const genSec = (item.generationTimeMs / 1000).toFixed(2);
+    detailGenTimeEl.innerHTML = `${icon("timer", { size: 11 })} <span>${genSec}s</span>`;
+    detailGenTimeEl.title = `Temps de calcul : ${genSec}s (${item.generationTimeMs}ms)`;
+    detailGenTimeEl.hidden = false;
+  } else {
+    detailGenTimeEl.hidden = true;
+  }
+
   previewInfoEl.hidden = false;
   audioDetailsEl.hidden = false;
+
+  updatePreviewRating(item.score || 0);
+  if (previewRatingEl) previewRatingEl.hidden = false;
 
   updatePreviewUpvoteButton(item.isFavorite);
   previewUpvoteBtn.hidden = false;
@@ -393,15 +539,382 @@ function updateHistoryPlayButtons() {
   }
 }
 
-playerEl.addEventListener("play", updateHistoryPlayButtons);
-playerEl.addEventListener("pause", updateHistoryPlayButtons);
-playerEl.addEventListener("ended", updateHistoryPlayButtons);
+// ==========================================================================
+// Moteur du Spectre Audio (Web Audio API + HTML5 Canvas)
+// ==========================================================================
+let audioCtx: AudioContext | null = null;
+let analyser: AnalyserNode | null = null;
+let audioSourceNode: MediaElementAudioSourceNode | null = null;
+let visualizerAnimId: number | null = null;
+const numBars = 36;
+const peaks: number[] = new Array(numBars).fill(0);
+
+function initVisualizerAudioContext() {
+  if (!audioCtx) {
+    try {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioCtx = new AudioContextClass();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.75;
+      analyser.minDecibels = -85;
+      analyser.maxDecibels = -15;
+
+      audioSourceNode = audioCtx.createMediaElementSource(playerEl);
+      audioSourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    } catch (err) {
+      console.warn("Initialisation du contexte audio pour le visualiseur :", err);
+    }
+  }
+
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+}
+
+function getActiveEngineColors(): { primary: string; secondary: string } {
+  const currentItem = currentPreviewAudioId ? historyItems.find((i) => i.id === currentPreviewAudioId) : null;
+  const activeEng = currentItem?.engine || engine;
+
+  switch (activeEng) {
+    case "piper":
+      return { primary: "#0284c7", secondary: "#38bdf8" };
+    case "kokoro":
+      return { primary: "#059669", secondary: "#34d399" };
+    case "chatterbox":
+      return { primary: "#e11d48", secondary: "#fb7185" };
+    case "edge":
+    default:
+      return { primary: "#7c3aed", secondary: "#a78bfa" };
+  }
+}
+
+function drawVisualizer() {
+  if (!visualizerCanvas) return;
+  const ctx = visualizerCanvas.getContext("2d");
+  if (!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = visualizerCanvas.getBoundingClientRect();
+  const width = rect.width;
+  const height = rect.height;
+
+  if (width === 0 || height === 0) return;
+
+  if (visualizerCanvas.width !== Math.floor(width * dpr) || visualizerCanvas.height !== Math.floor(height * dpr)) {
+    visualizerCanvas.width = Math.floor(width * dpr);
+    visualizerCanvas.height = Math.floor(height * dpr);
+  }
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, width, height);
+
+  const isPlaying = !playerEl.paused && !playerEl.ended;
+  const colors = getActiveEngineColors();
+
+  const binCount = analyser ? analyser.frequencyBinCount : 128;
+  const dataArray = new Uint8Array(binCount);
+  if (analyser && isPlaying) {
+    analyser.getByteFrequencyData(dataArray as unknown as Uint8Array<ArrayBuffer>);
+  }
+
+  const gap = 3;
+  const barWidth = Math.max(2, (width - gap * (numBars - 1)) / numBars);
+
+  for (let i = 0; i < numBars; i++) {
+    // Échantillonnage logarithmique de 20 Hz à 20 kHz
+    const binIndex = Math.min(dataArray.length - 1, Math.floor(Math.pow(i / (numBars - 1), 1.45) * (dataArray.length - 1)));
+    const val = isPlaying ? (dataArray[binIndex] || 0) : 0;
+    const normalized = val / 255;
+    
+    const minHeight = 3;
+    const barHeight = Math.max(minHeight, Math.round(normalized * (height - 8)));
+
+    // Gestion de l'inertie des pics (peak decay)
+    if (barHeight > peaks[i]) {
+      peaks[i] = barHeight;
+    } else {
+      peaks[i] = Math.max(minHeight, peaks[i] - 0.5);
+    }
+
+    const x = i * (barWidth + gap);
+    const y = height - barHeight;
+
+    // Dégradé vertical adapté au moteur TTS actif
+    const grad = ctx.createLinearGradient(0, y, 0, height);
+    grad.addColorStop(0, colors.secondary);
+    grad.addColorStop(1, colors.primary);
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    const radius = Math.min(barWidth / 2, 2.5);
+    if ("roundRect" in ctx && typeof (ctx as any).roundRect === "function") {
+      (ctx as any).roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
+    } else {
+      ctx.fillRect(x, y, barWidth, barHeight);
+    }
+    ctx.fill();
+
+    // Ligne de crête (Peak Indicator)
+    const peakY = height - peaks[i] - 2;
+    if (peakY < height - 5) {
+      ctx.fillStyle = colors.secondary;
+      ctx.fillRect(x, Math.max(0, peakY), barWidth, 1.5);
+    }
+  }
+
+  ctx.restore();
+
+  if (isPlaying || peaks.some((p) => p > 3.5)) {
+    visualizerAnimId = requestAnimationFrame(drawVisualizer);
+  } else {
+    visualizerAnimId = null;
+  }
+}
+
+function startVisualizer() {
+  initVisualizerAudioContext();
+  if (visualizerStatus) {
+    visualizerStatus.textContent = "Lecture en cours";
+    visualizerStatus.classList.add("playing");
+  }
+  if (visualizerContainer) {
+    visualizerContainer.classList.add("is-active");
+  }
+  if (visualizerAnimId) {
+    cancelAnimationFrame(visualizerAnimId);
+  }
+  visualizerAnimId = requestAnimationFrame(drawVisualizer);
+}
+
+function stopVisualizer() {
+  if (visualizerStatus) {
+    visualizerStatus.textContent = playerEl.ended ? "Terminé" : "En pause";
+    visualizerStatus.classList.remove("playing");
+  }
+  if (visualizerContainer) {
+    visualizerContainer.classList.remove("is-active");
+  }
+}
+
+playerEl.addEventListener("play", () => {
+  updateHistoryPlayButtons();
+  startVisualizer();
+});
+
+playerEl.addEventListener("pause", () => {
+  updateHistoryPlayButtons();
+  stopVisualizer();
+});
+
+playerEl.addEventListener("ended", () => {
+  updateHistoryPlayButtons();
+  stopVisualizer();
+});
+
+// Déverrouillage automatique de l'AudioContext dès la première interaction utilisateur
+const unlockAudioContext = () => {
+  initVisualizerAudioContext();
+};
+window.addEventListener("click", unlockAudioContext, { once: true });
+window.addEventListener("keydown", unlockAudioContext, { once: true });
+window.addEventListener("touchstart", unlockAudioContext, { once: true });
+
+// Premier tracé au repos
+window.addEventListener("resize", () => {
+  drawVisualizer();
+});
+setTimeout(() => {
+  drawVisualizer();
+}, 100);
 
 previewUpvoteBtn.addEventListener("click", () => {
   if (currentPreviewAudioId) {
     toggleItemUpvote(currentPreviewAudioId);
   }
 });
+
+if (previewRatingEl) {
+  previewRatingEl.addEventListener("click", (e) => {
+    const target = (e.target as HTMLElement).closest<HTMLButtonElement>(".rating-star");
+    if (!target || !currentPreviewAudioId) return;
+    const currentItem = historyItems.find((i) => i.id === currentPreviewAudioId);
+    const clickedScore = Number(target.dataset.score);
+    const newScore = currentItem?.score === clickedScore ? 0 : clickedScore;
+    setAudioScore(currentPreviewAudioId, newScore);
+  });
+}
+
+function renderStatsAndChart() {
+  if (!statsBody || !decisionMatrixChart) return;
+
+  statsBadgeCount.textContent = `${historyItems.length} test${historyItems.length > 1 ? "s" : ""}`;
+
+  // Calcul des statistiques par moteur
+  const engines: Engine[] = ["edge", "piper", "kokoro", "chatterbox"];
+  const summaryHtml = engines
+    .map((eng) => {
+      const items = historyItems.filter((i) => i.engine === eng);
+      const count = items.length;
+      const itemsWithTime = items.filter((i) => i.generationTimeMs && i.generationTimeMs > 0);
+      const avgTime =
+        itemsWithTime.length > 0
+          ? (itemsWithTime.reduce((acc, i) => acc + (i.generationTimeMs || 0), 0) / itemsWithTime.length / 1000).toFixed(2)
+          : "--";
+      const itemsWithScore = items.filter((i) => typeof i.score === "number" && i.score > 0);
+      const avgScore =
+        itemsWithScore.length > 0
+          ? (itemsWithScore.reduce((acc, i) => acc + (i.score || 0), 0) / itemsWithScore.length).toFixed(1)
+          : "--";
+      const engDetails = getEngineDetails(eng);
+
+      return `
+        <div class="stat-summary-card ${engDetails.cardClass}">
+          <div class="stat-card-title">
+            <span>${engDetails.label}</span>
+            <span class="badge badge-subtle">${count}</span>
+          </div>
+          <div class="stat-card-values">
+            <span>${icon("timer", { size: 11 })} Tps : <strong>${avgTime}${avgTime !== "--" ? "s" : ""}</strong></span>
+            <span>${icon("star", { size: 11, fill: "currentColor" })} Note : <strong>${avgScore}${avgScore !== "--" ? "/3" : ""}</strong></span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  statsSummaryGrid.innerHTML = summaryHtml;
+
+  // Rendu du Graphique SVG
+  const width = 540;
+  const height = 210;
+  const paddingLeft = 46;
+  const paddingRight = 24;
+  const paddingTop = 24;
+  const paddingBottom = 34;
+
+  const plotW = width - paddingLeft - paddingRight;
+  const plotH = height - paddingTop - paddingBottom;
+
+  const times = historyItems.map((i) => (i.generationTimeMs ? i.generationTimeMs / 1000 : 0.5));
+  const maxTime = Math.max(2.5, Math.ceil(Math.max(0, ...times) * 1.15));
+
+  const getX = (tSec: number) => paddingLeft + Math.min(plotW, (tSec / maxTime) * plotW);
+  const getY = (score: number = 0) => {
+    const normalized = score / 3;
+    return paddingTop + (1 - normalized) * plotH;
+  };
+
+  const engineColors: Record<Engine, string> = {
+    edge: "#7c3aed",
+    piper: "#0284c7",
+    kokoro: "#059669",
+    chatterbox: "#e11d48",
+  };
+
+  const optimalW = Math.min(plotW * 0.4, getX(1.0) - paddingLeft);
+  const optimalH = plotH * 0.45;
+
+  let svgContent = `
+    <defs>
+      <linearGradient id="optimalGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.18" />
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.04" />
+      </linearGradient>
+    </defs>
+
+    <rect x="${paddingLeft}" y="${paddingTop}" width="${optimalW}" height="${optimalH}" fill="url(#optimalGrad)" rx="4" />
+    <text x="${paddingLeft + 6}" y="${paddingTop + 14}" fill="#059669" font-size="9" font-weight="600" opacity="0.85">Zone Idéale Prod (Rapide + Studio)</text>
+
+    <line x1="${paddingLeft}" y1="${getY(3)}" x2="${width - paddingRight}" y2="${getY(3)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+    <line x1="${paddingLeft}" y1="${getY(2)}" x2="${width - paddingRight}" y2="${getY(2)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+    <line x1="${paddingLeft}" y1="${getY(1)}" x2="${width - paddingRight}" y2="${getY(1)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
+    <line x1="${paddingLeft}" y1="${getY(0)}" x2="${width - paddingRight}" y2="${getY(0)}" stroke="var(--border)" stroke-width="1.2" opacity="0.9" />
+
+    <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="var(--border)" stroke-width="1.2" />
+
+    <text x="${paddingLeft - 8}" y="${getY(3) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">3/3</text>
+    <text x="${paddingLeft - 8}" y="${getY(2) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">2/3</text>
+    <text x="${paddingLeft - 8}" y="${getY(1) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-weight="600">1/3</text>
+    <text x="${paddingLeft - 8}" y="${getY(0) + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end" opacity="0.6">0/3</text>
+
+    <text x="${paddingLeft}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="start">0s</text>
+    <text x="${paddingLeft + plotW / 2}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="middle">${(maxTime / 2).toFixed(1)}s</text>
+    <text x="${width - paddingRight}" y="${height - paddingBottom + 16}" fill="var(--text-muted)" font-size="9" text-anchor="end">${maxTime.toFixed(1)}s</text>
+    <text x="${width / 2}" y="${height - 4}" fill="var(--text-muted)" font-size="9" text-anchor="middle" font-weight="500">← Vitesse (Temps de génération en secondes) →</text>
+  `;
+
+  historyItems.forEach((item, index) => {
+    const tSec = item.generationTimeMs ? item.generationTimeMs / 1000 : 0.4;
+    const score = item.score ?? 0;
+    const cx = getX(tSec);
+    const cy = getY(score);
+    const color = engineColors[item.engine] || "var(--accent)";
+    const engDetails = getEngineDetails(item.engine);
+
+    const jitterX = Math.sin(index * 7) * 4;
+    const jitterY = Math.cos(index * 5) * 3;
+
+    const safeVoice = (item.voiceName || item.voiceId).replace(/"/g, "&quot;");
+    const safeText = (item.text || "").substring(0, 45).replace(/"/g, "&quot;");
+
+    svgContent += `
+      <circle
+        class="chart-node"
+        cx="${cx + jitterX}"
+        cy="${cy + jitterY}"
+        r="5.5"
+        fill="${color}"
+        stroke="var(--surface)"
+        stroke-width="1.5"
+        data-item-id="${item.id}"
+        data-engine="${engDetails.label}"
+        data-voice="${safeVoice}"
+        data-time="${tSec.toFixed(2)}s"
+        data-score="${score > 0 ? score + '/3' : 'Non noté'}"
+        data-text="${safeText}..."
+      />
+    `;
+  });
+
+  decisionMatrixChart.innerHTML = svgContent;
+
+  const nodes = Array.from(decisionMatrixChart.querySelectorAll<SVGCircleElement>(".chart-node"));
+  nodes.forEach((node) => {
+    node.addEventListener("mouseenter", () => {
+      const rect = decisionMatrixChart.getBoundingClientRect();
+      const nodeX = (node.cx.baseVal.value / width) * rect.width;
+      const nodeY = (node.cy.baseVal.value / height) * rect.height;
+
+      chartTooltip.innerHTML = `
+        <div style="font-weight:600;margin-bottom:2px">${node.dataset.engine} • ${node.dataset.voice}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <span style="display:inline-flex;align-items:center;gap:3px">${icon("timer", { size: 11 })} ${node.dataset.time}</span>
+          <span style="display:inline-flex;align-items:center;gap:3px">${icon("star", { size: 11, fill: "currentColor" })} ${node.dataset.score}</span>
+        </div>
+        <div style="font-style:italic;opacity:0.75;font-size:0.68rem">${node.dataset.text}</div>
+        <div style="display:inline-flex;align-items:center;gap:3px;margin-top:3px;font-size:0.65rem;color:var(--accent)">${icon("play", { size: 10, fill: "currentColor" })} Cliquer pour écouter</div>
+      `;
+      chartTooltip.style.left = `${nodeX}px`;
+      chartTooltip.style.top = `${nodeY}px`;
+      chartTooltip.hidden = false;
+    });
+
+    node.addEventListener("mouseleave", () => {
+      chartTooltip.hidden = true;
+    });
+
+    node.addEventListener("click", () => {
+      const id = node.dataset.itemId;
+      const item = historyItems.find((i) => i.id === id);
+      if (item) {
+        loadAudioIntoPreview(item, true);
+      }
+    });
+  });
+}
 
 // Historique : chargement et rendu
 async function loadHistory() {
@@ -410,7 +923,7 @@ async function loadHistory() {
     if (!res.ok) throw new Error(res.statusText);
     historyItems = await res.json();
     renderHistory();
-    // Si aucun audio n'est actuellement affiché dans l'aperçu et qu'un historique existe, charger le plus récent
+    renderStatsAndChart();
     if (!currentPreviewAudioId && historyItems.length > 0) {
       loadAudioIntoPreview(historyItems[0], false);
     }
@@ -456,6 +969,12 @@ function renderHistory() {
     const engineIcon = icon(engDetails.iconName, { size: 12 });
     const favClass = item.isFavorite ? "is-favorite" : "";
     const starIcon = icon("star", { size: 13, fill: item.isFavorite ? "currentColor" : "none" });
+    const genTimeBadge = (item.generationTimeMs && item.generationTimeMs > 0)
+      ? `<span class="card-badge history-card-gentime" title="Temps de calcul : ${(item.generationTimeMs / 1000).toFixed(2)}s">${icon("timer", { size: 11 })} <span>${(item.generationTimeMs / 1000).toFixed(2)}s</span></span>`
+      : "";
+    const scoreBadge = (item.score && item.score > 0)
+      ? `<span class="history-card-rating" title="Note attribuée : ${item.score}/3">${icon("star", { size: 11, fill: "currentColor" })} <span>${item.score}/3</span></span>`
+      : "";
 
     details.innerHTML = `
       <summary class="history-summary">
@@ -465,10 +984,17 @@ function renderHistory() {
             ${engineIcon} <span>${engDetails.label}</span>
           </span>
           <span class="card-badge">${item.voiceName || item.voiceId}</span>
+          ${genTimeBadge}
+          ${scoreBadge}
           <span class="history-card-time">${dateStr}</span>
         </div>
         <span class="history-summary-text" title="${item.text}">${item.text}</span>
         <div class="history-card-actions">
+          <div class="history-card-stars-action" title="Attribuer une note (1 à 3)">
+            <button type="button" class="rating-star ${item.score && item.score >= 1 ? 'active' : ''}" data-item-id="${item.id}" data-score="1" title="Note 1/3">${icon("star", { size: 12, fill: item.score && item.score >= 1 ? "currentColor" : "none" })}</button>
+            <button type="button" class="rating-star ${item.score && item.score >= 2 ? 'active' : ''}" data-item-id="${item.id}" data-score="2" title="Note 2/3">${icon("star", { size: 12, fill: item.score && item.score >= 2 ? "currentColor" : "none" })}</button>
+            <button type="button" class="rating-star ${item.score && item.score >= 3 ? 'active' : ''}" data-item-id="${item.id}" data-score="3" title="Note 3/3">${icon("star", { size: 12, fill: item.score && item.score >= 3 ? "currentColor" : "none" })}</button>
+          </div>
           <button type="button" class="card-play-btn" data-item-id="${item.id}" title="Écouter cet enregistrement" aria-label="Écouter">
             ${icon("play", { size: 12 })} <span>Écouter</span>
           </button>
@@ -493,6 +1019,18 @@ function renderHistory() {
         </div>
       </div>
     `;
+
+    // Gestion du clic sur les étoiles dans la carte
+    const cardStars = details.querySelectorAll<HTMLButtonElement>(".history-card-stars-action .rating-star");
+    cardStars.forEach((star) => {
+      star.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const clickedScore = Number(star.dataset.score);
+        const newScore = item.score === clickedScore ? 0 : clickedScore;
+        setAudioScore(item.id, newScore);
+      });
+    });
 
     // Événements de la carte
     const playBtn = details.querySelector<HTMLButtonElement>(".card-play-btn");
@@ -643,7 +1181,7 @@ async function generate() {
     } else if (engine === "kokoro") {
       body.speed = Number(kokoroSpeedEl.value);
     } else if (engine === "chatterbox") {
-      body.device = chatterboxDeviceEl ? chatterboxDeviceEl.value : "cuda";
+      body.device = chatterboxDeviceEl ? chatterboxDeviceEl.value : "cpu";
       body.exaggeration = Number(chatterboxExaggerationEl.value);
       body.temperature = Number(chatterboxTemperatureEl.value);
     }
@@ -665,6 +1203,8 @@ async function generate() {
     const rawVoiceName = res.headers.get("X-Audio-Voice-Name");
     const audioVoiceName = rawVoiceName ? decodeURIComponent(rawVoiceName) : selectedVoiceId;
     const audioId = res.headers.get("X-Audio-Id") || `${Date.now()}`;
+    const genTimeHeader = res.headers.get("X-Audio-Generation-Time-Ms");
+    const generationTimeMs = genTimeHeader ? parseFloat(genTimeHeader) : undefined;
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -678,6 +1218,7 @@ async function generate() {
         filePath: audioPath,
         url,
         isFavorite: false,
+        generationTimeMs,
       },
       true
     );
@@ -719,13 +1260,6 @@ function setupStaticIcons() {
   }
 
   generateBtn.innerHTML = `${icon("sparkles", { size: 16 })} <span>Générer la voix</span>`;
-
-  if (tabBtnGoal) {
-    tabBtnGoal.innerHTML = `${icon("target", { size: 14 })} <span>Expliquer l'objectif</span>`;
-  }
-  if (tabBtnHelp) {
-    tabBtnHelp.innerHTML = `${icon("help", { size: 14 })} <span>Aide</span>`;
-  }
 
   const previewTitle = document.querySelector(".preview-title");
   if (previewTitle) {

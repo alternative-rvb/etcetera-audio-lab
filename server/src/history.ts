@@ -15,6 +15,8 @@ export interface AudioHistoryEntry {
   sizeBytes: number;
   upvotes: number;
   isFavorite?: boolean;
+  score?: number; // Note sur 3 (0 = non noté, 1, 2, 3)
+  generationTimeMs?: number;
 }
 
 const OUTPUT_DIR = join(import.meta.dirname, "..", "output");
@@ -58,6 +60,7 @@ export function saveAudio(
     voiceId: string;
     voiceName: string;
     format: "wav" | "mp3";
+    generationTimeMs?: number;
   }
 ): AudioHistoryEntry {
   ensureOutputDir();
@@ -85,6 +88,7 @@ export function saveAudio(
     sizeBytes: buffer.length,
     upvotes: 0,
     isFavorite: false,
+    generationTimeMs: meta.generationTimeMs,
   };
 
   const current = getHistory();
@@ -103,6 +107,18 @@ export function toggleUpvote(id: string): AudioHistoryEntry | null {
   item.isFavorite = !item.isFavorite;
   item.upvotes = (item.upvotes ?? 0) + (item.isFavorite ? 1 : -1);
   if (item.upvotes < 0) item.upvotes = 0;
+
+  saveHistory(current);
+  return item;
+}
+
+export function setScore(id: string, score: number): AudioHistoryEntry | null {
+  const current = getHistory();
+  const item = current.find((i) => i.id === id);
+  if (!item) return null;
+
+  const validScore = Math.max(0, Math.min(3, Math.round(score)));
+  item.score = validScore;
 
   saveHistory(current);
   return item;

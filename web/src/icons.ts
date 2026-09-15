@@ -28,6 +28,14 @@ import {
   Gauge,
   Server,
   HardDrive,
+  Timer,
+  ExternalLink,
+  Trophy,
+  Lightbulb,
+  Info,
+  Palette,
+  Headphones,
+  Activity,
   type IconNode,
 } from "lucide";
 
@@ -61,6 +69,14 @@ const iconMap: Record<string, IconNode> = {
   gauge: Gauge,
   server: Server,
   "hard-drive": HardDrive,
+  timer: Timer,
+  "external-link": ExternalLink,
+  trophy: Trophy,
+  lightbulb: Lightbulb,
+  info: Info,
+  palette: Palette,
+  headphones: Headphones,
+  activity: Activity,
 };
 
 interface IconOptions {

@@ -5,13 +5,34 @@ import { synthesize as synthesizePiper } from "./piper.js";
 import { listEdgeVoices, synthesizeEdge, EDGE_VOICES } from "./edgeTts.js";
 import { getKokoroVoices, getKokoroVoice, synthesizeKokoro, KOKORO_VOICES } from "./kokoro.js";
 import { getChatterboxReferences, synthesizeChatterbox } from "./chatterbox.js";
-import { saveAudio, getHistory, deleteHistoryItem, clearHistory, getOutputDir, toggleUpvote } from "./history.js";
+import { saveAudio, getHistory, deleteHistoryItem, clearHistory, getOutputDir, toggleUpvote, setScore } from "./history.js";
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Range");
+  res.header("Access-Control-Expose-Headers", "Content-Range, Accept-Ranges, Content-Length, Content-Type");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
 app.use(express.json());
-app.use("/audio", express.static(getOutputDir()));
+app.use(
+  "/audio",
+  express.static(getOutputDir(), {
+    setHeaders: (res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      res.setHeader("Access-Control-Expose-Headers", "Content-Range, Accept-Ranges, Content-Length, Content-Type");
+    },
+  })
+);
 
 type Engine = "piper" | "edge" | "kokoro" | "chatterbox";
 
@@ -54,6 +75,34 @@ app.get("/api/history", (_req, res) => {
 
 app.post("/api/history/:id/upvote", (req, res) => {
   const updated = toggleUpvote(req.params.id);
+  if (!updated) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json(updated);
+});
+
+app.post("/api/history/:id/score", (req, res) => {
+  const score = Number(req.body.score);
+  if (isNaN(score)) {
+    res.status(400).json({ error: "Score invalide" });
+    return;
+  }
+  const updated = setScore(req.params.id, score);
+  if (!updated) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json(updated);
+});
+
+app.patch("/api/history/:id/score", (req, res) => {
+  const score = Number(req.body.score);
+  if (isNaN(score)) {
+    res.status(400).json({ error: "Score invalide" });
+    return;
+  }
+  const updated = setScore(req.params.id, score);
   if (!updated) {
     res.status(404).json({ error: "Entrée non trouvée" });
     return;
@@ -106,6 +155,7 @@ app.post("/api/tts", async (req, res) => {
     let audioBuffer: Buffer;
     let voiceName = voiceId;
     let format: "wav" | "mp3";
+    const startTime = performance.now();
 
     if (engine === "edge") {
       audioBuffer = await synthesizeEdge(text, voiceId, { ratePercent });
@@ -144,12 +194,15 @@ app.post("/api/tts", async (req, res) => {
       format = "wav";
     }
 
+    const generationTimeMs = Math.round(performance.now() - startTime);
+
     const entry = saveAudio(audioBuffer, {
       text: text.trim(),
       engine,
       voiceId,
       voiceName,
       format,
+      generationTimeMs,
     });
 
     res.set("X-Audio-Id", entry.id);
@@ -158,9 +211,10 @@ app.post("/api/tts", async (req, res) => {
     res.set("X-Audio-Engine", entry.engine);
     res.set("X-Audio-Voice-Id", entry.voiceId);
     res.set("X-Audio-Voice-Name", encodeURIComponent(entry.voiceName));
+    res.set("X-Audio-Generation-Time-Ms", String(generationTimeMs));
     res.set(
       "Access-Control-Expose-Headers",
-      "X-Audio-Id, X-Audio-Path, X-Audio-Url, X-Audio-Engine, X-Audio-Voice-Id, X-Audio-Voice-Name"
+      "X-Audio-Id, X-Audio-Path, X-Audio-Url, X-Audio-Engine, X-Audio-Voice-Id, X-Audio-Voice-Name, X-Audio-Generation-Time-Ms"
     );
 
     if (format === "mp3") {

@@ -18,7 +18,7 @@ os.makedirs(REFERENCES_DIR, exist_ok=True)
 
 models = {}
 
-def get_model(target_device_str: str = "cuda"):
+def get_model(target_device_str: str = "cpu"):
     global models
     # Fallback to cpu if cuda is requested but not available
     if target_device_str == "cuda" and not torch.cuda.is_available():
@@ -35,7 +35,7 @@ class TTSRequest(BaseModel):
     text: str
     language: str = "fr"
     reference_name: str | None = None
-    device: str = "cuda" # "cuda" ou "cpu"
+    device: str = "cpu" # "cpu" (par défaut / simulation VPS) ou "cuda"
     exaggeration: float = 0.5
     temperature: float = 0.8
     repetition_penalty: float = 2.0
