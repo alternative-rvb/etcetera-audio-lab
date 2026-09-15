@@ -1598,31 +1598,39 @@ audio::-webkit-media-controls-panel {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  max-height: 520px;
+  max-height: 360px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.35rem;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: rgba(140, 140, 160, 0.5) rgba(0, 0, 0, 0.05);
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
 
-/* Custom Sleek Scrollbars */
+:root[data-theme="dark"] .history-list {
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="retro"] .history-list {
+  scrollbar-color: #00f0ff rgba(0, 240, 255, 0.1);
+}
+
+/* Custom Sleek & Highly Visible Scrollbars */
 .history-list::-webkit-scrollbar,
 .history-card-text::-webkit-scrollbar,
 .transcription-result-box::-webkit-scrollbar,
 .transcription-segments-container::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 .history-list::-webkit-scrollbar-track,
 .history-card-text::-webkit-scrollbar-track,
 .transcription-result-box::-webkit-scrollbar-track,
 .transcription-segments-container::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(120, 120, 120, 0.08);
   border-radius: 999px;
 }
 
@@ -1630,16 +1638,35 @@ audio::-webkit-media-controls-panel {
 .history-card-text::-webkit-scrollbar-thumb,
 .transcription-result-box::-webkit-scrollbar-thumb,
 .transcription-segments-container::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: rgba(140, 140, 160, 0.45);
   border-radius: 999px;
-  transition: background 0.15s ease;
+  border: 1px solid transparent;
 }
 
 .history-list::-webkit-scrollbar-thumb:hover,
 .history-card-text::-webkit-scrollbar-thumb:hover,
 .transcription-result-box::-webkit-scrollbar-thumb:hover,
 .transcription-segments-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: rgba(140, 140, 160, 0.75);
+}
+
+:root[data-theme="dark"] .history-list::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] .history-card-text::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] .transcription-result-box::-webkit-scrollbar-thumb,
+:root[data-theme="dark"] .transcription-segments-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+:root[data-theme="dark"] .history-list::-webkit-scrollbar-thumb:hover,
+:root[data-theme="dark"] .history-card-text::-webkit-scrollbar-thumb:hover,
+:root[data-theme="dark"] .transcription-result-box::-webkit-scrollbar-thumb:hover,
+:root[data-theme="dark"] .transcription-segments-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+:root[data-theme="retro"] .history-list::-webkit-scrollbar-thumb {
+  background: #00f0ff;
+  box-shadow: 0 0 6px #00f0ff;
 }
 
 .history-header {
