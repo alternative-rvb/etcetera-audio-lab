@@ -16,25 +16,40 @@
           </div>
           <div class="brand-text">
             <div class="brand-title-row">
-              <h1 class="brand-title">TTS Studio</h1>
-              <span class="badge badge-header">Banc d'essai</span>
+              <h1 class="brand-title">Audio Studio</h1>
+              <span class="badge badge-header">TTS & STT Lab</span>
             </div>
-            <p class="brand-subtitle">Comparateur & banc de test Text-to-Speech multi-moteurs</p>
+            <p class="brand-subtitle">Banc d'essai IA voix : Synthèse Text-to-Speech & Reconnaissance Vocale</p>
           </div>
         </div>
 
         <div class="header-right">
           <div class="header-meta-tags">
-            <span class="meta-tag"><span class="status-dot"></span> 4 moteurs</span>
+            <span class="meta-tag"><span class="status-dot"></span> TTS & STT</span>
             <span class="meta-tag">fr-FR</span>
-            <span class="meta-tag">Local & Cloud</span>
+            <span class="meta-tag">CUDA & CPU</span>
           </div>
           <button id="themeToggle" class="theme-toggle" type="button" aria-label="Changer de thème"></button>
         </div>
       </header>
 
-      <!-- Section Hero : Objectif du banc d'essai TTS -->
-      <section class="hero-section" id="heroSection">
+      <!-- Navigation d'onglets Principale : TTS / STT -->
+      <nav class="app-nav-tabs" role="tablist" aria-label="Navigation principale Studio">
+        <button type="button" class="nav-tab active" id="tabNavTts" role="tab" aria-selected="true" data-page="tts">
+          <span class="nav-tab-icon" id="navTabTtsIcon"></span>
+          <span>1. Synthèse Vocale (TTS)</span>
+        </button>
+        <button type="button" class="nav-tab" id="tabNavStt" role="tab" aria-selected="false" data-page="stt">
+          <span class="nav-tab-icon" id="navTabSttIcon"></span>
+          <span>2. Reconnaissance Vocale (STT)</span>
+          <span class="badge badge-accent-subtle">Whisper</span>
+        </button>
+      </nav>
+
+      <!-- ================= PAGE 1 : SYNTHÈSE VOCALE (TTS) ================= -->
+      <div id="ttsPageView" class="page-view">
+        <!-- Section Hero : Objectif du banc d'essai TTS -->
+        <section class="hero-section" id="heroSection">
         <div class="hero-header-row">
           <div class="hero-title-area">
             <div class="hero-badge">
@@ -158,10 +173,22 @@
 
           <div class="controls">
             <div class="engine-switch" id="engineSwitch" role="group" aria-label="Moteur TTS">
-              <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true" title="Edge TTS — API Cloud Microsoft Neural">Edge TTS</button>
-              <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false" title="Piper — Moteur local natif (CPU)">Piper</button>
-              <button type="button" class="engine-btn engine-kokoro" data-engine="kokoro" aria-pressed="false" title="Kokoro — Moteur local ONNX (Node.js)">Kokoro</button>
-              <button type="button" class="engine-btn engine-chatterbox" data-engine="chatterbox" aria-pressed="false" title="Chatterbox — Clonage vocal local (GPU)">Chatterbox</button>
+              <button type="button" class="engine-btn engine-edge" data-engine="edge" aria-pressed="true" title="Edge TTS — API Cloud Microsoft Neural">
+                <span class="engine-btn-icon" id="edgeBtnIcon"></span>
+                <span>Edge TTS</span>
+              </button>
+              <button type="button" class="engine-btn engine-piper" data-engine="piper" aria-pressed="false" title="Piper — Moteur local natif (CPU)">
+                <span class="engine-btn-icon" id="piperBtnIcon"></span>
+                <span>Piper</span>
+              </button>
+              <button type="button" class="engine-btn engine-kokoro" data-engine="kokoro" aria-pressed="false" title="Kokoro — Moteur local ONNX (Node.js)">
+                <span class="engine-btn-icon" id="kokoroBtnIcon"></span>
+                <span>Kokoro</span>
+              </button>
+              <button type="button" class="engine-btn engine-chatterbox" data-engine="chatterbox" aria-pressed="false" title="Chatterbox — Clonage vocal local (GPU)">
+                <span class="engine-btn-icon" id="chatterboxBtnIcon"></span>
+                <span>Chatterbox</span>
+              </button>
             </div>
 
             <div class="voice-selection">
@@ -212,8 +239,8 @@
               <label>
                 Matériel d'inférence
                 <select id="chatterboxDevice" class="engine-select">
-                  <option value="cpu" selected>CPU seul (Simulation VPS sans GPU ~15-20s)</option>
-                  <option value="cuda">GPU CUDA (Accélération matérielle ~2-3s)</option>
+                  <option value="cpu" selected>CPU seul (Simulation VPS OVH ~20-30s)</option>
+                  <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~3-4s)</option>
                 </select>
               </label>
               <label>
@@ -230,7 +257,10 @@
           </div>
 
           <div class="action-row">
-            <button id="generate">Générer la voix</button>
+            <button id="generate">
+              <span id="generateBtnIcon"></span>
+              <span id="generateBtnText">Générer la voix</span>
+            </button>
             <p id="status"></p>
           </div>
 
@@ -301,13 +331,13 @@
                   <span id="detailVoice" class="card-badge"></span>
                   <span id="detailGenTime" class="card-badge history-card-gentime" hidden></span>
                 </div>
-                <div class="rating-group" id="previewRating" title="Évaluer la qualité (Score sur 3)" hidden>
+                <div class="rating-group" id="previewRating" title="Évaluer la qualité (Score sur 3)">
                   <span class="rating-label">Note :</span>
                   <button type="button" class="rating-star" data-score="1" title="Note 1/3 — Passable"></button>
                   <button type="button" class="rating-star" data-score="2" title="Note 2/3 — Bon"></button>
                   <button type="button" class="rating-star" data-score="3" title="Note 3/3 — Excellent / Studio"></button>
                 </div>
-                <button type="button" id="previewUpvoteBtn" class="upvote-btn" title="Ajouter ce TTS aux favoris" hidden>Favori</button>
+                <button type="button" id="previewUpvoteBtn" class="upvote-btn" title="Ajouter ce TTS aux favoris">Favori</button>
               </div>
             </div>
 
@@ -338,7 +368,7 @@
             <div id="audioDetails" class="preview-path-row" hidden>
               <span class="path-label">Fichier :</span>
               <code id="detailPath" class="path-text" title="Cliquez pour copier"></code>
-              <button type="button" id="copyPathBtn" class="copy-btn">Copier</button>
+              <button type="button" id="copyPathBtn" class="copy-btn"><span id="copyPathIcon"></span> Copier</button>
             </div>
           </section>
         </div>
@@ -368,8 +398,8 @@
               <!-- Graphique interactif SVG croisant Score (Y) et Temps (X) -->
               <div class="chart-container">
                 <div class="chart-zone-indicators">
-                  <span class="zone-tag zone-optimal"><span class="zone-icon" id="zoneOptimalIcon"></span> Idéal Prod (Rapide & Haute Qualité)</span>
-                  <span class="zone-tag zone-quality"><span class="zone-icon" id="zoneQualityIcon"></span> Qualité Studio / Poids lourd</span>
+                  <span class="zone-tag zone-optimal" id="zoneOptimalTag"><span class="zone-icon" id="zoneOptimalIcon"></span> Idéal Prod (≤ 1.2s • Note ≥ 2/3)</span>
+                  <span class="zone-tag zone-quality" id="zoneQualityTag"><span class="zone-icon" id="zoneQualityIcon"></span> Qualité Studio (Note 3/3)</span>
                 </div>
                 <div class="chart-svg-wrapper" id="chartSvgWrapper">
                   <svg id="decisionMatrixChart" class="decision-chart" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
@@ -396,8 +426,8 @@
                 <span id="historyCount" class="badge">0</span>
               </div>
               <div class="history-header-actions">
-                <button type="button" id="toggleAllHistoryBtn" class="action-btn" title="Tout replier ou déplier les dropdowns">Tout déplier</button>
-                <button type="button" id="clearHistoryBtn" class="action-btn" title="Vider tout l'historique">Vider</button>
+                <button type="button" id="toggleAllHistoryBtn" class="action-btn" title="Tout replier ou déplier les dropdowns"><span id="toggleAllHistoryIcon"></span> Tout déplier</button>
+                <button type="button" id="clearHistoryBtn" class="action-btn" title="Vider tout l'historique"><span id="clearHistoryIcon"></span> Vider</button>
               </div>
             </div>
 
@@ -417,6 +447,318 @@
           </section>
         </div>
       </div>
+    </div>
+    <!-- FIN PAGE 1 : TTS -->
+
+    <!-- ================= PAGE 2 : RECONNAISSANCE VOCALE (STT) ================= -->
+    <div id="sttPageView" class="page-view" hidden>
+      <!-- Hero Section STT -->
+      <section class="hero-section hero-stt" id="heroSttSection">
+        <div class="hero-header-row">
+          <div class="hero-title-area">
+            <div class="hero-badge stt-badge">
+              <span id="heroSttTargetIcon"></span>
+              <span>Reconnaissance Vocale</span>
+            </div>
+            <h2 class="hero-title">Banc d'essai Speech-to-Text (STT)</h2>
+            <p class="hero-desc">
+              Testez et évaluez les moteurs de transcription vocale pour le français (<code>fr-FR</code>). Mesurez la précision, la ponctuation, le Real-Time Factor (RTF) et comparez <strong>Whisper (Faster-Whisper)</strong> avec les alternatives Web et locales.
+            </p>
+          </div>
+          <button type="button" class="hero-toggle-btn" id="heroSttToggleBtn" title="Masquer ou afficher les spécifications STT">
+            <span id="heroSttToggleIcon"></span>
+            <span id="heroSttToggleText">Masquer les specs</span>
+          </button>
+        </div>
+
+        <div class="hero-grid-compare" id="heroSttGridCompare">
+          <div class="tab-mini-card card-whisper">
+            <div class="mini-card-header">
+              <span class="card-badge engine-whisper">Whisper (Faster)</span>
+              <span class="mini-card-tag">OpenAI / CTranslate2</span>
+            </div>
+            <p class="mini-card-body">Modèle de référence SOTA. Ponctuation exacte, détection automatique de langue et horodatage mot-à-mot.</p>
+            <div class="mini-card-footer">
+              <span class="badge badge-subtle">CUDA / CPU</span>
+              <span class="badge badge-subtle">MIT</span>
+              <span class="badge badge-subtle">RTF ~0.15</span>
+            </div>
+          </div>
+
+          <div class="tab-mini-card card-webspeech">
+            <div class="mini-card-header">
+              <span class="card-badge engine-webspeech">Web Speech API</span>
+              <span class="mini-card-tag">Navigateur Natif</span>
+            </div>
+            <p class="mini-card-body">Transcription en direct intégrée au navigateur. Zéro latence serveur et gratuite sans installation.</p>
+            <div class="mini-card-footer">
+              <span class="badge badge-subtle">Temps Réel</span>
+              <span class="badge badge-subtle">0 Mo</span>
+              <span class="badge badge-subtle">Natif</span>
+            </div>
+          </div>
+
+          <div class="tab-mini-card card-sherpa">
+            <div class="mini-card-header">
+              <span class="card-badge engine-sherpa">Sherpa-ONNX</span>
+              <span class="mini-card-tag">Léger VPS CPU</span>
+            </div>
+            <p class="mini-card-body">Moteur offline streaming ultra-léger basé sur Next-gen Kaldi. Idéal pour VPS low-cost sans GPU.</p>
+            <div class="mini-card-footer">
+              <span class="badge badge-subtle">CPU Léger</span>
+              <span class="badge badge-subtle">Apache 2.0</span>
+              <span class="badge badge-subtle">Offline</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section Principale STT : Entrée Audio à gauche, Résultat à droite -->
+      <div class="layout-grid layout-top">
+        <!-- Colonne Gauche STT : Entrée Audio & Configuration -->
+        <div class="column column-form">
+          <section class="stt-input-section" id="sttInputSection">
+            <div class="section-header">
+              <h2 class="section-title">Configuration Moteur & Source Audio</h2>
+              <span class="badge badge-subtle">1. Moteur • 2. Audio</span>
+            </div>
+
+            <!-- 1. Sélecteur de Moteur STT (Choix du provider en premier) -->
+            <div class="stt-engine-selection">
+              <label class="field-label">1. Choisir le Moteur de Reconnaissance Vocale (STT)</label>
+              <div class="engine-switch stt-engine-switch" id="sttEngineSwitch" role="group">
+                <button type="button" class="engine-btn engine-whisper active" data-stt-engine="whisper" aria-pressed="true">
+                  <span class="stt-btn-icon" id="sttWhisperBtnIcon"></span>
+                  <span>Whisper</span>
+                </button>
+                <button type="button" class="engine-btn engine-webspeech" data-stt-engine="webspeech" aria-pressed="false">
+                  <span class="stt-btn-icon" id="sttWebSpeechBtnIcon"></span>
+                  <span>Web Speech API</span>
+                </button>
+                <button type="button" class="engine-btn engine-sherpa" data-stt-engine="sherpa" aria-pressed="false">
+                  <span class="stt-btn-icon" id="sttSherpaBtnIcon"></span>
+                  <span>Sherpa-ONNX</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Options Whisper -->
+            <div class="stt-engine-options" id="sttWhisperOptions">
+              <div class="options-grid">
+                <label>
+                  Taille du modèle Whisper
+                  <select id="whisperModelSize" class="engine-select">
+                    <option value="tiny">Tiny (39M params • Ultra-rapide ~0.2s)</option>
+                    <option value="base" selected>Base (74M params • Équilibré ~0.4s)</option>
+                    <option value="small">Small (244M params • Haute précision ~0.8s)</option>
+                    <option value="medium">Medium (769M params • Qualité Studio ~2.0s)</option>
+                  </select>
+                </label>
+                <label>
+                  Matériel d'inférence
+                  <select id="whisperDevice" class="engine-select">
+                    <option value="cpu" selected>CPU seul (Simulation VPS OVH ~1-3s)</option>
+                    <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~0.4s)</option>
+                  </select>
+                </label>
+                <label>
+                  Langue audio
+                  <select id="whisperLanguage" class="engine-select">
+                    <option value="fr" selected>Français (fr)</option>
+                    <option value="en">Anglais (en)</option>
+                    <option value="auto">Détection automatique</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <!-- 2. Source Audio & Enregistrement -->
+            <div class="stt-source-container">
+              <label class="field-label">2. Capturer ou Importer la Source Audio</label>
+              <!-- Onglets de source audio : Micro / Fichier / Démo -->
+              <div class="stt-source-tabs" role="tablist">
+                <button type="button" class="source-tab active" id="sourceTabMic" data-source="mic">
+                  <span class="source-tab-icon" id="sourceTabMicIcon"></span> Micro Direct
+                </button>
+                <button type="button" class="source-tab" id="sourceTabUpload" data-source="upload">
+                  <span class="source-tab-icon" id="sourceTabUploadIcon"></span> Fichier Audio
+                </button>
+                <button type="button" class="source-tab" id="sourceTabDemo" data-source="demo">
+                  <span class="source-tab-icon" id="sourceTabDemoIcon"></span> Extraits Démo
+                </button>
+              </div>
+
+              <!-- Panneau 1 : Microphone en direct -->
+              <div class="source-panel" id="sourcePanelMic">
+                <div class="mic-recorder-card">
+                  <div class="recorder-visualizer-wrap">
+                    <canvas id="micVisualizerCanvas" class="mic-visualizer-canvas"></canvas>
+                  </div>
+                  <div class="recorder-controls">
+                    <button type="button" id="micRecordBtn" class="record-btn">
+                      <span class="record-btn-icon" id="micRecordBtnIcon"></span>
+                      <span id="micRecordBtnText">Démarrer l'enregistrement</span>
+                    </button>
+                    <span id="micRecordTimer" class="record-timer">00:00.0</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panneau 2 : Upload de fichier -->
+              <div class="source-panel" id="sourcePanelUpload" hidden>
+                <div class="file-dropzone" id="sttFileDropzone">
+                  <input type="file" id="sttFileInput" accept="audio/*" hidden />
+                  <div class="dropzone-content">
+                    <span class="dropzone-icon" id="sttDropzoneIcon"></span>
+                    <p class="dropzone-text"><strong>Glissez un fichier audio</strong> ou <span class="link-btn">parcourez vos dossiers</span></p>
+                    <span class="dropzone-hint">WAV, MP3, M4A, OGG, FLAC (Max 50 Mo)</span>
+                  </div>
+                  <div id="selectedFileInfo" class="selected-file-badge" hidden>
+                    <span id="selectedFileName"></span>
+                    <button type="button" id="removeSelectedFileBtn" class="remove-file-btn" title="Retirer le fichier">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panneau 3 : Échantillons démo -->
+              <div class="source-panel" id="sourcePanelDemo" hidden>
+                <div class="demo-samples-grid">
+                  <button type="button" class="demo-sample-card" id="demoSampleFemale" data-sample="female">
+                    <span class="demo-card-title">Extrait Féminin (Français)</span>
+                    <span class="demo-card-sub">4.5s • 24kHz • Voix naturelle</span>
+                  </button>
+                  <button type="button" class="demo-sample-card" id="demoSampleMale" data-sample="male">
+                    <span class="demo-card-title">Extrait Masculin (Français)</span>
+                    <span class="demo-card-sub">10.7s • 24kHz • Débit conversationnel</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton d'action de transcription -->
+            <div class="stt-action-row">
+              <button type="button" id="transcribeBtn" class="generate-btn stt-transcribe-btn">
+                <span id="transcribeBtnIcon"></span>
+                <span id="transcribeBtnText">Lancer la transcription STT</span>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <!-- Colonne Droite STT : Résultat & Lecteur Audio -->
+        <div class="column column-preview">
+          <section class="preview-section stt-preview-section compact" id="sttPreviewSection">
+            <div class="preview-header">
+              <div class="preview-header-left">
+                <div class="preview-title-wrap">
+                  <span class="preview-deck-icon" id="sttPreviewDeckIcon"></span>
+                  <h3 class="preview-title">Transcription</h3>
+                </div>
+                <span class="preview-format-badge" id="sttFormatBadge">Prêt</span>
+              </div>
+
+              <div class="preview-header-right">
+                <div class="preview-badges">
+                  <span id="sttEngineBadge" class="badge engine-whisper">Whisper</span>
+                  <span id="sttDurationBadge" class="badge badge-subtle">--s</span>
+                  <span id="sttRtfBadge" class="badge badge-subtle">RTF: --</span>
+                </div>
+                <div class="rating-group" id="sttPreviewRating" title="Évaluer la précision (Score sur 3)">
+                  <span class="rating-label">Note :</span>
+                  <button type="button" class="rating-star" data-score="1" title="Note 1/3 — Passable"></button>
+                  <button type="button" class="rating-star" data-score="2" title="Note 2/3 — Bon"></button>
+                  <button type="button" class="rating-star" data-score="3" title="Note 3/3 — Excellent / Parfait"></button>
+                </div>
+                <button type="button" id="sttPreviewUpvoteBtn" class="upvote-btn" title="Ajouter cette transcription aux favoris">Favori</button>
+                <button type="button" id="copyTranscriptionBtn" class="action-btn" title="Copier la transcription dans le presse-papier">
+                  <span id="copyTranscriptionIcon"></span> Copier
+                </button>
+              </div>
+            </div>
+
+            <!-- Lecteur audio du fichier source -->
+            <audio id="sttAudioPlayer" controls></audio>
+
+            <!-- Visualiseur de lecture STT -->
+            <div class="audio-visualizer-card" id="sttVisualizerContainer">
+              <div class="visualizer-header">
+                <span class="visualizer-label">
+                  <span id="sttVisualizerIcon"></span> Signal Audio Source
+                </span>
+                <span class="visualizer-status" id="sttVisualizerStatus">En attente</span>
+              </div>
+              <div class="visualizer-canvas-wrapper">
+                <canvas id="sttAudioVisualizer" class="audio-visualizer-canvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Résultat textuel de la transcription -->
+            <div class="transcription-result-box" id="transcriptionResultBox">
+              <div class="transcription-text-content" id="transcriptionTextContent">
+                <p class="transcription-placeholder">Enregistrez votre voix au micro ou importez un fichier audio pour afficher ici le texte transcrit.</p>
+              </div>
+            </div>
+
+            <!-- Segments et horodatages détaillés -->
+            <div class="transcription-segments-container" id="transcriptionSegmentsContainer" hidden>
+              <div class="segments-header">
+                <span class="segments-title">Segments & Horodatages :</span>
+              </div>
+              <div class="segments-list" id="transcriptionSegmentsList"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Section Inférieure STT : Matrice & Historique STT -->
+      <div class="layout-grid layout-bottom">
+        <div class="column column-stats">
+          <section class="stats-section" id="sttStatsSection">
+            <div class="stats-header">
+              <div class="stats-title-row">
+                <span class="stats-title-icon" id="sttStatsTitleIcon"></span>
+                <h2 class="section-title">Matrice Précision / Vitesse STT</h2>
+                <span class="badge badge-subtle" id="sttStatsBadgeCount">0 tests</span>
+              </div>
+            </div>
+            <div class="stats-body" id="sttStatsBody">
+              <div class="stats-summary-grid" id="sttStatsSummaryGrid"></div>
+              <div class="chart-container">
+                <div class="chart-zone-indicators">
+                  <span class="zone-tag zone-optimal" id="sttZoneOptimalTag"><span class="zone-icon" id="sttZoneOptimalIcon"></span> RTF ≤ 0.25 (Temps réel éclair)</span>
+                  <span class="zone-tag zone-quality" id="sttZoneQualityTag"><span class="zone-icon" id="sttZoneQualityIcon"></span> Haute Précision (Modèle Medium/Small)</span>
+                </div>
+                <div class="chart-svg-wrapper" id="sttChartSvgWrapper">
+                  <svg id="sttDecisionMatrixChart" class="decision-chart" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+                <div class="chart-legend">
+                  <span class="legend-item"><span class="legend-dot engine-whisper"></span> Whisper</span>
+                  <span class="legend-item"><span class="legend-dot engine-webspeech"></span> Web Speech</span>
+                  <span class="legend-item"><span class="legend-dot engine-sherpa"></span> Sherpa</span>
+                  <span class="legend-hint"><span class="legend-hint-icon" id="sttLegendHintIcon"></span> Cliquez pour recharger l'enregistrement</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="column column-history">
+          <section class="history-section" id="sttHistorySection">
+            <div class="history-header">
+              <div class="history-title-row">
+                <h2 class="section-title">Historique STT</h2>
+                <span id="sttHistoryCount" class="badge">0</span>
+              </div>
+              <div class="history-header-actions">
+                <button type="button" id="clearSttHistoryBtn" class="action-btn" title="Vider l'historique STT"><span id="clearSttHistoryIcon"></span> Vider</button>
+              </div>
+            </div>
+            <div id="sttHistoryList" class="history-list"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <!-- FIN PAGE 2 : STT -->
 
       <!-- Footer de l'application -->
       <footer class="app-footer">

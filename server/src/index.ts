@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import { join } from "node:path";
 import { listVoices as listPiperVoices, getVoice as getPiperVoice } from "./voices.js";
 import { synthesize as synthesizePiper } from "./piper.js";
@@ -6,6 +7,18 @@ import { listEdgeVoices, synthesizeEdge, EDGE_VOICES } from "./edgeTts.js";
 import { getKokoroVoices, getKokoroVoice, synthesizeKokoro, KOKORO_VOICES } from "./kokoro.js";
 import { getChatterboxReferences, synthesizeChatterbox } from "./chatterbox.js";
 import { saveAudio, getHistory, deleteHistoryItem, clearHistory, getOutputDir, toggleUpvote, setScore } from "./history.js";
+import { transcribeAudioWhisper } from "./stt.js";
+import {
+  getSttHistory,
+  saveSttAudioAndResult,
+  setSttScore,
+  toggleSttFavorite,
+  deleteSttHistoryItem,
+  clearSttHistory,
+  getSttOutputDir
+} from "./sttHistory.js";
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
@@ -121,6 +134,116 @@ app.delete("/api/history/:id", (req, res) => {
 
 app.delete("/api/history", (_req, res) => {
   clearHistory();
+  res.json({ ok: true });
+});
+
+// --- ROUTES STT (Speech-To-Text) ---
+app.get("/api/stt/history", (_req, res) => {
+  try {
+    res.json(getSttHistory());
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post("/api/stt/transcribe", upload.single("file"), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file || !file.buffer) {
+      res.status(400).json({ error: "Fichier audio manquant dans la requête." });
+      return;
+    }
+
+    const engine = (req.body.engine as "whisper" | "webspeech" | "sherpa") || "whisper";
+    const modelSize = (req.body.modelSize as "tiny" | "base" | "small" | "medium") || "base";
+    const language = req.body.language || "fr";
+    const device = (req.body.device as "cuda" | "cpu") || "cpu";
+    const wordTimestamps = req.body.wordTimestamps !== "false";
+
+    let result;
+    if (engine === "whisper") {
+      result = await transcribeAudioWhisper(file.buffer, file.originalname || "audio.wav", {
+        modelSize,
+        language,
+        device,
+        wordTimestamps,
+      });
+    } else {
+      res.status(400).json({ error: `Moteur STT non supporté: ${engine}` });
+      return;
+    }
+
+    const entry = saveSttAudioAndResult(file.buffer, {
+      text: result.text,
+      engine,
+      modelSize: result.modelSize,
+      device: result.device,
+      language: result.language,
+      durationSec: result.duration,
+      processingTimeMs: result.processingTimeMs,
+      rtf: result.rtf,
+      segments: result.segments,
+      originalFilename: file.originalname,
+    });
+
+    res.json({
+      entry,
+      result,
+    });
+  } catch (err) {
+    console.error("[API /stt/transcribe] Erreur:", err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post("/api/stt/history/:id/score", (req, res) => {
+  const score = Number(req.body.score);
+  if (isNaN(score)) {
+    res.status(400).json({ error: "Score invalide" });
+    return;
+  }
+  const updated = setSttScore(req.params.id, score);
+  if (!updated) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json(updated);
+});
+
+app.patch("/api/stt/history/:id/score", (req, res) => {
+  const score = Number(req.body.score);
+  if (isNaN(score)) {
+    res.status(400).json({ error: "Score invalide" });
+    return;
+  }
+  const updated = setSttScore(req.params.id, score);
+  if (!updated) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json(updated);
+});
+
+app.post("/api/stt/history/:id/favorite", (req, res) => {
+  const updated = toggleSttFavorite(req.params.id);
+  if (!updated) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json(updated);
+});
+
+app.delete("/api/stt/history/:id", (req, res) => {
+  const success = deleteSttHistoryItem(req.params.id);
+  if (!success) {
+    res.status(404).json({ error: "Entrée non trouvée" });
+    return;
+  }
+  res.json({ ok: true });
+});
+
+app.delete("/api/stt/history", (_req, res) => {
+  clearSttHistory();
   res.json({ ok: true });
 });
 

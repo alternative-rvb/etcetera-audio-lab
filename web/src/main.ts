@@ -1,4 +1,5 @@
 import { icon } from "./icons.js";
+import { initSttModule } from "./stt.js";
 
 interface VoiceInfo {
   id: string;
@@ -205,6 +206,30 @@ function setupHeroSection() {
   if (previewDeckIconEl) {
     previewDeckIconEl.innerHTML = icon("volume", { size: 13 });
   }
+
+  const edgeBtnIcon = document.getElementById("edgeBtnIcon");
+  if (edgeBtnIcon) edgeBtnIcon.innerHTML = icon("cloud", { size: 14 });
+
+  const piperBtnIcon = document.getElementById("piperBtnIcon");
+  if (piperBtnIcon) piperBtnIcon.innerHTML = icon("cpu", { size: 14 });
+
+  const kokoroBtnIcon = document.getElementById("kokoroBtnIcon");
+  if (kokoroBtnIcon) kokoroBtnIcon.innerHTML = icon("sparkles", { size: 14 });
+
+  const chatterboxBtnIcon = document.getElementById("chatterboxBtnIcon");
+  if (chatterboxBtnIcon) chatterboxBtnIcon.innerHTML = icon("zap", { size: 14 });
+
+  const generateBtnIcon = document.getElementById("generateBtnIcon");
+  if (generateBtnIcon) generateBtnIcon.innerHTML = icon("play", { size: 14 });
+
+  const copyPathIcon = document.getElementById("copyPathIcon");
+  if (copyPathIcon) copyPathIcon.innerHTML = icon("copy", { size: 12 });
+
+  const toggleAllHistoryIcon = document.getElementById("toggleAllHistoryIcon");
+  if (toggleAllHistoryIcon) toggleAllHistoryIcon.innerHTML = icon("chevrons-up-down", { size: 13 });
+
+  const clearHistoryIcon = document.getElementById("clearHistoryIcon");
+  if (clearHistoryIcon) clearHistoryIcon.innerHTML = icon("trash", { size: 13 });
 }
 
 setupHeroSection();
@@ -777,6 +802,22 @@ if (previewRatingEl) {
     const newScore = currentItem?.score === clickedScore ? 0 : clickedScore;
     setAudioScore(currentPreviewAudioId, newScore);
   });
+
+  previewRatingEl.addEventListener("mouseover", (e) => {
+    const target = (e.target as HTMLElement).closest<HTMLButtonElement>(".rating-star");
+    if (!target) return;
+    const hoverScore = Number(target.dataset.score || 0);
+    previewRatingEl.querySelectorAll<HTMLButtonElement>(".rating-star").forEach((star) => {
+      const starScore = Number(star.dataset.score || 0);
+      star.classList.toggle("hovered", starScore <= hoverScore);
+    });
+  });
+
+  previewRatingEl.addEventListener("mouseleave", () => {
+    previewRatingEl.querySelectorAll<HTMLButtonElement>(".rating-star").forEach((star) => {
+      star.classList.remove("hovered");
+    });
+  });
 }
 
 function renderStatsAndChart() {
@@ -854,6 +895,15 @@ function renderStatsAndChart() {
   const optimalH = (getY(2) - zoneTopY) + 12; // Englobe proprement les scores 2/3 et 3/3
   const qualityH = (getY(3) - zoneTopY) + 20; // Englobe la ligne supérieure score 3/3
 
+  const zoneOptimalTag = document.getElementById("zoneOptimalTag");
+  if (zoneOptimalTag) {
+    zoneOptimalTag.innerHTML = `<span class="zone-icon" id="zoneOptimalIcon">${icon("trophy", { size: 12 })}</span> Idéal Prod (≤ ${optimalThresholdSec.toFixed(1)}s • Note ≥ 2/3)`;
+  }
+  const zoneQualityTag = document.getElementById("zoneQualityTag");
+  if (zoneQualityTag) {
+    zoneQualityTag.innerHTML = `<span class="zone-icon" id="zoneQualityIcon">${icon("palette", { size: 12 })}</span> Qualité Studio (Note 3/3)`;
+  }
+
   let svgContent = `
     <defs>
       <linearGradient id="optimalGrad" x1="0" y1="0" x2="1" y2="1">
@@ -868,11 +918,9 @@ function renderStatsAndChart() {
 
     <!-- Zone 1 : Idéal Prod (Temps rapide <= ${optimalThresholdSec.toFixed(1)}s & Note >= 2/3) -->
     <rect x="${paddingLeft}" y="${zoneTopY}" width="${optimalW}" height="${optimalH}" fill="url(#optimalGrad)" stroke="rgba(16, 185, 129, 0.45)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
-    <text x="${paddingLeft + 6}" y="${zoneTopY + 11}" fill="#10b981" font-size="8" font-weight="700">Idéal Prod (≤ ${optimalThresholdSec.toFixed(1)}s)</text>
 
     <!-- Zone 2 : Qualité Studio / Poids lourd (Note 3/3 • Temps plus long) -->
     <rect x="${paddingLeft + optimalW}" y="${zoneTopY}" width="${qualityW}" height="${qualityH}" fill="url(#qualityGrad)" stroke="rgba(225, 29, 72, 0.35)" stroke-width="1" stroke-dasharray="3,3" rx="5" />
-    <text x="${width - paddingRight - 6}" y="${zoneTopY + 11}" fill="#e11d48" font-size="8" font-weight="700" text-anchor="end">Qualité Studio (3★)</text>
 
     <line x1="${paddingLeft}" y1="${getY(3)}" x2="${width - paddingRight}" y2="${getY(3)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
     <line x1="${paddingLeft}" y1="${getY(2)}" x2="${width - paddingRight}" y2="${getY(2)}" stroke="var(--border)" stroke-dasharray="3,3" opacity="0.7" />
@@ -1078,6 +1126,24 @@ function renderHistory() {
       });
     });
 
+    const cardStarsAction = details.querySelector<HTMLDivElement>(".history-card-stars-action");
+    if (cardStarsAction) {
+      cardStarsAction.addEventListener("mouseover", (e) => {
+        const star = (e.target as HTMLElement).closest<HTMLButtonElement>(".rating-star");
+        if (!star) return;
+        const hoverScore = Number(star.dataset.score || 0);
+        cardStarsAction.querySelectorAll<HTMLButtonElement>(".rating-star").forEach((s) => {
+          const sScore = Number(s.dataset.score || 0);
+          s.classList.toggle("hovered", sScore <= hoverScore);
+        });
+      });
+      cardStarsAction.addEventListener("mouseleave", () => {
+        cardStarsAction.querySelectorAll<HTMLButtonElement>(".rating-star").forEach((s) => {
+          s.classList.remove("hovered");
+        });
+      });
+    }
+
     // Événements de la carte
     const playBtn = details.querySelector<HTMLButtonElement>(".card-play-btn");
     playBtn?.addEventListener("click", (e) => {
@@ -1209,6 +1275,7 @@ async function generate() {
   }
 
   generateBtn.disabled = true;
+  generateBtn.innerHTML = `${icon("rotateCcw", { size: 14, className: "spin-animation" })} <span>Génération...</span>`;
   statusEl.textContent = "Génération en cours...";
   const start = performance.now();
 
@@ -1278,6 +1345,7 @@ async function generate() {
     statusEl.textContent = `Erreur : ${(err as Error).message}`;
   } finally {
     generateBtn.disabled = false;
+    generateBtn.innerHTML = `${icon("sparkles", { size: 15 })} <span>Générer la voix</span>`;
   }
 }
 
@@ -1287,25 +1355,25 @@ function setupStaticIcons() {
   const edgeBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-edge");
   if (edgeBtn) {
     edgeBtn.innerHTML = `${icon("cloud", { size: 14 })} <span>Edge TTS</span>`;
-    edgeBtn.title = "Edge TTS — API Cloud (Microsoft)";
+    edgeBtn.title = "Edge TTS — API Cloud (Microsoft Neural)";
   }
   const piperBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-piper");
   if (piperBtn) {
     piperBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Piper</span>`;
-    piperBtn.title = "Piper — Moteur local (CPU)";
+    piperBtn.title = "Piper — Moteur local (CPU Natif)";
   }
   const kokoroBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-kokoro");
   if (kokoroBtn) {
-    kokoroBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Kokoro</span>`;
-    kokoroBtn.title = "Kokoro — Moteur local (ONNX)";
+    kokoroBtn.innerHTML = `${icon("sparkles", { size: 14 })} <span>Kokoro</span>`;
+    kokoroBtn.title = "Kokoro — Moteur local (ONNX Runtime)";
   }
   const chatterboxBtn = engineSwitchEl.querySelector<HTMLButtonElement>(".engine-chatterbox");
   if (chatterboxBtn) {
-    chatterboxBtn.innerHTML = `${icon("cpu", { size: 14 })} <span>Chatterbox</span>`;
-    chatterboxBtn.title = "Chatterbox — Moteur local (GPU / Clonage)";
+    chatterboxBtn.innerHTML = `${icon("zap", { size: 14 })} <span>Chatterbox</span>`;
+    chatterboxBtn.title = "Chatterbox — Moteur local (GPU / Clonage Vocal)";
   }
 
-  generateBtn.innerHTML = `${icon("sparkles", { size: 16 })} <span>Générer la voix</span>`;
+  generateBtn.innerHTML = `${icon("sparkles", { size: 15 })} <span>Générer la voix</span>`;
 
   copyPathBtn.innerHTML = `${icon("copy", { size: 12 })} <span>Copier</span>`;
 
@@ -1331,19 +1399,19 @@ function setupStaticIcons() {
   const filterPiper = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="piper"]');
   if (filterPiper) {
     filterPiper.innerHTML = `${icon("cpu", { size: 13 })} <span>Piper</span>`;
-    filterPiper.title = "Filtrer : Piper (Local)";
+    filterPiper.title = "Filtrer : Piper (Local CPU)";
   }
 
   const filterKokoro = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="kokoro"]');
   if (filterKokoro) {
-    filterKokoro.innerHTML = `${icon("cpu", { size: 13 })} <span>Kokoro</span>`;
-    filterKokoro.title = "Filtrer : Kokoro (Local)";
+    filterKokoro.innerHTML = `${icon("sparkles", { size: 13 })} <span>Kokoro</span>`;
+    filterKokoro.title = "Filtrer : Kokoro (Local ONNX)";
   }
 
   const filterChatterbox = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="chatterbox"]');
   if (filterChatterbox) {
-    filterChatterbox.innerHTML = `${icon("cpu", { size: 13 })} <span>Chatterbox</span>`;
-    filterChatterbox.title = "Filtrer : Chatterbox (Local)";
+    filterChatterbox.innerHTML = `${icon("zap", { size: 13 })} <span>Chatterbox</span>`;
+    filterChatterbox.title = "Filtrer : Chatterbox (Local GPU)";
   }
 
   const filterFav = historyFilterButtonsEl.querySelector<HTMLButtonElement>('[data-filter="favorites"]');
@@ -1411,9 +1479,12 @@ themeToggleEl.addEventListener("click", () => {
 setupStaticIcons();
 initTheme();
 updateControlsVisibility();
+updatePreviewRating(0);
+updatePreviewUpvoteButton(false);
 loadVoices().catch((err) => {
   statusEl.textContent = `Impossible de charger les voix : ${(err as Error).message}`;
 });
 loadHistory().catch((err) => {
   console.error("Erreur lors du chargement initial de l'historique :", err);
 });
+initSttModule();

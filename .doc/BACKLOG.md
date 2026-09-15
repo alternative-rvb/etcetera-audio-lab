@@ -13,4 +13,7 @@
 - [x] 10 - Ajouter Footer avec lien [logo + Alternative RVB](https://www.alternative-rvb.com)
 - [x] 11 - Ajouter des stats - graphique
 - [x] 12 - Ajouter un spectre audio en temps réel sous le lecteur principal
+- [x] 13 - Section Speech-to-Text (STT) : Page 2 avec Whisper (Faster-Whisper CUDA/CPU), enregistrement micro, import fichier, métriques RTF et matrice décisionnelle
+- [x] 14 - STT : Système d'évaluation sur 3 étoiles (1/3, 2/3, 3/3) & favoris sur l'aperçu et chaque carte d'historique
+- [x] 15 - Harmonisation des icônes SVG (Heart, Square, RefreshCw, BarChart, Globe, Upload, Cloud, Sparkles, Zap) & cohérence stylistique globale
 - [ ] Prioriser les providers dont les voix ont été mis en favoris
