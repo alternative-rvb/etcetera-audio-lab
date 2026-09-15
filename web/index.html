@@ -199,61 +199,73 @@
               <div id="voiceButtons" class="voice-grid" role="radiogroup" aria-label="Modèle de voix"></div>
             </div>
 
-            <div id="edgeControls" class="engine-controls">
-              <label>
-                Vitesse (%)
-                <input id="ratePercent" type="range" min="-50" max="50" step="5" value="0" />
-                <span id="ratePercentValue">+0%</span>
-              </label>
-            </div>
+            <!-- Dropdown Réglages Moteur & Matériel TTS -->
+            <details class="settings-dropdown" id="ttsSettingsDropdown">
+              <summary class="settings-dropdown-summary">
+                <span class="settings-summary-left">
+                  <span class="settings-summary-icon" id="ttsSettingsIcon"></span>
+                  <span class="settings-summary-title">Réglages Matériels & Paramètres Avancés</span>
+                </span>
+                <span class="dropdown-chevron" id="ttsSettingsChevron"></span>
+              </summary>
+              <div class="settings-dropdown-body">
+                <div id="edgeControls" class="engine-controls">
+                  <label>
+                    Vitesse (%)
+                    <input id="ratePercent" type="range" min="-50" max="50" step="5" value="0" />
+                    <span id="ratePercentValue">+0%</span>
+                  </label>
+                </div>
 
-            <div id="piperControls" class="engine-controls" hidden>
-              <label>
-                Vitesse (length scale)
-                <input id="lengthScale" type="range" min="0.5" max="2" step="0.05" value="1" />
-                <span id="lengthScaleValue">1.00</span>
-              </label>
+                <div id="piperControls" class="engine-controls" hidden>
+                  <label>
+                    Vitesse (length scale)
+                    <input id="lengthScale" type="range" min="0.5" max="2" step="0.05" value="1" />
+                    <span id="lengthScaleValue">1.00</span>
+                  </label>
 
-              <label>
-                Variation (noise scale)
-                <input id="noiseScale" type="range" min="0" max="1" step="0.05" value="0.667" />
-                <span id="noiseScaleValue">0.67</span>
-              </label>
+                  <label>
+                    Variation (noise scale)
+                    <input id="noiseScale" type="range" min="0" max="1" step="0.05" value="0.667" />
+                    <span id="noiseScaleValue">0.67</span>
+                  </label>
 
-              <label>
-                Expressivité (noise w)
-                <input id="noiseW" type="range" min="0" max="1" step="0.05" value="0.8" />
-                <span id="noiseWValue">0.80</span>
-              </label>
-            </div>
+                  <label>
+                    Expressivité (noise w)
+                    <input id="noiseW" type="range" min="0" max="1" step="0.05" value="0.8" />
+                    <span id="noiseWValue">0.80</span>
+                  </label>
+                </div>
 
-            <div id="kokoroControls" class="engine-controls" hidden>
-              <label>
-                Vitesse de débit (speed)
-                <input id="kokoroSpeed" type="range" min="0.5" max="2.0" step="0.05" value="1.0" />
-                <span id="kokoroSpeedValue">1.00x</span>
-              </label>
-            </div>
+                <div id="kokoroControls" class="engine-controls" hidden>
+                  <label>
+                    Vitesse de débit (speed)
+                    <input id="kokoroSpeed" type="range" min="0.5" max="2.0" step="0.05" value="1.0" />
+                    <span id="kokoroSpeedValue">1.00x</span>
+                  </label>
+                </div>
 
-            <div id="chatterboxControls" class="engine-controls" hidden>
-              <label>
-                Matériel d'inférence
-                <select id="chatterboxDevice" class="engine-select">
-                  <option value="cpu" selected>CPU seul (Simulation VPS OVH ~20-30s)</option>
-                  <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~3-4s)</option>
-                </select>
-              </label>
-              <label>
-                Exagération émotionnelle
-                <input id="chatterboxExaggeration" type="range" min="0.0" max="1.5" step="0.05" value="0.5" />
-                <span id="chatterboxExaggerationValue">0.50</span>
-              </label>
-              <label>
-                Température créative
-                <input id="chatterboxTemperature" type="range" min="0.1" max="1.2" step="0.05" value="0.8" />
-                <span id="chatterboxTemperatureValue">0.80</span>
-              </label>
-            </div>
+                <div id="chatterboxControls" class="engine-controls" hidden>
+                  <label>
+                    Matériel d'inférence
+                    <select id="chatterboxDevice" class="engine-select">
+                      <option value="cpu" selected>CPU seul (Simulation VPS OVH ~20-30s)</option>
+                      <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~3-4s)</option>
+                    </select>
+                  </label>
+                  <label>
+                    Exagération émotionnelle
+                    <input id="chatterboxExaggeration" type="range" min="0.0" max="1.5" step="0.05" value="0.5" />
+                    <span id="chatterboxExaggerationValue">0.50</span>
+                  </label>
+                  <label>
+                    Température créative
+                    <input id="chatterboxTemperature" type="range" min="0.1" max="1.2" step="0.05" value="0.8" />
+                    <span id="chatterboxTemperatureValue">0.80</span>
+                  </label>
+                </div>
+              </div>
+            </details>
           </div>
 
           <div class="action-row">
@@ -542,55 +554,67 @@
               </div>
             </div>
 
-            <!-- Options Web Speech API -->
-            <div class="stt-engine-options" id="sttWebSpeechOptions">
-              <div class="options-grid">
-                <label>
-                  Langue de reconnaissance
-                  <select id="webspeechLanguage" class="engine-select">
-                    <option value="fr-FR" selected>Français (fr-FR)</option>
-                    <option value="en-US">Anglais (en-US)</option>
-                    <option value="es-ES">Espagnol (es-ES)</option>
-                  </select>
-                </label>
-                <label>
-                  Moteur & Exécution
-                  <select id="webspeechMode" class="engine-select">
-                    <option value="browser" selected>Natif Navigateur (Zéro latence • Temps réel)</option>
-                  </select>
-                </label>
-              </div>
-            </div>
+            <!-- Dropdown Réglages Moteur & Matériel STT -->
+            <details class="settings-dropdown" id="sttSettingsDropdown">
+              <summary class="settings-dropdown-summary">
+                <span class="settings-summary-left">
+                  <span class="settings-summary-icon" id="sttSettingsIcon"></span>
+                  <span class="settings-summary-title">Réglages Matériels & Paramètres STT</span>
+                </span>
+                <span class="dropdown-chevron" id="sttSettingsChevron"></span>
+              </summary>
+              <div class="settings-dropdown-body">
+                <!-- Options Web Speech API -->
+                <div class="stt-engine-options" id="sttWebSpeechOptions">
+                  <div class="options-grid">
+                    <label>
+                      Langue de reconnaissance
+                      <select id="webspeechLanguage" class="engine-select">
+                        <option value="fr-FR" selected>Français (fr-FR)</option>
+                        <option value="en-US">Anglais (en-US)</option>
+                        <option value="es-ES">Espagnol (es-ES)</option>
+                      </select>
+                    </label>
+                    <label>
+                      Moteur & Exécution
+                      <select id="webspeechMode" class="engine-select">
+                        <option value="browser" selected>Natif Navigateur (Zéro latence • Temps réel)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
 
-            <!-- Options Whisper -->
-            <div class="stt-engine-options" id="sttWhisperOptions" hidden>
-              <div class="options-grid">
-                <label>
-                  Taille du modèle Whisper
-                  <select id="whisperModelSize" class="engine-select">
-                    <option value="tiny">Tiny (39M params • Ultra-rapide ~0.2s)</option>
-                    <option value="base" selected>Base (74M params • Équilibré ~0.4s)</option>
-                    <option value="small">Small (244M params • Haute précision ~0.8s)</option>
-                    <option value="medium">Medium (769M params • Qualité Studio ~2.0s)</option>
-                  </select>
-                </label>
-                <label>
-                  Matériel d'inférence
-                  <select id="whisperDevice" class="engine-select">
-                    <option value="cpu" selected>CPU seul (Simulation VPS OVH ~1-3s)</option>
-                    <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~0.4s)</option>
-                  </select>
-                </label>
-                <label>
-                  Langue audio
-                  <select id="whisperLanguage" class="engine-select">
-                    <option value="fr" selected>Français (fr)</option>
-                    <option value="en">Anglais (en)</option>
-                    <option value="auto">Détection automatique</option>
-                  </select>
-                </label>
+                <!-- Options Whisper -->
+                <div class="stt-engine-options" id="sttWhisperOptions" hidden>
+                  <div class="options-grid">
+                    <label>
+                      Taille du modèle Whisper
+                      <select id="whisperModelSize" class="engine-select">
+                        <option value="tiny">Tiny (39M params • Ultra-rapide ~0.2s)</option>
+                        <option value="base" selected>Base (74M params • Équilibré ~0.4s)</option>
+                        <option value="small">Small (244M params • Haute précision ~0.8s)</option>
+                        <option value="medium">Medium (769M params • Qualité Studio ~2.0s)</option>
+                      </select>
+                    </label>
+                    <label>
+                      Matériel d'inférence
+                      <select id="whisperDevice" class="engine-select">
+                        <option value="cpu" selected>CPU seul (Simulation VPS OVH ~1-3s)</option>
+                        <option value="cuda">GPU CUDA (Accélération locale RTX 3070 ~0.4s)</option>
+                      </select>
+                    </label>
+                    <label>
+                      Langue audio
+                      <select id="whisperLanguage" class="engine-select">
+                        <option value="fr" selected>Français (fr)</option>
+                        <option value="en">Anglais (en)</option>
+                        <option value="auto">Détection automatique</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
+            </details>
 
             <!-- 2. Source Audio & Enregistrement -->
             <div class="stt-source-container">

@@ -881,6 +881,68 @@ body[data-active-engine="chatterbox"] .voice-btn[aria-checked="true"] {
   display: none;
 }
 
+/* Dropdown Réglages Matériels & Paramètres Avancés (TTS & STT) */
+.settings-dropdown {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  margin-top: 0.25rem;
+}
+
+.settings-dropdown:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.settings-dropdown-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.settings-dropdown-summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-dropdown-summary:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-summary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.settings-dropdown[open] .dropdown-chevron {
+  transform: rotate(90deg);
+}
+
+.settings-dropdown-body {
+  padding: 0.85rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .engine-select {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -230,6 +230,12 @@ function setupHeroSection() {
 
   const clearHistoryIcon = document.getElementById("clearHistoryIcon");
   if (clearHistoryIcon) clearHistoryIcon.innerHTML = icon("trash", { size: 13 });
+
+  const ttsSettingsIcon = document.getElementById("ttsSettingsIcon");
+  if (ttsSettingsIcon) ttsSettingsIcon.innerHTML = icon("sliders", { size: 14 });
+
+  const ttsSettingsChevron = document.getElementById("ttsSettingsChevron");
+  if (ttsSettingsChevron) ttsSettingsChevron.innerHTML = icon("chevronRight", { size: 13 });
 }
 
 setupHeroSection();

@@ -687,6 +687,12 @@ export function initSttModule() {
   const clearSttHistoryIcon = document.getElementById("clearSttHistoryIcon");
   if (clearSttHistoryIcon) clearSttHistoryIcon.innerHTML = icon("trash", { size: 13 });
 
+  const sttSettingsIcon = document.getElementById("sttSettingsIcon");
+  if (sttSettingsIcon) sttSettingsIcon.innerHTML = icon("sliders", { size: 14 });
+
+  const sttSettingsChevron = document.getElementById("sttSettingsChevron");
+  if (sttSettingsChevron) sttSettingsChevron.innerHTML = icon("chevronRight", { size: 13 });
+
   async function loadSttHistory() {
     try {
       const res = await fetch(`${API_BASE}/api/stt/history`);
