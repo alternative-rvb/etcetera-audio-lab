@@ -1591,28 +1591,31 @@ audio::-webkit-media-controls-panel {
   gap: 1.25rem;
 }
 
+.column-history {
+  min-height: 0;
+}
+
 .history-section {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  max-height: 480px;
+  display: block;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 .history-list,
 #historyList,
 #sttHistoryList {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.55rem !important;
-  max-height: 320px !important;
-  min-height: 80px;
+  display: block !important;
+  max-height: 350px !important;
+  min-height: 60px;
   overflow-y: scroll !important;
   overflow-x: hidden !important;
+  box-sizing: border-box !important;
   padding-right: 0.45rem !important;
+  margin-top: 0.75rem !important;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(140, 140, 160, 0.6) rgba(0, 0, 0, 0.08);
@@ -2014,11 +2017,19 @@ audio::-webkit-media-controls-panel {
 }
 
 .history-item-dropdown {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.55rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.15s ease;
+}
+
+.history-item-dropdown:last-child {
+  margin-bottom: 0;
 }
 
 .history-item-dropdown.card-piper {
