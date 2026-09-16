@@ -11,7 +11,7 @@ export interface VoiceInfo {
   sampleRate: number;
 }
 
-const VOICES_DIR = join(import.meta.dirname, "..", "voices");
+const VOICES_DIR = join(import.meta.dirname, "..", "..", "voices");
 
 const PIPER_VOICE_META: Record<string, { name: string; gender: "female" | "male" }> = {
   "fr_FR-siwis-medium": { name: "Siwis", gender: "female" },

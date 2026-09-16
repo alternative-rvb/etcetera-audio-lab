@@ -1,4 +1,4 @@
-import { icon } from "./icons.js";
+import { icon } from "../shared/icons.js";
 
 export interface STTSegment {
   id: number;

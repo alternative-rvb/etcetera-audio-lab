@@ -19,7 +19,7 @@ export interface AudioHistoryEntry {
   generationTimeMs?: number;
 }
 
-const OUTPUT_DIR = join(import.meta.dirname, "..", "output");
+const OUTPUT_DIR = join(import.meta.dirname, "..", "..", "output");
 const HISTORY_FILE = join(OUTPUT_DIR, "history.json");
 
 function ensureOutputDir() {

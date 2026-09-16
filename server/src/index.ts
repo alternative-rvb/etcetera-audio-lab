@@ -1,13 +1,13 @@
 import express from "express";
 import multer from "multer";
 import { join } from "node:path";
-import { listVoices as listPiperVoices, getVoice as getPiperVoice } from "./voices.js";
-import { synthesize as synthesizePiper } from "./piper.js";
-import { listEdgeVoices, synthesizeEdge, EDGE_VOICES } from "./edgeTts.js";
-import { getKokoroVoices, getKokoroVoice, synthesizeKokoro, KOKORO_VOICES } from "./kokoro.js";
-import { getChatterboxReferences, synthesizeChatterbox } from "./chatterbox.js";
-import { saveAudio, getHistory, deleteHistoryItem, clearHistory, getOutputDir, toggleUpvote, setScore } from "./history.js";
-import { transcribeAudioWhisper } from "./stt.js";
+import { listVoices as listPiperVoices, getVoice as getPiperVoice } from "./tts/voices.js";
+import { synthesize as synthesizePiper } from "./tts/piper.js";
+import { listEdgeVoices, synthesizeEdge, EDGE_VOICES } from "./tts/edgeTts.js";
+import { getKokoroVoices, getKokoroVoice, synthesizeKokoro, KOKORO_VOICES } from "./tts/kokoro.js";
+import { getChatterboxReferences, synthesizeChatterbox } from "./tts/chatterbox.js";
+import { saveAudio, getHistory, deleteHistoryItem, clearHistory, getOutputDir, toggleUpvote, setScore } from "./tts/history.js";
+import { transcribeAudioWhisper } from "./stt/index.js";
 import {
   getSttHistory,
   saveSttAudioAndResult,
@@ -16,7 +16,7 @@ import {
   deleteSttHistoryItem,
   clearSttHistory,
   getSttOutputDir
-} from "./sttHistory.js";
+} from "./stt/history.js";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 

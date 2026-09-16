@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import type { STTSegment } from "./stt.js";
+import type { STTSegment } from "./index.js";
 
 export interface STTHistoryEntry {
   id: string;
@@ -21,7 +21,7 @@ export interface STTHistoryEntry {
   isFavorite?: boolean;
 }
 
-const OUTPUT_DIR = join(import.meta.dirname, "..", "output");
+const OUTPUT_DIR = join(import.meta.dirname, "..", "..", "output");
 const STT_OUTPUT_DIR = join(OUTPUT_DIR, "stt");
 const STT_HISTORY_FILE = join(OUTPUT_DIR, "stt_history.json");
 

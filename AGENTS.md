@@ -14,18 +14,31 @@ Quatre moteurs implémentés et sélectionnables dans l'interface :
 ## Architecture
 
 - `server/` : API Node/TypeScript (Express).
-  - `src/piper.ts` : exécute le binaire natif Piper via `child_process`, enveloppe le PCM brut (`--output_raw`) en WAV.
-  - `src/voices.ts` : liste les voix Piper disponibles (scan de `server/voices/*.onnx.json`).
-  - `src/edgeTts.ts` : appelle `edge-tts-universal` (liste de voix fixe `EDGE_VOICES`), renvoie du MP3.
-  - `src/kokoro.ts` : charge Kokoro-82M ONNX via `kokoro-js`, génère un WAV 24kHz.
-  - `src/chatterbox.ts` : client HTTP appelant le micro-service Python Chatterbox sur `http://127.0.0.1:5002`.
-  - `src/history.ts` : gestion de l'historique et sauvegarde des fichiers audio dans `server/output/`.
-  - `src/index.ts` : routes `GET /api/voices?engine=...` et `POST /api/tts` dispatchant vers les 4 moteurs.
+  - `src/index.ts` : serveur Express, middleware et montage des routes unifiées TTS & STT.
+  - `src/tts/` : domaine Text-to-Speech :
+    - `edgeTts.ts` : adaptateur Edge TTS (`edge-tts-universal`).
+    - `piper.ts` : adaptateur binaire natif Piper ONNX.
+    - `kokoro.ts` : adaptateur Kokoro-82M ONNX local via `kokoro-js`.
+    - `chatterbox.ts` : client HTTP vers le microservice Python Chatterbox GPU.
+    - `voices.ts` : scan et catalogue des voix Piper (`server/voices/`).
+    - `history.ts` : gestion des audios générés et historique TTS.
+  - `src/stt/` : domaine Speech-to-Text :
+    - `index.ts` : logique de transcription Whisper / Faster-Whisper.
+    - `history.ts` : gestion de l'historique et des métriques STT (RTF, score, favoris).
 - `server/python/` :
-  - `chatterbox_service.py` : micro-service FastAPI exposant `/health`, `/references`, et `/tts` (génération PyTorch CUDA 24kHz).
-  - `references/` : échantillons audios de référence pour le clonage vocal.
-  - `requirements.txt` : dépendances Python (`torch`, `torchaudio`, `chatterbox-tts`, `fastapi`, `uvicorn`).
-- `web/` : frontend TypeScript + Vite. Sélecteur à 4 moteurs avec code couleur persistant (Edge: violet, Piper: bleu, Kokoro: vert émeraude, Chatterbox: rose framboise), réglages dédiés, badges, onglets d'explication et filtres d'historique.
+  - `app.py` : micro-service unifié FastAPI exposant `/health`, `/references`, `/tts` et `/stt/transcribe`.
+  - `tts/` : domaine Text-to-Speech Python :
+    - `chatterbox.py` : génération vocale zéro-shot PyTorch CUDA / CPU (Chatterbox Multilingual).
+    - `references/` : échantillons audios de référence (`.wav`, `.mp3`) pour le clonage vocal.
+  - `stt/` : domaine Speech-to-Text Python :
+    - `whisper.py` : moteur de transcription Faster-Whisper avec horodatage mots et segmentation.
+  - `requirements.txt` : dépendances Python (`torch`, `torchaudio`, `chatterbox-tts`, `faster-whisper`, `fastapi`, `uvicorn`).
+- `web/` : frontend TypeScript + Vite.
+  - `src/main.ts` : point d'entrée principal, orchestration des modules et gestion du thème (Light, Dark, Rétro Y2K).
+  - `src/tts/index.ts` : module complet Text-to-Speech (4 moteurs, filtres, spectre audio, matrice décisionnelle, historique).
+  - `src/stt/index.ts` : module complet Speech-to-Text (micro, upload, Faster-Whisper, Web Speech, historique STT).
+  - `src/shared/icons.ts` : bibliothèque d'icônes SVG partagées.
+  - `src/style.css` : charte graphique rétro-numérique Y2K unifiée.
 - `scripts/setup-piper.sh` : télécharge le binaire Piper et les modèles de voix.
 - `scripts/setup-chatterbox.sh` : initialise le virtualenv Python et installe les dépendances Chatterbox.
 

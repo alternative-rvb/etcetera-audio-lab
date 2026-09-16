@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { existsSync, chmodSync } from "node:fs";
 
 const execFileAsync = promisify(execFile);
-const BIN_DIR = join(import.meta.dirname, "..", "bin");
+const BIN_DIR = join(import.meta.dirname, "..", "..", "bin");
 const ESPEAK_BIN = join(BIN_DIR, "espeak-ng");
 
 async function phonemizeFrench(text: string): Promise<string> {

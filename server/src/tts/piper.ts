@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { getVoice } from "./voices.js";
 
-const PIPER_BIN = join(import.meta.dirname, "..", "bin", "piper");
+const PIPER_BIN = join(import.meta.dirname, "..", "..", "bin", "piper");
 
 export interface SynthesizeOptions {
   lengthScale?: number;
