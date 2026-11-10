@@ -69,8 +69,6 @@ npm run dev:all          # lance tout en 1 commande : API (3001), frontend (5173
 - Déploiement sur le VPS OVH (skill `vps-deploy`).
 - Intégration dans l'app existante une fois la voix validée.
 
-## Backlog
+## Suivi du backlog
 
-Pour suivre ce qui reste à faire.
-
-@.doc/BACKLOG.md
+Backlog CSV : `.doc/backlog.csv` (actif) et `.doc/archives/backlog-archive-AAAA-MM-JJ.csv` (terminées). Workflow commun décrit dans le skill `backlog-csv-workflow`. Le commit inclut le mouvement de backlog, au format `[id] Résumé court`.
