@@ -21,6 +21,7 @@ Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23)
 - **Sherpa-ONNX**: NVIDIA Parakeet TDT 0.6B v3 (25 langues européennes, détection automatique) exécuté dans Node par `sherpa-onnx-node`, avec Whisper `tiny` du service Python en secours.
 - **Groq Whisper**: API cloud compatible OpenAI (`whisper-large-v3-turbo` ou `whisper-large-v3`), horodatage mot à mot sans score de confiance. Clé `GROQ_API_KEY` dans `.env.local` (ignoré par git). Offre gratuite: 2 000 requêtes et 8 h d'audio par jour, 25 Mo par fichier.
 - **Web Speech API**: transcription en direct dans le navigateur, sans serveur, uniquement depuis le micro.
+- **Analyse IA des transcriptions** (Groq, modèle `openai/gpt-oss-20b`, surchargeable par `GROQ_ANALYSIS_MODEL`): lancée automatiquement après chaque transcription (route `POST /api/stt/history/[id]/analyze`), elle note le texte de 1 à 3 (ponctuation, cohérence, fluidité, mots suspects, résumé) dans `aiScore` et `analysis`, champs séparés de la note manuelle `score`. Sans texte de référence, elle juge la lisibilité, pas l'exactitude. Le texte transcrit part chez Groq. La matrice du Comparatif prend la note manuelle si elle existe, sinon la note IA (point en anneau).
 
 ## Architecture
 

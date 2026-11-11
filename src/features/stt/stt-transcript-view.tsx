@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { SttHistoryEntry } from "@/lib/shared/types";
 import { AudioPlayer, type AudioPlayerHandle } from "@/components/ui/audio-player";
-import { CopyButton, FavoriteToggle } from "@/components/ui/feedback-controls";
+import { CopyButton, FavoriteToggle, StarRating } from "@/components/ui/feedback-controls";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
 import { compareToPeers, MeasureHeadline } from "@/components/ui/measure-headline";
@@ -36,6 +36,9 @@ export function SttTranscriptView({
   autoPlayToken,
   onToggleFavorite,
   onScore,
+  analyzing,
+  analysisFailed,
+  onAnalyze,
 }: {
   entry: SttHistoryEntry | null;
   /** Historique complet, pour comparer le RTF aux essais précédents du même moteur. */
@@ -44,6 +47,9 @@ export function SttTranscriptView({
   autoPlayToken: number;
   onToggleFavorite: (id: string) => void;
   onScore: (id: string, score: number) => void;
+  analyzing: boolean;
+  analysisFailed: boolean;
+  onAnalyze: (id: string) => void;
 }) {
   const playerRef = useRef<AudioPlayerHandle | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -88,6 +94,32 @@ export function SttTranscriptView({
           />
 
           <p className="rounded-lg bg-sunken px-3 py-2 text-[0.95rem] leading-relaxed text-ink">{entry.text || <span className="text-muted">Aucune parole détectée.</span>}</p>
+
+          {entry.text.trim() && (
+            <div className="rounded-lg border border-line px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-xs font-medium text-muted">Analyse IA</span>
+                {entry.analysis ? <StarRating value={entry.analysis.score} label="Note IA" size={13} /> : null}
+                {analyzing ? (
+                  <span className="text-xs text-muted">Analyse en cours...</span>
+                ) : (
+                  <button type="button" className="ml-auto text-xs text-muted hover:text-ink" onClick={() => onAnalyze(entry.id)}>
+                    {entry.analysis || analysisFailed ? "Relancer" : "Analyser"}
+                  </button>
+                )}
+              </div>
+              {analysisFailed && !analyzing && <p className="mt-1 text-xs text-warning">Analyse indisponible, détails dans les logs.</p>}
+              {entry.analysis && (
+                <div className="mt-1 space-y-1 text-xs text-muted">
+                  <p>
+                    Ponctuation {entry.analysis.criteria.ponctuation}/3, cohérence {entry.analysis.criteria.coherence}/3, fluidité {entry.analysis.criteria.fluidite}/3
+                  </p>
+                  {entry.analysis.suspectWords.length > 0 && <p>Mots suspects : <span className="text-warning">{entry.analysis.suspectWords.join(", ")}</span></p>}
+                  <p className="text-ink">{entry.analysis.summary}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {entry.url && (
             <AudioPlayer src={entry.url} downloadName={entry.fileName} autoPlayToken={autoPlayToken} handleRef={playerRef} onTimeUpdate={setCurrentTime} />

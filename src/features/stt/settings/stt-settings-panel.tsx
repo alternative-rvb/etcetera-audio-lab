@@ -13,17 +13,20 @@ export function SttSettingsPanel({
   settings,
   onChange,
   pythonServiceHealth,
+  whisperNodeModels,
   webSpeechSupported,
 }: {
   provider: SttProviderId;
   settings: SttSettingsByProvider;
   onChange: <P extends SttProviderId>(provider: P, value: SttSettingsByProvider[P]) => void;
   pythonServiceHealth?: ProviderHealth;
+  /** Tailles Whisper installées pour l'exécution en Node ; les autres passent par le service Python. */
+  whisperNodeModels?: string[];
   webSpeechSupported: boolean;
 }) {
   switch (provider) {
     case "whisper":
-      return <WhisperSettingsPanel settings={settings.whisper} onChange={(value) => onChange("whisper", value)} pythonServiceHealth={pythonServiceHealth} />;
+      return <WhisperSettingsPanel settings={settings.whisper} onChange={(value) => onChange("whisper", value)} pythonServiceHealth={pythonServiceHealth} nodeModels={whisperNodeModels} />;
     case "sherpa":
       return <SherpaSettingsPanel />;
     case "groq":

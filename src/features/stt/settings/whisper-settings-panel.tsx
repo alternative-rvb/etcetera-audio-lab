@@ -7,14 +7,24 @@ import { WHISPER_LANGUAGE_OPTIONS, type WhisperSettings } from "../stt-settings"
 // SECTION: Réglages Whisper (taille du modèle, matériel, langue, horodatage mot à mot).
 // NOTE: CPU = exécution dans Node (sherpa-onnx), CUDA = service Python (Faster-Whisper), seul à fournir les mots horodatés.
 
+const MODEL_OPTIONS = [
+  { value: "tiny", label: "Tiny", size: "39M" },
+  { value: "base", label: "Base", size: "74M" },
+  { value: "small", label: "Small", size: "244M" },
+  { value: "medium", label: "Medium", size: "769M" },
+] as const;
+
 export function WhisperSettingsPanel({
   settings,
   onChange,
   pythonServiceHealth,
+  nodeModels,
 }: {
   settings: WhisperSettings;
   onChange: (settings: WhisperSettings) => void;
   pythonServiceHealth?: ProviderHealth;
+  /** Tailles installées pour Node ; absent tant que la santé est inconnue. */
+  nodeModels?: string[];
 }) {
   const cudaAvailable = pythonServiceHealth?.details?.cuda_available;
   return (
@@ -22,13 +32,12 @@ export function WhisperSettingsPanel({
       <SettingChoice
         label="Modèle"
         value={settings.modelSize}
-        hint="Plus le modèle est gros, plus il est précis et lent. Le premier appel télécharge puis charge le modèle."
-        options={[
-          { value: "tiny", label: "Tiny", detail: "39M" },
-          { value: "base", label: "Base", detail: "74M" },
-          { value: "small", label: "Small", detail: "244M" },
-          { value: "medium", label: "Medium", detail: "769M" },
-        ]}
+        hint="Plus le modèle est gros, plus il est précis et lent. Le premier appel charge le modèle, comptez plusieurs secondes. « Python » : modèle absent de models/sherpa/, le service Python prend le relais (long, et il doit tourner)."
+        options={MODEL_OPTIONS.map(({ value, label, size }) => ({
+          value,
+          label,
+          detail: settings.device === "cpu" && nodeModels && !nodeModels.includes(value) ? `${size}, Python` : size,
+        }))}
         onChange={(modelSize) => onChange({ ...settings, modelSize })}
       />
       <SettingChoice

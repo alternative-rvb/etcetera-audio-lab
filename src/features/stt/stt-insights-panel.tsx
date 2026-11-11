@@ -15,16 +15,17 @@ export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHist
   // NOTE: filtre actif par défaut, le banc d'essai vise un VPS sans GPU.
   const [noGpu, setNoGpu] = useState(true);
   const items = noGpu ? allItems.filter((i) => isVpsComparable(sttHardware(i))) : allItems;
-  const rated = items.filter((i) => i.score > 0);
-  const averageScore = averageOf(rated.map((i) => i.score));
+  // NOTE: la note manuelle prime, sinon la note IA (analyse Groq).
+  const effectiveScore = (i: SttHistoryEntry) => (i.score > 0 ? i.score : (i.aiScore ?? 0));
+  const rated = items.filter((i) => effectiveScore(i) > 0);
+  const averageScore = averageOf(rated.map(effectiveScore));
   const averageRtf = averageOf(items.filter((i) => i.rtf > 0).map((i) => i.rtf));
 
   return (
     <CollapsiblePanel
       storageKey="stt-insights"
       title="Comparatif"
-      disabled={rated.length === 0}
-      summary={rated.length === 0 ? "Notez une transcription pour comparer" : `${items.length} transcription${items.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
+      summary={rated.length === 0 ? "Aucune note pour comparer" : `${items.length} transcription${items.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
     >
       <div className="space-y-3">
         <NoGpuFilter active={noGpu} onChange={setNoGpu} hiddenCount={allItems.length - items.length} />
@@ -40,7 +41,8 @@ export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHist
           points={items.map((item) => ({
             id: item.id,
             provider: item.provider,
-            score: item.score,
+            score: effectiveScore(item),
+            source: item.score > 0 ? "manual" : "ai",
             x: item.rtf,
             title: `${item.modelSize}, ${item.device.toUpperCase()}`,
             subtitle: item.text,
@@ -49,7 +51,7 @@ export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHist
           formatX={(rtf) => `${rtf.toFixed(2)}×`}
           minXDomain={0.5}
           onSelect={onSelect}
-          emptyMessage="Notez des transcriptions Whisper ou Sherpa de 1 à 3 étoiles pour les placer sur la matrice."
+          emptyMessage="Notez des transcriptions Whisper ou Sherpa de 1 à 3 étoiles, ou laissez l'analyse IA le faire, pour les placer sur la matrice."
         />
       </div>
     </CollapsiblePanel>

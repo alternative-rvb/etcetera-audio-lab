@@ -95,5 +95,5 @@ export function useHistoryCollection<T extends HistoryItemBase>(basePath: "/api/
     }
   }, [basePath]);
 
-  return { items, loading, loadError, reload, prepend, toggleFavorite, setScore, remove, clear };
+  return { items, loading, loadError, reload, prepend, replaceItem, toggleFavorite, setScore, remove, clear };
 }

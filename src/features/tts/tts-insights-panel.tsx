@@ -22,7 +22,6 @@ export function TtsInsightsPanel({ items: allItems, onSelect }: { items: TtsHist
     <CollapsiblePanel
       storageKey="tts-insights"
       title="Comparatif"
-      disabled={rated.length === 0}
       summary={rated.length === 0 ? "Notez un audio pour comparer" : `${items.length} audio${items.length > 1 ? "s" : ""}, ${rated.length} noté${rated.length > 1 ? "s" : ""}`}
     >
       <div className="space-y-3">

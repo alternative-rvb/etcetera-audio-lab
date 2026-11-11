@@ -1,5 +1,6 @@
 import "server-only";
 import { AppError } from "@/lib/server/core/errors";
+import { GROQ_API_BASE, GROQ_KEY_HINT, readGroqApiKey, readGroqError } from "@/lib/server/core/groq-api";
 import type { ProviderHealth, SttSegment, SttTranscriptionResult, SttWord } from "@/lib/shared/types";
 import type { ServerSttProvider, SttTranscriptionInput } from "../stt-provider.types";
 
@@ -7,11 +8,10 @@ import type { ServerSttProvider, SttTranscriptionInput } from "../stt-provider.t
 // LINK: https://console.groq.com/docs/speech-to-text
 // NOTE: la clé GROQ_API_KEY est lue dans .env.local (chargé par Next), jamais exposée au navigateur.
 
-const GROQ_TRANSCRIPTIONS_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
+const GROQ_TRANSCRIPTIONS_URL = `${GROQ_API_BASE}/audio/transcriptions`;
 const GROQ_TIMEOUT_MS = 2 * 60_000;
 /** Limite de l'offre gratuite ; au-delà, Groq exige le paramètre `url` (fichier hébergé). */
 const GROQ_MAX_FILE_BYTES = 25 * 1024 * 1024;
-const GROQ_KEY_HINT = "Ajoutez GROQ_API_KEY=... dans .env.local à la racine du projet, puis relancez `npm run dev`.";
 
 interface GroqVerboseResponse {
   text?: string;
@@ -23,10 +23,6 @@ interface GroqVerboseResponse {
 
 /** Groq renvoie le nom anglais de la langue détectée ("french") : on revient au code ISO quand il est connu. */
 const LANGUAGE_NAME_TO_CODE: Record<string, string> = { french: "fr", english: "en", spanish: "es", german: "de", italian: "it" };
-
-function readApiKey(): string | undefined {
-  return process.env.GROQ_API_KEY?.trim() || undefined;
-}
 
 /** Les mots arrivent à plat : on les range dans le segment qui contient leur début. */
 function attachWords(segments: SttSegment[], words: GroqVerboseResponse["words"]): SttSegment[] {
@@ -40,17 +36,8 @@ function attachWords(segments: SttSegment[], words: GroqVerboseResponse["words"]
   });
 }
 
-async function readGroqError(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { error?: { message?: string } };
-    return body.error?.message ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 async function transcribeWithGroq(input: SttTranscriptionInput): Promise<SttTranscriptionResult> {
-  const apiKey = readApiKey();
+  const apiKey = readGroqApiKey();
   if (!apiKey) {
     throw new AppError("ENGINE_UNAVAILABLE", "Clé API Groq absente.", { provider: "groq", hint: GROQ_KEY_HINT });
   }
@@ -125,7 +112,7 @@ export const groqProvider: ServerSttProvider = {
   transcribe: transcribeWithGroq,
   async checkHealth(): Promise<ProviderHealth> {
     // NOTE: pas d'appel réseau, pour ne pas consommer le quota à chaque vérification.
-    if (!readApiKey()) return { status: "down", reason: "Clé GROQ_API_KEY absente.", hint: GROQ_KEY_HINT };
+    if (!readGroqApiKey()) return { status: "down", reason: "Clé GROQ_API_KEY absente.", hint: GROQ_KEY_HINT };
     return { status: "ok", details: { network: "requis, non vérifié" } };
   },
 };

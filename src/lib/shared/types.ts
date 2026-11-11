@@ -210,6 +210,16 @@ export interface SttTranscriptionResult extends RuntimeTrace {
   segments: SttSegment[];
 }
 
+/** Analyse automatique du texte transcrit par un LLM (Groq), notes de 1 à 3. */
+export interface SttAnalysis {
+  score: number;
+  criteria: { ponctuation: number; coherence: number; fluidite: number };
+  suspectWords: string[];
+  summary: string;
+  model: string;
+  analyzedAt: string;
+}
+
 export interface SttHistoryEntry extends SttTranscriptionResult {
   id: string;
   createdAt: string;
@@ -219,7 +229,11 @@ export interface SttHistoryEntry extends SttTranscriptionResult {
   url?: string;
   originalFilename?: string;
   isFavorite: boolean;
+  /** Note manuelle sur 3 (0 = non noté). Jamais écrasée par l'analyse automatique. */
   score: number;
+  /** Note automatique sur 3 (analyse Groq), absente tant que le texte n'a pas été analysé. */
+  aiScore?: number;
+  analysis?: SttAnalysis;
 }
 
 export interface SttTranscribeResponse {

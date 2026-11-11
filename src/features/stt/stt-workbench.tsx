@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { STT_PROVIDER_IDS, type SttHistoryEntry, type SttProviderId } from "@/lib/shared/types";
 import { STT_PROVIDER_CATALOG } from "@/lib/shared/provider-catalog";
 import { ApiClientError, apiRequest, createClientRequestId, showErrorToast } from "@/lib/client/api-client";
+import { reportBrowserLog } from "@/lib/client/browser-logger";
 import { formatTimer } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 import { useHealth } from "@/components/layout/health-provider";
@@ -91,6 +92,32 @@ export function SttWorkbench() {
     return () => URL.revokeObjectURL(url);
   }, [source]);
 
+  // ANCHOR: analyse IA (Groq) après chaque transcription, en arrière-plan : un échec ne gêne jamais la transcription.
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+  const [failedAnalysisIds, setFailedAnalysisIds] = useState<Set<string>>(new Set());
+  const analyzeEntry = useCallback(
+    async (id: string) => {
+      const mark = (setter: typeof setAnalyzingIds, on: boolean) =>
+        setter((current) => {
+          const next = new Set(current);
+          if (on) next.add(id);
+          else next.delete(id);
+          return next;
+        });
+      mark(setAnalyzingIds, true);
+      mark(setFailedAnalysisIds, false);
+      try {
+        history.replaceItem(await apiRequest<SttHistoryEntry>(`/api/stt/history/${encodeURIComponent(id)}/analyze`, { method: "POST" }));
+      } catch (err) {
+        mark(setFailedAnalysisIds, true);
+        reportBrowserLog("warn", "browser", "analysis.failed", err instanceof Error ? err.message : "Analyse impossible.", { meta: { entryId: id } });
+      } finally {
+        mark(setAnalyzingIds, false);
+      }
+    },
+    [history]
+  );
+
   const transcribe = useCallback(
     async (audio: SttAudioSource, options: TranscribeOptions = {}) => {
       if (transcribing) return;
@@ -117,6 +144,7 @@ export function SttWorkbench() {
         });
         // NOTE: pas de toast de succès, le panneau Résultat se met à jour.
         history.prepend(entry);
+        if (entry.text.trim()) void analyzeEntry(entry.id);
         setCurrentEntryId(entry.id);
         setTranscriptOrigin("transcribed");
         scrollToIfStacked(resultRef.current);
@@ -132,7 +160,7 @@ export function SttWorkbench() {
         abortRef.current = null;
       }
     },
-    [transcribing, safeProvider, providerSettings, history, refreshHealth]
+    [transcribing, safeProvider, providerSettings, history, refreshHealth, analyzeEntry]
   );
 
   // ANCHOR: à l'arrêt du micro, la transcription part automatiquement, d'où le libellé « Arrêter et transcrire ».
@@ -162,6 +190,7 @@ export function SttWorkbench() {
   const recorder = useMicrophoneRecorder((recorded) => void handleRecorded(recorded));
 
   const startRecording = async () => {
+    setSource(null);
     const started = await recorder.start();
     if (started && safeProvider === "web-speech") webSpeech.start(providerSettings["web-speech"].language);
   };
@@ -183,15 +212,58 @@ export function SttWorkbench() {
     scrollToIfStacked(resultRef.current);
   };
 
+  // ANCHOR: une seule description de l'action principale, commune aux 4 moteurs : la barre du bas et le bouton du haut ne font que l'afficher.
+  // Onglet Micro, pour les 4 moteurs : le bouton principal ENREGISTRE toujours (Enregistrer, Arrêter et transcrire, Annuler).
+  // Avant, une fois un enregistrement fait, il devenait « Transcrire avec X » : un clic renvoyait en 0,3 s l'ancien audio,
+  // d'où l'impression que « ça s'arrête tout seul » et que l'ancien texte se mélange au nouveau moteur.
+  // Retranscrire le même enregistrement avec un autre moteur reste possible, en bouton secondaire nommé explicitement.
+  // Onglets Fichier et Démo : le bouton principal transcrit l'audio choisi.
+  type PrimaryAction =
+    | { kind: "stop" }
+    | { kind: "cancel" }
+    | { kind: "record" | "transcribe" | "idle"; label: string; disabled: boolean; reason: string | null; run?: () => void };
+  const primary: PrimaryAction = (() => {
+    if (recorder.recording) return { kind: "stop" };
+    if (transcribing) return { kind: "cancel" };
+    if (tab === "mic") {
+      return {
+        kind: "record",
+        label: readySource ? "Nouvel enregistrement" : "Enregistrer",
+        disabled: Boolean(blockedReason),
+        reason: blockedReason,
+        run: () => void startRecording(),
+      };
+    }
+    if (readySource) {
+      return {
+        kind: "transcribe",
+        label: `Transcrire avec ${providerLabel}`,
+        disabled: Boolean(blockedReason),
+        reason: blockedReason,
+        run: () => void transcribe(readySource),
+      };
+    }
+    return {
+      kind: "idle",
+      label: tab === "upload" ? "Choisissez un fichier pour lancer la transcription." : "Choisissez un échantillon pour lancer la transcription.",
+      disabled: true,
+      reason: blockedReason,
+    };
+  })();
+
+  // NOTE: comparer les moteurs sur le même enregistrement micro ; Web Speech en est exclu, il n'écoute qu'en direct.
+  const retranscribe =
+    primary.kind === "record" && readySource && safeProvider !== "web-speech" && !blockedReason ? () => void transcribe(readySource) : null;
+
   const actionBar = (() => {
-    if (recorder.recording) {
+    if (primary.kind === "stop") {
       return (
         <Button variant="danger" size="lg" className="border-danger/50 bg-danger/10" icon={<Icon name="stop" />} onClick={recorder.stop}>
           Arrêter et transcrire
         </Button>
       );
     }
-    if (transcribing) {
+    if (primary.kind === "cancel") {
       return (
         <>
           <Button variant="secondary" size="lg" icon={<Icon name="stop" />} tooltip="Échap" onClick={() => abortRef.current?.abort()}>
@@ -201,171 +273,131 @@ export function SttWorkbench() {
             <span className="size-2 shrink-0 rounded-full bg-[var(--provider)] animate-pulse-dot" />
             <span className="truncate">Transcription {providerLabel}</span>
             <span className="tabular-nums text-ink">{formatTimer(elapsedMs)}</span>
+            {elapsedMs > 4000 && safeProvider !== "web-speech" && <span className="hidden text-xs sm:inline">Chargement du modèle au premier appel, patientez.</span>}
           </span>
         </>
       );
     }
-    const reason = blockedReason && <span className="min-w-0 text-xs text-muted">{blockedReason}</span>;
-    if (readySource) {
-      return (
-        <>
-          <Button
-            variant="primary"
-            size="lg"
-            icon={<Icon name="stt" size={20} />}
-            disabled={Boolean(blockedReason)}
-            onClick={() => void transcribe(readySource, { browserTranscript: webSpeech.transcript })}
-            className="min-w-0 max-w-full"
-          >
-            <span className="truncate">Transcrire avec {providerLabel}</span>
+    if (primary.kind === "idle") return <p className="py-2 text-sm text-muted">{primary.reason ?? primary.label}</p>;
+    return (
+      <>
+        <Button
+          variant="primary"
+          size="lg"
+          icon={<Icon name={primary.kind === "record" ? "mic" : "stt"} size={20} />}
+          disabled={primary.disabled}
+          onClick={primary.run}
+          className="min-w-0 max-w-full"
+        >
+          <span className="truncate">{primary.label}</span>
+        </Button>
+        {retranscribe && (
+          <Button variant="secondary" size="lg" icon={<Icon name="stt" size={20} />} onClick={retranscribe} className="min-w-0 max-w-full">
+            <span className="truncate">Retranscrire avec {providerLabel}</span>
           </Button>
-          {reason}
-        </>
-      );
-    }
-    if (tab === "mic") {
-      return (
-        <>
-          <Button variant="primary" size="lg" icon={<Icon name="mic" size={20} />} disabled={Boolean(blockedReason)} onClick={() => void startRecording()}>
-            Enregistrer
-          </Button>
-          {reason}
-        </>
-      );
-    }
-    return <p className="py-2 text-sm text-muted">{blockedReason ?? (tab === "upload" ? "Choisissez un fichier pour lancer la transcription." : "Choisissez un échantillon pour lancer la transcription.")}</p>;
+        )}
+        {primary.reason && <span className="min-w-0 text-xs text-muted">{primary.reason}</span>}
+      </>
+    );
   })();
 
-  // ANCHOR: action rapide en haut du panneau, même effet que le bouton de la barre du bas, sans défiler.
   const quickAction = (() => {
     const filled = "bg-[var(--provider)] text-white hover:bg-[color-mix(in_srgb,var(--provider)_85%,black)] hover:text-white";
     const outlined = "text-[var(--provider)] hover:text-[var(--provider)]";
-    if (recorder.recording) {
+    if (primary.kind === "stop") {
       return (
         <IconButton label="Arrêter et transcrire" onClick={recorder.stop} className={outlined}>
           <Icon name="stop" size={22} />
         </IconButton>
       );
     }
-    if (transcribing) {
+    if (primary.kind === "cancel") {
       return (
         <IconButton label="Annuler la transcription (Échap)" onClick={() => abortRef.current?.abort()} className={outlined}>
           <Icon name="stop" size={22} />
         </IconButton>
       );
     }
-    if (readySource) {
-      return (
-        <IconButton
-          label={blockedReason ?? `Transcrire avec ${providerLabel}`}
-          disabled={Boolean(blockedReason)}
-          onClick={() => void transcribe(readySource, { browserTranscript: webSpeech.transcript })}
-          className={filled}
-        >
-          <Icon name="stt" size={20} />
-        </IconButton>
-      );
-    }
-    if (tab === "mic") {
-      return (
-        <IconButton label={blockedReason ?? "Enregistrer"} disabled={Boolean(blockedReason)} onClick={() => void startRecording()} className={filled}>
-          <Icon name="mic" size={20} />
-        </IconButton>
-      );
-    }
     return (
-      <IconButton label={tab === "upload" ? "Choisissez un fichier pour lancer la transcription" : "Choisissez un échantillon pour lancer la transcription"} disabled className={filled}>
-        <Icon name="stt" size={20} />
+      <IconButton label={primary.reason && primary.kind !== "record" ? primary.reason : primary.label} disabled={primary.disabled} onClick={primary.run} className={filled}>
+        <Icon name={primary.kind === "record" ? "mic" : "stt"} size={20} />
       </IconButton>
     );
   })();
 
-  // NOTE: sans note, le comparatif n'est qu'une barre repliée : il passe pleine largeur au lieu de laisser un vide.
-  const hasRated = history.items.some((item) => item.score > 0);
-
   return (
     <div style={providerStyle(safeProvider)} className="space-y-4">
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-4">
-          <Panel
-            title="Transcription"
-            className="min-w-0"
-            bodyClassName="space-y-3"
-            actions={
-              <>
-                <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
-                  <Icon name="info" />
-                </IconButton>
-                {quickAction}
-              </>
-            }
-          >
-            <SttAudioSourcePanel
-              provider={safeProvider}
-              tab={tab}
-              onTabChange={setTab}
-              source={source}
-              sourceUrl={sourceUrl}
-              onSourceChange={setSource}
-              recorder={recorder}
-              liveTranscript={webSpeech.transcript}
-              liveError={webSpeech.error}
-              disabled={transcribing}
-            />
-
-            <ProviderPicker
-              label="Moteur de transcription"
-              providers={STT_PROVIDER_IDS}
-              catalog={STT_PROVIDER_CATALOG}
-              value={safeProvider}
-              onChange={setProvider}
-              health={report?.stt}
-              disabled={transcribing || recorder.recording}
-            />
-
-            {specOpen && <ProviderSpecCards catalog={STT_PROVIDER_CATALOG} health={report?.stt} only={safeProvider} />}
-
-            <ProviderHealthAlert health={providerHealth} />
-
-            <SettingsDisclosure
-              storageKey="stt"
-              providerLabel={providerLabel}
-              modifiedCount={modifiedCount}
-              onReset={() => updateSettings(safeProvider, DEFAULT_STT_SETTINGS[safeProvider])}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-1">
+          <div className="order-1 min-w-0 lg:order-none">
+            <Panel
+              title="Transcription"
+              className="min-w-0"
+              bodyClassName="space-y-3"
+              actions={
+                <>
+                  <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
+                    <Icon name="info" />
+                  </IconButton>
+                  {quickAction}
+                </>
+              }
             >
-              <SttSettingsPanel
+              <SttAudioSourcePanel
                 provider={safeProvider}
-                settings={providerSettings}
-                onChange={updateSettings}
-                pythonServiceHealth={report?.pythonService}
-                webSpeechSupported={webSpeech.supported}
+                tab={tab}
+                onTabChange={setTab}
+                source={source}
+                sourceUrl={sourceUrl}
+                onSourceChange={setSource}
+                recorder={recorder}
+                liveTranscript={webSpeech.transcript}
+                liveError={webSpeech.error}
+                disabled={transcribing}
               />
-            </SettingsDisclosure>
 
-            {/* ANCHOR: barre d'action collante en bas de l'écran tant que le panneau est visible ; les marges négatives annulent le padding du corps. */}
-            <div className="sticky bottom-0 z-10 -mx-3 -mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-b-2xl border-t border-line bg-surface px-3 py-2.5 sm:-mx-4 sm:-mb-4 sm:px-4">
-              {actionBar}
-            </div>
-          </Panel>
-          <ActivityPanel storageKey="stt-activity" sources={[...STT_PROVIDER_IDS, "python-service", "api"]} requestId={activeRequestId} live={transcribing} />
-        </div>
+              <ProviderPicker
+                label="Moteur de transcription"
+                providers={STT_PROVIDER_IDS}
+                catalog={STT_PROVIDER_CATALOG}
+                value={safeProvider}
+                onChange={(next) => {
+                // ANCHOR: changer de moteur repart d'un état propre : le texte et l'erreur Web Speech d'avant ne doivent pas se mélanger au nouveau moteur.
+                webSpeech.reset();
+                toast.dismiss("web-speech-error");
+                setProvider(next);
+              }}
+                health={report?.stt}
+                disabled={transcribing || recorder.recording}
+              />
 
-        <div ref={resultRef} className="min-w-0 scroll-mt-20 space-y-4">
-          <SttTranscriptView
-            key={currentEntry?.id ?? "none"}
-            entry={currentEntry}
-            peers={history.items}
-            origin={selectedEntry ? transcriptOrigin : "latest"}
-            autoPlayToken={autoPlayToken}
-            onToggleFavorite={history.toggleFavorite}
-            onScore={history.setScore}
-          />
-        </div>
-      </div>
+              {specOpen && <ProviderSpecCards catalog={STT_PROVIDER_CATALOG} health={report?.stt} only={safeProvider} />}
 
-      {/* ANCHOR: comparatif et historique côte à côte sur grand écran ; l'historique est plafonné pour finir au niveau du comparatif. */}
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
-        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+              <ProviderHealthAlert health={providerHealth} />
+
+              <SettingsDisclosure
+                storageKey="stt"
+                providerLabel={providerLabel}
+                modifiedCount={modifiedCount}
+                onReset={() => updateSettings(safeProvider, DEFAULT_STT_SETTINGS[safeProvider])}
+              >
+                <SttSettingsPanel
+                  provider={safeProvider}
+                  settings={providerSettings}
+                  onChange={updateSettings}
+                  pythonServiceHealth={report?.pythonService}
+                  whisperNodeModels={report?.stt.whisper?.details?.nodeModels as string[] | undefined}
+                  webSpeechSupported={webSpeech.supported}
+                />
+              </SettingsDisclosure>
+
+              {/* ANCHOR: barre d'action collante en bas de l'écran tant que le panneau est visible ; les marges négatives annulent le padding du corps. */}
+              <div className="sticky bottom-0 z-10 -mx-3 -mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-b-2xl border-t border-line bg-surface px-3 py-2.5 sm:-mx-4 sm:-mb-4 sm:px-4">
+                {actionBar}
+              </div>
+            </Panel>
+          </div>
+          <div className="order-4 min-w-0 lg:order-none">
           <SttInsightsPanel
             items={history.items}
             onSelect={(id) => {
@@ -373,8 +405,24 @@ export function SttWorkbench() {
               if (entry) openEntry(entry);
             }}
           />
+          </div>
         </div>
-        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-1">
+          <div ref={resultRef} className="order-2 min-w-0 scroll-mt-20 lg:order-none">
+            <SttTranscriptView
+              key={currentEntry?.id ?? "none"}
+              entry={currentEntry}
+              peers={history.items}
+              origin={selectedEntry ? transcriptOrigin : "latest"}
+              autoPlayToken={autoPlayToken}
+              onToggleFavorite={history.toggleFavorite}
+              onScore={history.setScore}
+              analyzing={currentEntry ? analyzingIds.has(currentEntry.id) : false}
+              analysisFailed={currentEntry ? failedAnalysisIds.has(currentEntry.id) : false}
+              onAnalyze={(id) => void analyzeEntry(id)}
+            />
+          </div>
+          <div className="order-5 min-w-0 lg:order-none">
           <SttHistoryList
             items={history.items}
             loading={history.loading}
@@ -390,8 +438,12 @@ export function SttWorkbench() {
             onClear={() => void history.clear()}
             onRetry={() => void history.reload()}
           />
+          </div>
         </div>
       </div>
+
+      {/* ANCHOR: journal d'activité en dernier, pleine largeur sous les deux colonnes. */}
+      <ActivityPanel storageKey="stt-activity" sources={[...STT_PROVIDER_IDS, "python-service", "api"]} requestId={activeRequestId} live={transcribing} />
     </div>
   );
 }

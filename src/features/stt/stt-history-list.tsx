@@ -125,6 +125,11 @@ export function SttHistoryList({
                         </span>
                       </button>
                       <div className="ml-auto flex items-center">
+                        {item.aiScore ? (
+                          <span title={`Note IA ${item.aiScore}/3`} className="mr-0.5 inline-flex items-center rounded-md bg-sunken px-1 text-[0.7rem] text-muted">
+                            IA {item.aiScore}★
+                          </span>
+                        ) : null}
                         <StarRating value={item.score} size={14} onChange={(score) => onScore(item.id, score)} />
                         <FavoriteToggle active={item.isFavorite} onToggle={() => onToggleFavorite(item.id)} />
                         <CopyButton text={item.text} label="Copier le texte" />

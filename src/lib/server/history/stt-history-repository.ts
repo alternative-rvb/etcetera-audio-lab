@@ -1,7 +1,7 @@
 import "server-only";
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
-import type { SttHistoryEntry, SttProviderId, SttTranscriptionResult } from "@/lib/shared/types";
+import type { SttAnalysis, SttHistoryEntry, SttProviderId, SttTranscriptionResult } from "@/lib/shared/types";
 import { ensureDirectory, readJsonFile, writeJsonFileAtomic } from "@/lib/server/core/json-file-store";
 import { createLogger } from "@/lib/server/core/logger";
 import { PROJECT_PATHS } from "@/lib/server/core/paths";
@@ -42,6 +42,8 @@ function normalizeEntry(raw: LegacySttHistoryEntry): SttHistoryEntry {
     originalFilename: raw.originalFilename,
     isFavorite: raw.isFavorite ?? false,
     score: raw.score ?? 0,
+    aiScore: raw.aiScore,
+    analysis: raw.analysis,
   };
 }
 
@@ -111,6 +113,17 @@ export function setSttScore(id: string, score: number) {
   return updateSttEntry(id, (entry) => {
     entry.score = score;
   });
+}
+
+export function setSttAnalysis(id: string, analysis: SttAnalysis) {
+  return updateSttEntry(id, (entry) => {
+    entry.analysis = analysis;
+    entry.aiScore = analysis.score;
+  });
+}
+
+export function getSttEntry(id: string): SttHistoryEntry | null {
+  return listSttHistory().find((entry) => entry.id === id) ?? null;
 }
 
 export function deleteSttHistoryEntry(id: string): boolean {

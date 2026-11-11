@@ -38,8 +38,11 @@ export async function transcribeWithSherpa(options: {
   const config = options.recognizerConfig();
   const recognizer = await recognizerCache.get(options.recognizerKey, () => sherpa.OfflineRecognizer.createAsync(config));
 
+  // NOTE: le chargement du modèle (plusieurs secondes au premier appel) ne s'interrompt pas, mais on s'arrête juste après.
+  throwIfAborted(signal);
   const startedAt = performance.now();
   const samples = await decodeAudioToPcm16k(options.audio, { provider, signal });
+  throwIfAborted(signal);
   const durationSec = samples.length / STT_SAMPLE_RATE;
 
   const vad = new sherpa.Vad(

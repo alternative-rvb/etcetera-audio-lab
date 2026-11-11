@@ -44,6 +44,11 @@ export class AppError extends Error {
   }
 }
 
+/** Le client a fermé la connexion (Next lève ResponseAborted) : ce n'est ni une panne du moteur ni un délai. */
+export function isClientAbort(err: unknown, signal?: AbortSignal): boolean {
+  return Boolean(signal?.aborted) || (err instanceof Error && err.name === "ResponseAborted");
+}
+
 function isTimeoutError(err: unknown): boolean {
   return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
 }

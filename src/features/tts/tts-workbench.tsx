@@ -150,143 +150,126 @@ export function TtsWorkbench() {
     toast.info("Texte et voix repris dans l'éditeur");
   };
 
-  // NOTE: sans note, le comparatif n'est qu'une barre repliée : il passe pleine largeur au lieu de laisser un vide.
-  const hasRated = history.items.some((item) => item.score > 0);
-
   return (
     <div style={providerStyle(safeProvider)} className="space-y-4">
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        <Panel
-          title="Synthèse vocale"
-          className="min-w-0"
-          bodyClassName="space-y-3"
-          actions={
-            <>
-              <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
-                <Icon name="info" />
-              </IconButton>
-              {/* ANCHOR: action rapide en haut du panneau, même effet que le bouton de la barre du bas, sans défiler. */}
-              {generating ? (
-                <IconButton label="Annuler la génération (Échap)" onClick={() => abortRef.current?.abort()} className="text-[var(--provider)] hover:text-[var(--provider)]">
-                  <Icon name="stop" size={22} />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-[1.25]">
+          <div className="order-1 min-w-0 lg:order-none">
+          <Panel
+            title="Synthèse vocale"
+            className="min-w-0"
+            bodyClassName="space-y-3"
+            actions={
+              <>
+                <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
+                  <Icon name="info" />
                 </IconButton>
-              ) : (
-                <IconButton
-                  label={disabledReason ?? `Générer avec ${providerLabel}${selectedVoiceName ? `, ${selectedVoiceName}` : ""} (Ctrl + Entrée)`}
-                  onClick={() => void generate()}
-                  disabled={!canGenerate}
-                  className="bg-[var(--provider)] text-white hover:bg-[color-mix(in_srgb,var(--provider)_85%,black)] hover:text-white"
-                >
-                  <Icon name="tts" size={20} />
-                </IconButton>
-              )}
-            </>
-          }
-        >
-          <ProviderPicker label="Moteur de synthèse" providers={TTS_PROVIDER_IDS} catalog={TTS_PROVIDER_CATALOG} value={safeProvider} onChange={setProvider} health={report?.tts} disabled={generating} />
-
-          {specOpen && <ProviderSpecCards catalog={TTS_PROVIDER_CATALOG} health={report?.tts} only={safeProvider} />}
-
-          <ProviderHealthAlert health={providerHealth} />
-
-          <section aria-label="Voix">
-            <TtsVoicePicker
-              voiceList={voiceList?.provider === safeProvider ? voiceList : null}
-              loading={voicesLoading}
-              error={voicesError}
-              selectedVoiceId={selectedVoiceId}
-              onSelect={(voiceId) => setSelectedVoices((current) => ({ ...current, [safeProvider]: voiceId }))}
-              onRetry={retryVoices}
-              emptyHint={EMPTY_VOICE_HINTS[safeProvider]}
-              healthAlertShown={Boolean(providerHealth && providerHealth.status !== "ok")}
-            />
-          </section>
-
-          <div>
-            <label htmlFor="tts-text" className="sr-only">
-              Texte à lire
-            </label>
-            <textarea
-              ref={textRef}
-              id="tts-text"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-                  event.preventDefault();
-                  void generate();
-                }
-              }}
-              rows={5}
-              placeholder="Écrivez le texte à faire lire."
-              className="block w-full resize-y rounded-xl border border-line bg-sunken px-3 py-2.5 text-[0.95rem] leading-relaxed text-ink placeholder:text-muted focus:border-[var(--provider)] focus:outline-none"
-            />
-          </div>
-
-          <SettingsDisclosure
-            storageKey="tts"
-            providerLabel={providerLabel}
-            modifiedCount={modifiedCount}
-            onReset={() => updateSettings(safeProvider, DEFAULT_TTS_SETTINGS[safeProvider])}
+                {/* ANCHOR: action rapide en haut du panneau, même effet que le bouton de la barre du bas, sans défiler. */}
+                {generating ? (
+                  <IconButton label="Annuler la génération (Échap)" onClick={() => abortRef.current?.abort()} className="text-[var(--provider)] hover:text-[var(--provider)]">
+                    <Icon name="stop" size={22} />
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    label={disabledReason ?? `Générer avec ${providerLabel}${selectedVoiceName ? `, ${selectedVoiceName}` : ""} (Ctrl + Entrée)`}
+                    onClick={() => void generate()}
+                    disabled={!canGenerate}
+                    className="bg-[var(--provider)] text-white hover:bg-[color-mix(in_srgb,var(--provider)_85%,black)] hover:text-white"
+                  >
+                    <Icon name="tts" size={20} />
+                  </IconButton>
+                )}
+              </>
+            }
           >
-            <TtsSettingsPanel provider={safeProvider} settings={providerSettings} onChange={updateSettings} pythonServiceHealth={report?.pythonService} />
-          </SettingsDisclosure>
+            <ProviderPicker label="Moteur de synthèse" providers={TTS_PROVIDER_IDS} catalog={TTS_PROVIDER_CATALOG} value={safeProvider} onChange={setProvider} health={report?.tts} disabled={generating} />
 
-          {/* ANCHOR: barre d'action collante en bas de l'écran tant que le panneau est visible ; les marges négatives annulent le padding du corps. */}
-          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-b-2xl border-t border-line bg-surface px-3 py-2.5 sm:-mx-4 sm:-mb-4 sm:px-4">
-            {generating ? (
-              <>
-                <Button variant="secondary" size="lg" icon={<Icon name="stop" />} tooltip="Échap" onClick={() => abortRef.current?.abort()}>
-                  Annuler
-                </Button>
-                <span aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm text-muted">
-                  <span className="size-2 shrink-0 rounded-full bg-[var(--provider)] animate-pulse-dot" />
-                  <span className="truncate">Génération {providerLabel}</span>
-                  <span className="tabular-nums text-ink">{formatTimer(elapsedMs)}</span>
-                </span>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  icon={<Icon name="tts" size={20} />}
-                  tooltip="Ctrl + Entrée"
-                  onClick={() => void generate()}
-                  disabled={!canGenerate}
-                  className="min-w-0 max-w-full"
-                >
-                  <span className="truncate">
-                    Générer avec {providerLabel}
-                    {selectedVoiceName ? `, ${selectedVoiceName}` : ""}
+            {specOpen && <ProviderSpecCards catalog={TTS_PROVIDER_CATALOG} health={report?.tts} only={safeProvider} />}
+
+            <ProviderHealthAlert health={providerHealth} />
+
+            <section aria-label="Voix">
+              <TtsVoicePicker
+                voiceList={voiceList?.provider === safeProvider ? voiceList : null}
+                loading={voicesLoading}
+                error={voicesError}
+                selectedVoiceId={selectedVoiceId}
+                onSelect={(voiceId) => setSelectedVoices((current) => ({ ...current, [safeProvider]: voiceId }))}
+                onRetry={retryVoices}
+                emptyHint={EMPTY_VOICE_HINTS[safeProvider]}
+                healthAlertShown={Boolean(providerHealth && providerHealth.status !== "ok")}
+              />
+            </section>
+
+            <div>
+              <label htmlFor="tts-text" className="sr-only">
+                Texte à lire
+              </label>
+              <textarea
+                ref={textRef}
+                id="tts-text"
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                    event.preventDefault();
+                    void generate();
+                  }
+                }}
+                rows={5}
+                placeholder="Écrivez le texte à faire lire."
+                className="block w-full resize-y rounded-xl border border-line bg-sunken px-3 py-2.5 text-[0.95rem] leading-relaxed text-ink placeholder:text-muted focus:border-[var(--provider)] focus:outline-none"
+              />
+            </div>
+
+            <SettingsDisclosure
+              storageKey="tts"
+              providerLabel={providerLabel}
+              modifiedCount={modifiedCount}
+              onReset={() => updateSettings(safeProvider, DEFAULT_TTS_SETTINGS[safeProvider])}
+            >
+              <TtsSettingsPanel provider={safeProvider} settings={providerSettings} onChange={updateSettings} pythonServiceHealth={report?.pythonService} />
+            </SettingsDisclosure>
+
+            {/* ANCHOR: barre d'action collante en bas de l'écran tant que le panneau est visible ; les marges négatives annulent le padding du corps. */}
+            <div className="sticky bottom-0 z-10 -mx-3 -mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-b-2xl border-t border-line bg-surface px-3 py-2.5 sm:-mx-4 sm:-mb-4 sm:px-4">
+              {generating ? (
+                <>
+                  <Button variant="secondary" size="lg" icon={<Icon name="stop" />} tooltip="Échap" onClick={() => abortRef.current?.abort()}>
+                    Annuler
+                  </Button>
+                  <span aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm text-muted">
+                    <span className="size-2 shrink-0 rounded-full bg-[var(--provider)] animate-pulse-dot" />
+                    <span className="truncate">Génération {providerLabel}</span>
+                    <span className="tabular-nums text-ink">{formatTimer(elapsedMs)}</span>
                   </span>
-                </Button>
-                {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
-              </>
-            )}
-            <span className={cn("ml-auto text-xs tabular-nums", tooLong ? "font-medium text-danger" : "text-muted")}>
-              {text.length} / {MAX_TEXT_LENGTH}
-            </span>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    icon={<Icon name="tts" size={20} />}
+                    tooltip="Ctrl + Entrée"
+                    onClick={() => void generate()}
+                    disabled={!canGenerate}
+                    className="min-w-0 max-w-full"
+                  >
+                    <span className="truncate">
+                      Générer avec {providerLabel}
+                      {selectedVoiceName ? `, ${selectedVoiceName}` : ""}
+                    </span>
+                  </Button>
+                  {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
+                </>
+              )}
+              <span className={cn("ml-auto text-xs tabular-nums", tooLong ? "font-medium text-danger" : "text-muted")}>
+                {text.length} / {MAX_TEXT_LENGTH}
+              </span>
+            </div>
+          </Panel>
           </div>
-        </Panel>
-
-        <div ref={listenRef} className="min-w-0 scroll-mt-20 space-y-4">
-          <TtsAudioMonitor
-            entry={currentEntry}
-            peers={history.items}
-            origin={effectiveOrigin}
-            selectedProvider={safeProvider}
-            autoPlayToken={autoPlayToken}
-            onToggleFavorite={history.toggleFavorite}
-            onScore={history.setScore}
-          />
-          <ActivityPanel storageKey="tts-activity" sources={[...TTS_PROVIDER_IDS, "api"]} requestId={activeRequestId} live={generating} />
-        </div>
-      </div>
-
-      {/* ANCHOR: comparatif et historique côte à côte sur grand écran ; l'historique est plafonné pour finir au niveau du comparatif. */}
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
-        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+          <div className="order-4 min-w-0 lg:order-none">
           <TtsInsightsPanel
             items={history.items}
             onSelect={(id) => {
@@ -294,8 +277,21 @@ export function TtsWorkbench() {
               if (entry) playEntry(entry);
             }}
           />
+          </div>
         </div>
-        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-1">
+          <div ref={listenRef} className="order-2 min-w-0 scroll-mt-20 lg:order-none">
+            <TtsAudioMonitor
+              entry={currentEntry}
+              peers={history.items}
+              origin={effectiveOrigin}
+              selectedProvider={safeProvider}
+              autoPlayToken={autoPlayToken}
+              onToggleFavorite={history.toggleFavorite}
+              onScore={history.setScore}
+            />
+          </div>
+          <div className="order-5 min-w-0 lg:order-none">
           <TtsHistoryList
             items={history.items}
             loading={history.loading}
@@ -312,8 +308,12 @@ export function TtsWorkbench() {
             onClear={() => void history.clear()}
             onRetry={() => void history.reload()}
           />
+          </div>
         </div>
       </div>
+
+      {/* ANCHOR: journal d'activité en dernier, pleine largeur sous les deux colonnes. */}
+      <ActivityPanel storageKey="tts-activity" sources={[...TTS_PROVIDER_IDS, "api"]} requestId={activeRequestId} live={generating} />
     </div>
   );
 }

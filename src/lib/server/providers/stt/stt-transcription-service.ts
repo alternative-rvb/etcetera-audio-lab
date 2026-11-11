@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { GROQ_WHISPER_MODELS, STT_PROVIDER_IDS, type SttHistoryEntry, type SttProviderId } from "@/lib/shared/types";
-import { AppError, toAppError } from "@/lib/server/core/errors";
+import { AppError, isClientAbort, toAppError } from "@/lib/server/core/errors";
 import { createLogger } from "@/lib/server/core/logger";
 import { saveSttTranscription } from "@/lib/server/history/stt-history-repository";
 import { SERVER_STT_PROVIDERS } from "./stt-provider-registry";
@@ -100,6 +100,13 @@ export async function runSttTranscription(request: Request): Promise<SttHistoryE
       groqModel: fields.groqModel,
       signal: request.signal,
     });
+    // ANCHOR: transcription annulée côté navigateur (Annuler, Échap) : on n'enregistre rien dans l'historique.
+    if (request.signal.aborted) {
+      providerLogger.info("transcription.cancelled", "Transcription annulée par le client, résultat non enregistré.", {
+        durationMs: Math.round(performance.now() - startedAt),
+      });
+      throw new AppError("VALIDATION", "Transcription annulée.", { provider: providerId, status: 499 });
+    }
     const entry = saveSttTranscription(audio, { provider: providerId, originalFilename: audioFile.name, result });
     providerLogger.info("transcription.done", `${result.segments.length} segment(s), RTF ${result.rtf}.`, {
       durationMs: Math.round(performance.now() - startedAt),
@@ -114,7 +121,13 @@ export async function runSttTranscription(request: Request): Promise<SttHistoryE
     });
     return entry;
   } catch (err) {
-    const appError = toAppError(err, providerId);
+    const appError = isClientAbort(err, request.signal)
+      ? new AppError("VALIDATION", "Transcription annulée.", { provider: providerId, status: 499, cause: err })
+      : toAppError(err, providerId);
+    if (appError.status === 499) {
+      providerLogger.info("transcription.cancelled", "Transcription annulée par le client.", { durationMs: Math.round(performance.now() - startedAt) });
+      throw appError;
+    }
     providerLogger.error("transcription.failed", appError.message, {
       durationMs: Math.round(performance.now() - startedAt),
       meta: { code: appError.code, hint: appError.hint, details: appError.details },

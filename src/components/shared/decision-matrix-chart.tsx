@@ -14,6 +14,8 @@ export interface DecisionMatrixPoint {
   x: number;
   title: string;
   subtitle?: string;
+  /** "ai" : note automatique, dessinée en anneau ; absent ou "manual" : disque plein. */
+  source?: "manual" | "ai";
 }
 
 // NOTE: la largeur du viewBox suit celle du conteneur (ResizeObserver) pour garder un texte à sa taille réelle.
@@ -102,9 +104,9 @@ export function DecisionMatrixChart({
                 cx={toX(point.x)}
                 cy={toY(point.score)}
                 r={isHovered ? 8 : 6}
-                fill={providerColorVar(point.provider)}
-                stroke="var(--surface)"
-                strokeWidth={2}
+                fill={point.source === "ai" ? "var(--surface)" : providerColorVar(point.provider)}
+                stroke={point.source === "ai" ? providerColorVar(point.provider) : "var(--surface)"}
+                strokeWidth={point.source === "ai" ? 2.5 : 2}
                 tabIndex={onSelect ? 0 : -1}
                 role={onSelect ? "button" : undefined}
                 aria-label={`${point.title}, ${LOG_SOURCE_LABELS[point.provider]}, ${point.score} sur 3, ${formatX(point.x)}`}
@@ -146,6 +148,7 @@ export function DecisionMatrixChart({
             {LOG_SOURCE_LABELS[provider]}
           </li>
         ))}
+        {rated.some((p) => p.source === "ai") && <li>Anneau : note IA, plein : note manuelle</li>}
         {onSelect && <li className="ml-auto">Cliquez sur un point pour le réécouter.</li>}
       </ul>
     </div>
