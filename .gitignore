@@ -20,3 +20,6 @@ models/
 # NOTE: secrets locaux (GROQ_API_KEY, etc.)
 .env*
 !.env.example
+
+# Playwright CLI
+.playwright-cli/
