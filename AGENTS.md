@@ -167,6 +167,28 @@ Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus
 npm run typecheck
 ```
 
+## Données sensibles
+
+Le dépôt est public: aucun fichier ni aucune donnée sensible ne doit être indexé, même temporairement, car un commit poussé reste dans l'historique.
+
+- Ne jamais indexer: `.env.local` ou tout `.env` autre que `.env.example`, clés et certificats, `output/` (audios, historiques et logs qui peuvent contenir la voix ou les propos de la personne), `models/`, `voices/`, `bin/`, `.doc/`, `CLAUDE.local.md`.
+- Ne jamais écrire dans un fichier suivi une clé d'API, un mot de passe, un chemin personnel absolu (`/home/<utilisateur>`), une adresse e-mail ou toute autre donnée personnelle.
+- Indexer fichier par fichier plutôt qu'avec `git add -A` ou `git add .`, puis relire la liste avant chaque commit:
+
+```bash
+git diff --staged --name-only
+```
+
+- Le hook `.githooks/pre-commit`, activé par `npm install` (script `prepare`), lance `scripts/check-sensitive.sh` et bloque le commit si un fichier ou un secret reconnu est indexé. On peut le lancer à la main:
+
+```bash
+npm run check:sensitive
+```
+
+- Des motifs propres à votre machine (nom d'utilisateur, projets privés, domaines) s'ajoutent dans `.git/info/sensitive-patterns`, une expression régulière par ligne. Ce fichier n'est jamais versionné.
+- `git commit --no-verify` ne sert qu'à passer un faux positif vérifié, jamais à forcer un fichier signalé.
+- Si un secret a été poussé malgré tout, le révoquer immédiatement auprès du service concerné: le retirer de l'historique ne suffit pas.
+
 ## Pistes envisagées
 
 - XTTS-v2, via un service Python séparé (licence Coqui CPML non commerciale à vérifier avant tout usage au-delà du test).

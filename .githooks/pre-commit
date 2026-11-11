@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# ANCHOR: activé par `npm install` (script prepare, core.hooksPath=.githooks) ; bloque l'indexation de données sensibles.
+exec bash "$(git rev-parse --show-toplevel)/scripts/check-sensitive.sh"

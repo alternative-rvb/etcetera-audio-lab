@@ -14,7 +14,9 @@
     "ai-service": "bash scripts/ai-service.sh",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:sensitive": "bash scripts/check-sensitive.sh",
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@iconify-icons/material-symbols": "2.0.7",
