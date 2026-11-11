@@ -17,15 +17,15 @@ export function healthLabel(health?: ProviderHealth): string {
   return [STATUS_LABELS[status], health?.reason].filter(Boolean).join(" : ");
 }
 
-export function HealthDot({ health, className }: { health?: ProviderHealth; className?: string }) {
+/** `tooltip={false}` quand le parent porte déjà l'infobulle (évite deux bulles imbriquées). */
+export function HealthDot({ health, className, tooltip = true }: { health?: ProviderHealth; className?: string; tooltip?: boolean }) {
   const status = health?.status ?? "unknown";
-  return (
-    <Tooltip label={healthLabel(health)}>
-      <span
-        role="img"
-        aria-label={healthLabel(health)}
-        className={cn("inline-block size-2 shrink-0 rounded-full retro:shadow-[0_0_8px_currentColor]", STATUS_CLASSES[status], className)}
-      />
-    </Tooltip>
+  const dot = (
+    <span
+      role="img"
+      aria-label={healthLabel(health)}
+      className={cn("inline-block size-2 shrink-0 rounded-full retro:shadow-[0_0_8px_currentColor]", STATUS_CLASSES[status], className)}
+    />
   );
+  return tooltip ? <Tooltip label={healthLabel(health)}>{dot}</Tooltip> : dot;
 }

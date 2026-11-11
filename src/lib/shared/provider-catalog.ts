@@ -5,6 +5,8 @@ import type { LogSource, SttProviderId, TtsProviderId, TtsSettingsByProvider } f
 
 export interface ProviderSpec {
   label: string;
+  /** Où tourne le moteur, affiché en icône dans le sélecteur. */
+  runtime: "cloud" | "local" | "browser";
   tagline: string;
   description: string;
   stack: string;
@@ -16,6 +18,7 @@ export interface ProviderSpec {
 export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
   "edge-tts": {
     label: "Edge TTS",
+    runtime: "cloud",
     tagline: "API cloud Microsoft",
     description:
       "Voix neurales Microsoft Edge via un endpoint gratuit, sans clé API. Moteur de référence actuellement en production dans NowWeAct.",
@@ -26,6 +29,7 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
   },
   piper: {
     label: "Piper",
+    runtime: "local",
     tagline: "100 % local CPU",
     description: "Moteur rapide et léger, entièrement local sur CPU, sans GPU ni réseau.",
     stack: "Binaire C++ natif, child_process, modèles ONNX",
@@ -35,6 +39,7 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
   },
   kokoro: {
     label: "Kokoro",
+    runtime: "local",
     tagline: "Local ONNX 82M",
     description: "Modèle neuronal compact (82M paramètres, StyleTTS2) au timbre studio, supérieur à Piper.",
     stack: "kokoro-js, onnxruntime-node (q8), espeak-ng IPA",
@@ -44,6 +49,7 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
   },
   chatterbox: {
     label: "Chatterbox",
+    runtime: "local",
     tagline: "Clonage vocal local",
     description: "Clonage vocal zéro-shot (Resemble AI) à partir d'un échantillon audio de référence.",
     stack: "FastAPI, PyTorch, CUDA, chatterbox-tts",
@@ -56,6 +62,7 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
 export const STT_PROVIDER_CATALOG: Record<SttProviderId, ProviderSpec> = {
   "web-speech": {
     label: "Web Speech API",
+    runtime: "browser",
     tagline: "Navigateur natif",
     description: "Transcription en direct intégrée au navigateur, pendant l'enregistrement micro. Aucune installation.",
     stack: "SpeechRecognition (Chrome, Edge)",
@@ -64,6 +71,7 @@ export const STT_PROVIDER_CATALOG: Record<SttProviderId, ProviderSpec> = {
   },
   whisper: {
     label: "Whisper",
+    runtime: "local",
     tagline: "Faster-Whisper local",
     description: "Modèle de référence : ponctuation, détection de langue et horodatage mot à mot.",
     stack: "faster-whisper, CTranslate2, FastAPI",
@@ -72,6 +80,7 @@ export const STT_PROVIDER_CATALOG: Record<SttProviderId, ProviderSpec> = {
   },
   sherpa: {
     label: "Sherpa-ONNX",
+    runtime: "local",
     tagline: "Provisoire : Whisper tiny CPU",
     description:
       "Cible : moteur offline léger pour VPS sans GPU. En attendant le ticket 22, cette option exécute Whisper tiny sur CPU.",

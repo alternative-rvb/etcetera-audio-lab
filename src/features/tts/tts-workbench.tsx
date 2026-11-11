@@ -157,9 +157,26 @@ export function TtsWorkbench() {
           className="min-w-0"
           bodyClassName="space-y-3"
           actions={
-            <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
-              <Icon name="info" />
-            </IconButton>
+            <>
+              <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
+                <Icon name="info" />
+              </IconButton>
+              {/* ANCHOR: action rapide en haut du panneau, même effet que le bouton de la barre du bas, sans défiler. */}
+              {generating ? (
+                <IconButton label="Annuler la génération (Échap)" onClick={() => abortRef.current?.abort()} className="text-[var(--provider)] hover:text-[var(--provider)]">
+                  <Icon name="stop" size={22} />
+                </IconButton>
+              ) : (
+                <IconButton
+                  label={disabledReason ?? `Générer avec ${providerLabel}${selectedVoiceName ? `, ${selectedVoiceName}` : ""} (Ctrl + Entrée)`}
+                  onClick={() => void generate()}
+                  disabled={!canGenerate}
+                  className="bg-[var(--provider)] text-white hover:bg-[color-mix(in_srgb,var(--provider)_85%,black)] hover:text-white"
+                >
+                  <Icon name="tts" size={20} />
+                </IconButton>
+              )}
+            </>
           }
         >
           <ProviderPicker label="Moteur de synthèse" providers={TTS_PROVIDER_IDS} catalog={TTS_PROVIDER_CATALOG} value={safeProvider} onChange={setProvider} health={report?.tts} disabled={generating} />
@@ -242,7 +259,7 @@ export function TtsWorkbench() {
                 <Button
                   variant="primary"
                   size="lg"
-                  icon={<Icon name="play" size={20} />}
+                  icon={<Icon name="tts" size={20} />}
                   tooltip="Ctrl + Entrée"
                   onClick={() => void generate()}
                   disabled={!canGenerate}

@@ -3,12 +3,14 @@
 import type { TtsVoice, TtsVoiceList } from "@/lib/shared/types";
 import { Skeleton } from "@/components/ui/panel";
 import { IconButton } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/client/cn";
 
 // SECTION: Grille des voix du provider sélectionné.
 
 const GENDER_LABELS: Record<TtsVoice["gender"], string> = { female: "Femme", male: "Homme", unknown: "Neutre" };
+const GENDER_ICONS: Partial<Record<TtsVoice["gender"], IconName>> = { female: "female", male: "male" };
 const LANGUAGE_LABELS: Record<string, string> = { "fr-FR": "français", "en-US": "anglais US", "en-GB": "anglais UK", "es-ES": "espagnol", "de-DE": "allemand" };
 // NOTE: niveaux de qualité des voix Piper ; les autres moteurs fournissent déjà un libellé lisible.
 const QUALITY_LABELS: Record<string, string> = { x_low: "qualité très basse", low: "qualité basse", medium: "qualité moyenne", high: "qualité haute" };
@@ -39,9 +41,9 @@ export function TtsVoicePicker({
 }) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+      <div className="flex gap-1.5">
         {Array.from({ length: 3 }, (_, i) => (
-          <Skeleton key={i} className="h-12" />
+          <Skeleton key={i} className="h-8 w-24" />
         ))}
       </div>
     );
@@ -71,29 +73,31 @@ export function TtsVoicePicker({
       {voices.length === 0 ? (
         <p className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-sm text-muted">{emptyHint}</p>
       ) : (
-        <div role="radiogroup" aria-label="Voix" className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        // NOTE: puces sur une ligne (icône de genre, nom, icône multilingue) ; la description complète passe en infobulle.
+        <div role="radiogroup" aria-label="Voix" className="flex flex-wrap gap-1.5">
           {voices.map((voice) => {
             const active = voice.id === selectedVoiceId;
+            const description = describeVoice(voice, showLanguage);
             return (
-              <button
-                key={voice.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => onSelect(voice.id)}
-                className={cn(
-                  "min-w-0 rounded-lg border px-2.5 py-1.5 text-left transition",
-                  active ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_8%,transparent)]" : "border-line hover:border-line-strong"
-                )}
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-ink">{voice.name}</span>
-                  {active && <Icon name="check" size={16} className="text-[var(--provider)]" />}
-                </span>
-                <span className="mt-0.5 block truncate text-xs text-muted">
-                  {describeVoice(voice, showLanguage)}
-                </span>
-              </button>
+              <Tooltip key={voice.id} label={description}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  aria-description={description}
+                  onClick={() => onSelect(voice.id)}
+                  className={cn(
+                    "inline-flex h-8 max-w-full min-w-0 items-center gap-1 rounded-lg border pr-2.5 pl-1.5 text-sm transition",
+                    active
+                      ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,transparent)] font-medium text-ink"
+                      : "border-line text-muted hover:border-line-strong hover:text-ink"
+                  )}
+                >
+                  {GENDER_ICONS[voice.gender] && <Icon name={GENDER_ICONS[voice.gender]!} size={17} className={active ? "text-[var(--provider)]" : undefined} />}
+                  <span className="truncate">{voice.name}</span>
+                  {/multiling/i.test(voice.quality) && <Icon name="multilingual" size={15} className="text-muted" />}
+                </button>
+              </Tooltip>
             );
           })}
         </div>

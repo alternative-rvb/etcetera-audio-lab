@@ -2,6 +2,7 @@ import { Icon as IconifyIcon } from "@iconify/react/offline";
 import audioFile from "@iconify-icons/material-symbols/audio-file-outline-rounded";
 import check from "@iconify-icons/material-symbols/check-rounded";
 import chevronRight from "@iconify-icons/material-symbols/chevron-right-rounded";
+import cloud from "@iconify-icons/material-symbols/cloud-outline-rounded";
 import close from "@iconify-icons/material-symbols/close-rounded";
 import contentCopy from "@iconify-icons/material-symbols/content-copy-outline-rounded";
 import darkMode from "@iconify-icons/material-symbols/dark-mode-outline-rounded";
@@ -11,11 +12,15 @@ import editNote from "@iconify-icons/material-symbols/edit-note-rounded";
 import expandMore from "@iconify-icons/material-symbols/expand-more-rounded";
 import favorite from "@iconify-icons/material-symbols/favorite-rounded";
 import favoriteOutline from "@iconify-icons/material-symbols/favorite-outline-rounded";
+import female from "@iconify-icons/material-symbols/female-rounded";
 import graphicEq from "@iconify-icons/material-symbols/graphic-eq-rounded";
 import history from "@iconify-icons/material-symbols/history-rounded";
 import info from "@iconify-icons/material-symbols/info-outline-rounded";
+import language from "@iconify-icons/material-symbols/language-rounded";
 import libraryMusic from "@iconify-icons/material-symbols/library-music-outline-rounded";
 import lightMode from "@iconify-icons/material-symbols/light-mode-outline-rounded";
+import male from "@iconify-icons/material-symbols/male-rounded";
+import memory from "@iconify-icons/material-symbols/memory-rounded";
 import mic from "@iconify-icons/material-symbols/mic-rounded";
 import openInNew from "@iconify-icons/material-symbols/open-in-new-rounded";
 import pause from "@iconify-icons/material-symbols/pause-rounded";
@@ -31,6 +36,7 @@ import starOutline from "@iconify-icons/material-symbols/star-outline-rounded";
 import stop from "@iconify-icons/material-symbols/stop-rounded";
 import terminal from "@iconify-icons/material-symbols/terminal-rounded";
 import textToSpeech from "@iconify-icons/material-symbols/text-to-speech-rounded";
+import translate from "@iconify-icons/material-symbols/translate-rounded";
 import tune from "@iconify-icons/material-symbols/tune-rounded";
 import unfoldLess from "@iconify-icons/material-symbols/unfold-less-rounded";
 import unfoldMore from "@iconify-icons/material-symbols/unfold-more-rounded";
@@ -58,6 +64,12 @@ const ICONS = {
   demo: libraryMusic,
   audioFile,
   speed,
+  female,
+  male,
+  multilingual: translate,
+  runtimeCloud: cloud,
+  runtimeLocal: memory,
+  runtimeBrowser: language,
   download,
   copy: contentCopy,
   check,

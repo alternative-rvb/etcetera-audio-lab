@@ -2,11 +2,15 @@
 
 import type { LogSource, ProviderHealth } from "@/lib/shared/types";
 import type { ProviderSpec } from "@/lib/shared/provider-catalog";
-import { HealthDot } from "@/components/ui/health-dot";
+import { HealthDot, healthLabel } from "@/components/ui/health-dot";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { Tooltip } from "@/components/ui/tooltip";
 import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 
 // SECTION: Choix du provider (TTS ou STT), avec son état de santé (un provider indisponible reste sélectionnable, l'alerte explique pourquoi).
+
+const RUNTIME_ICONS: Record<ProviderSpec["runtime"], IconName> = { cloud: "runtimeCloud", local: "runtimeLocal", browser: "runtimeBrowser" };
 
 export function ProviderPicker<P extends LogSource>({
   providers,
@@ -32,29 +36,29 @@ export function ProviderPicker<P extends LogSource>({
         const active = provider === value;
         const providerHealth = health?.[provider];
         const isDown = providerHealth?.status === "down";
+        // NOTE: le sous-titre et l'état passent en infobulle, la carte tient sur une ligne.
         return (
-          <button
-            key={provider}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            disabled={disabled}
-            onClick={() => onChange(provider)}
-            style={providerStyle(provider)}
-            className={cn(
-              "group relative flex min-w-0 flex-col items-start rounded-xl border px-2.5 py-2 text-left transition disabled:cursor-not-allowed",
-              active
-                ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,var(--surface))] shadow-[inset_0_0_0_1px_var(--provider)] retro:shadow-[0_0_16px_color-mix(in_srgb,var(--provider)_45%,transparent)]"
-                : "border-line bg-surface hover:border-line-strong",
-              isDown && !active && "opacity-60"
-            )}
-          >
-            <span className="flex w-full items-center justify-between gap-2">
-              <span className={cn("truncate font-semibold", active ? "text-[var(--provider)]" : "text-ink")}>{spec.label}</span>
-              <HealthDot health={providerHealth} />
-            </span>
-            <span className="w-full truncate text-xs text-muted">{spec.tagline}</span>
-          </button>
+          <Tooltip key={provider} label={`${spec.tagline}. ${healthLabel(providerHealth)}.`}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={disabled}
+              onClick={() => onChange(provider)}
+              style={providerStyle(provider)}
+              className={cn(
+                "flex h-9 min-w-0 items-center gap-1.5 rounded-lg border px-2.5 text-left text-sm transition disabled:cursor-not-allowed",
+                active
+                  ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,var(--surface))] shadow-[inset_0_0_0_1px_var(--provider)] retro:shadow-[0_0_16px_color-mix(in_srgb,var(--provider)_45%,transparent)]"
+                  : "border-line bg-surface hover:border-line-strong",
+                isDown && !active && "opacity-60"
+              )}
+            >
+              <Icon name={RUNTIME_ICONS[spec.runtime]} size={17} className={active ? "text-[var(--provider)]" : "text-muted"} />
+              <span className={cn("min-w-0 flex-1 truncate font-semibold", active ? "text-[var(--provider)]" : "text-ink")}>{spec.label}</span>
+              <HealthDot health={providerHealth} tooltip={false} />
+            </button>
+          </Tooltip>
         );
       })}
     </div>
