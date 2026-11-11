@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN_DIR="$ROOT_DIR/server/bin"
-VOICES_DIR="$ROOT_DIR/server/voices"
+BIN_DIR="$ROOT_DIR/bin"
+VOICES_DIR="$ROOT_DIR/voices"
 
 PIPER_VERSION="2023.11.14-2"
 PIPER_ARCHIVE_URL="https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_linux_x86_64.tar.gz"

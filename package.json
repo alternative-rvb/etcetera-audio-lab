@@ -1,15 +1,37 @@
 {
-  "name": "tts-test",
-  "version": "0.1.0",
+  "name": "etcetera",
+  "version": "0.2.0",
   "private": true,
+  "description": "Etcetera, Audio Lab : banc d'essai de moteurs TTS et STT",
   "scripts": {
-    "setup": "bash scripts/setup-piper.sh && npm install --prefix server && npm install --prefix web",
-    "ai-service": "./server/python/.venv/bin/python server/python/app.py",
-    "chatterbox": "./server/python/.venv/bin/python server/python/app.py",
-    "dev": "concurrently -k -n server,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix web\"",
-    "dev:all": "concurrently -k -n server,web,chatterbox -c blue,green,magenta \"npm run dev --prefix server\" \"npm run dev --prefix web\" \"npm run chatterbox\""
+    "setup": "bash scripts/setup-piper.sh && npm install",
+    "setup:chatterbox": "bash scripts/setup-chatterbox.sh",
+    "dev": "next dev",
+    "dev:all": "concurrently -k -n next,python -c green,magenta \"npm run dev\" \"npm run ai-service\"",
+    "ai-service": "cd python && ./.venv/bin/python app.py",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "edge-tts-universal": "^1.4.0",
+    "kokoro-js": "^1.2.1",
+    "lucide-react": "1.60.0",
+    "next": "16.4.3",
+    "onnxruntime-node": "^1.30.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "sonner": "2.0.8",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.2.3",
+    "concurrently": "^10.0.5",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
   }
 }

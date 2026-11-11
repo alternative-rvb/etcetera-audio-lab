@@ -1,10 +1,14 @@
 node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
 dist/
-server/bin/
-server/voices/
-server/output/
+bin/
+voices/
+output/
 *.log
 .venv/
 venv/
 __pycache__/
 *.pyc
+.tmp/

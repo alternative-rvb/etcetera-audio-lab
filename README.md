@@ -1,6 +1,8 @@
-# TTS-test
+# Etcetera
 
-Banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT) pour le français, en vue d'une intégration dans une app NextJS et d'un déploiement sur VPS. Voir [AGENTS.md](AGENTS.md) pour le contexte et les décisions d'architecture.
+Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT) pour le français, en vue d'une intégration dans une app NextJS et d'un déploiement sur VPS. Voir [AGENTS.md](AGENTS.md) pour le contexte et les décisions d'architecture.
+
+L'interface compte trois pages: Synthèse (`/tts`), Transcription (`/stt`) et Logs (`/logs`), avec trois thèmes (clair, sombre, rétro Y2K).
 
 ## Solutions testées
 
@@ -18,8 +20,8 @@ Banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (S
 | Moteur | Type | Licence | Version utilisée | Dernière version | Particularités |
 | ------ | ---- | ------- | ---------------- | ---------------- | -------------- |
 | Faster-Whisper | Local, micro-service Python | MIT | 1.2.1 (modèle `base` par défaut) | ![PyPI](https://img.shields.io/pypi/v/faster-whisper?label=) | CUDA ou CPU, horodatage des mots |
-| Sherpa-ONNX | Local, CPU | Apache 2.0 | 1.13.8 (installée) | ![PyPI](https://img.shields.io/pypi/v/sherpa-onnx?label=) | Option modèle `tiny` sur CPU |
-| Web Speech API | Navigateur | Sans objet | Selon le navigateur | Sans objet | Transcription en direct, sans serveur |
+| Sherpa-ONNX | Local, CPU | Apache 2.0 | Provisoire | ![PyPI](https://img.shields.io/pypi/v/sherpa-onnx?label=) | Substitut Faster-Whisper `tiny` ou `base` sur CPU en attendant le vrai moteur |
+| Web Speech API | Navigateur | Sans objet | Selon le navigateur | Sans objet | Transcription en direct depuis le micro, sans serveur |
 
 ### Piste suivante
 
@@ -27,14 +29,13 @@ XTTS-v2 (licence Coqui CPML non commerciale à vérifier avant tout usage au-del
 
 ## Installation
 
+Installer les dépendances, le binaire Piper (dans `bin/`) et deux voix, française et anglaise (dans `voices/`):
+
 ```bash
-npm install
 npm run setup
 ```
 
-`npm run setup` télécharge le binaire Piper dans `server/bin/` et deux voix (français, anglais) dans `server/voices/`, puis installe les dépendances de `server/` et `web/`.
-
-Pour Chatterbox et Faster-Whisper (optionnel, environnement Python PyTorch) :
+Pour Chatterbox et Faster-Whisper (optionnel), créer l'environnement Python PyTorch dans `python/.venv`:
 
 ```bash
 npm run setup:chatterbox
@@ -42,29 +43,40 @@ npm run setup:chatterbox
 
 ## Lancement en développement
 
+Lancer l'app Next.js sur `http://localhost:3000`:
+
 ```bash
 npm run dev
 ```
 
-Lance le serveur (`http://localhost:3001`) et le frontend (`http://localhost:5173`) en parallèle depuis la racine. Le frontend proxifie les appels `/api` vers le serveur.
+Lancer l'app et le micro-service Python (port 5002) pour Chatterbox et Faster-Whisper:
 
 ```bash
 npm run dev:all
 ```
 
-Ajoute le micro-service Python (port 5002) pour Chatterbox et Faster-Whisper.
+Sans le service Python, Chatterbox, Faster-Whisper et Sherpa apparaissent comme indisponibles dans l'interface, avec la commande à lancer.
+
+## Suivre ce qui se passe
+
+La page Logs affiche en temps réel les événements de chaque provider (Node, Python et navigateur), filtrables par source, niveau, texte ou identifiant de requête, avec export JSON. Sur les pages Synthèse et Transcription, le panneau Activité suit la dernière requête en direct. Les logs sont aussi écrits dans `output/logs/app.jsonl`.
 
 ## Ajouter une voix Piper
 
 1. Trouver la voix voulue sur [huggingface.co/rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices).
-2. Télécharger le `.onnx` et le `.onnx.json` correspondants dans `server/voices/`.
-3. Redémarrer le serveur : la voix apparaît automatiquement dans le sélecteur.
+2. Télécharger le `.onnx` et le `.onnx.json` correspondants dans `voices/`.
+3. Recharger la page: la voix apparaît automatiquement dans le sélecteur.
 
 ## Build production
 
+Construire l'app:
+
 ```bash
-cd web && npm run build
-cd ../server && npm run build && npm start
+npm run build
 ```
 
-Le serveur sert alors le frontend buildé (`web/dist`) en plus de l'API.
+Démarrer le serveur de production:
+
+```bash
+npm start
+```

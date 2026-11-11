@@ -1,74 +1,106 @@
-# TTS-test
+# Etcetera
 
-Projet de test de moteurs de synthèse vocale (text-to-speech), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud) — pas avant feu vert explicite.
+Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
+
+Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Le dossier local et le dépôt GitHub gardent encore cet ancien nom.
 
 ## Portée actuelle
 
-Quatre moteurs implémentés et sélectionnables dans l'interface :
+### Synthèse vocale (TTS)
 
-- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0) : endpoint gratuit non-officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur déjà utilisé en production dans l'app NextJS de Nicolas (NowWeAct, `app/api/tts/speak/route.ts`).
-- **Piper** (rhasspy/piper) : moteur local, binaire natif via `child_process`, voix ONNX (Siwis, UPMC, etc.).
-- **Kokoro** (82M paramètres, licence Apache 2.0) : qualité studio supérieure à Piper, exécuté localement en Node.js via ONNX Runtime (`kokoro-js`). Supporte la voix française Siwis (`ff_siwis`) et des voix anglaises expressives.
-- **Chatterbox** (Resemble AI, licence MIT) : clonage vocal zéro-shot sous licence commerciale permissive libre, exécuté via un micro-service Python (FastAPI + PyTorch CUDA sur GPU RTX 3070), permettant d'ajuster l'exagération émotionnelle et de synthétiser à partir d'échantillons audios de référence.
+- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0): endpoint gratuit non officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur déjà utilisé en production dans NowWeAct (`app/api/tts/speak/route.ts`).
+- **Piper** (rhasspy/piper): moteur local, binaire natif lancé via `child_process`, voix ONNX (Siwis, UPMC, etc.).
+- **Kokoro** (82M paramètres, licence Apache 2.0): qualité supérieure à Piper, exécuté en Node.js via ONNX Runtime (`kokoro-js`). Voix française `ff_siwis` et voix anglaises expressives.
+- **Chatterbox** (Resemble AI, licence MIT): clonage vocal zéro-shot à partir d'échantillons de référence, avec réglage de l'exagération émotionnelle, exécuté par le micro-service Python (PyTorch, CUDA sur RTX 3070 ou CPU).
+
+### Reconnaissance vocale (STT)
+
+- **Faster-Whisper**: micro-service Python, CUDA ou CPU, horodatage des mots.
+- **Sherpa-ONNX**: implémentation provisoire qui délègue à Faster-Whisper `tiny` ou `base` sur CPU (backlog id 22).
+- **Web Speech API**: transcription en direct dans le navigateur, sans serveur, uniquement depuis le micro.
 
 ## Architecture
 
-- `server/` : API Node/TypeScript (Express).
-  - `src/index.ts` : serveur Express, middleware et montage des routes unifiées TTS & STT.
-  - `src/tts/` : domaine Text-to-Speech :
-    - `edgeTts.ts` : adaptateur Edge TTS (`edge-tts-universal`).
-    - `piper.ts` : adaptateur binaire natif Piper ONNX.
-    - `kokoro.ts` : adaptateur Kokoro-82M ONNX local via `kokoro-js`.
-    - `chatterbox.ts` : client HTTP vers le microservice Python Chatterbox GPU.
-    - `voices.ts` : scan et catalogue des voix Piper (`server/voices/`).
-    - `history.ts` : gestion des audios générés et historique TTS.
-  - `src/stt/` : domaine Speech-to-Text :
-    - `index.ts` : logique de transcription Whisper / Faster-Whisper.
-    - `history.ts` : gestion de l'historique et des métriques STT (RTF, score, favoris).
-- `server/python/` :
-  - `app.py` : micro-service unifié FastAPI exposant `/health`, `/references`, `/tts` et `/stt/transcribe`.
-  - `tts/` : domaine Text-to-Speech Python :
-    - `chatterbox.py` : génération vocale zéro-shot PyTorch CUDA / CPU (Chatterbox Multilingual).
-    - `references/` : échantillons audios de référence (`.wav`, `.mp3`) pour le clonage vocal.
-  - `stt/` : domaine Speech-to-Text Python :
-    - `whisper.py` : moteur de transcription Faster-Whisper avec horodatage mots et segmentation.
-  - `requirements.txt` : dépendances Python (`torch`, `torchaudio`, `chatterbox-tts`, `faster-whisper`, `fastapi`, `uvicorn`).
-- `web/` : frontend TypeScript + Vite.
-  - `src/main.ts` : point d'entrée principal, orchestration des modules et gestion du thème (Light, Dark, Rétro Y2K).
-  - `src/tts/index.ts` : module complet Text-to-Speech (4 moteurs, filtres, spectre audio, matrice décisionnelle, historique).
-  - `src/stt/index.ts` : module complet Speech-to-Text (micro, upload, Faster-Whisper, Web Speech, historique STT).
-  - `src/shared/icons.ts` : bibliothèque d'icônes SVG partagées.
-  - `src/style.css` : charte graphique rétro-numérique Y2K unifiée.
-- `scripts/setup-piper.sh` : télécharge le binaire Piper et les modèles de voix.
-- `scripts/setup-chatterbox.sh` : initialise le virtualenv Python et installe les dépendances Chatterbox.
+Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus un micro-service Python pour Chatterbox et Faster-Whisper.
 
-Le binaire (`server/bin/`) et les voix (`server/voices/`) sont téléchargés par le script, pas commités (voir `.gitignore`).
+- `src/app/`: pages et routes.
+  - `tts/`, `stt/`, `logs/`: les trois pages de l'interface (`/` redirige vers `/tts`).
+  - `api/`: routes API (`health`, `voices`, `tts`, `tts/history`, `stt/transcribe`, `stt/history`, `logs`, `logs/stream` en SSE).
+  - `audio/[...path]/route.ts`: sert les fichiers de `output/` avec support des requêtes Range.
+- `src/lib/server/`: code serveur uniquement (`server-only`).
+  - `core/`: socle commun (erreurs `AppError`, `api-handler`, logger, `request-context`, chemins, client et pont de logs du service Python, timeouts).
+  - `providers/tts/<provider>/` et `providers/stt/<provider>/`: un dossier par provider, fichiers nommés `<provider>-provider.ts` (plus catalogue de voix si besoin). Chaque domaine a son registre (`*-provider-registry.ts`), ses types et son service d'orchestration (`tts-synthesis-service.ts`, `stt-transcription-service.ts`).
+  - `history/`: dépôts d'historique TTS et STT (écriture JSON atomique).
+- `src/lib/shared/`: types et catalogue des providers partagés entre client et serveur.
+- `src/lib/client/`: client API typé (`api-client.ts`), logger navigateur, utilitaires.
+- `src/features/tts/`, `src/features/stt/`, `src/features/logs/`: composants propres à chaque page. Les réglages par provider sont dans `settings/<provider>-settings-panel.tsx`.
+- `src/components/`: `layout/` (en-tête, thème, état de santé), `shared/` (panneau Activité, matrice décisionnelle, historique filtrable, sélecteur et fiches des providers, ligne de log), `ui/` (briques génériques).
+- `src/hooks/`: hooks transverses (spectre audio, flux de logs, historique, état persistant).
+- `python/`: micro-service FastAPI (`app.py`) exposant `/health`, `/references`, `/tts`, `/stt/transcribe` et `/logs`.
+  - `tts/chatterbox.py` et `tts/references/` (échantillons pour le clonage vocal).
+  - `stt/whisper.py`: transcription Faster-Whisper.
+  - `log_buffer.py`: tampon de logs interrogé par Next.
+- `scripts/setup-piper.sh`: télécharge le binaire Piper dans `bin/` et les voix dans `voices/`.
+- `scripts/setup-chatterbox.sh`: crée le virtualenv `python/.venv` et installe les dépendances.
+
+`bin/`, `voices/` et `output/` (audios générés, historiques, logs) ne sont pas commités (voir `.gitignore`).
+
+## Erreurs et logs
+
+- Toute route passe par `withApiHandler`, qui renvoie une enveloppe `{ error: { code, message, hint, provider, requestId } }` avec le statut HTTP adapté. Une erreur inconnue devient `INTERNAL`, sans stack côté client.
+- Le client génère un identifiant `req_xxx` envoyé dans l'en-tête `X-Request-Id`, ce qui permet au panneau Activité de suivre une requête en direct.
+- Le logger garde un tampon circulaire en mémoire, écrit dans `output/logs/app.jsonl` et diffuse en SSE sur `/api/logs/stream`. Les logs Python sont récupérés en interrogeant `/logs` du service tant qu'un client SSE est connecté. Les erreurs navigateur (micro, Web Speech, rendu) arrivent par `POST /api/logs`.
 
 ## Décisions notables
 
-- Piper est choisi en binaire natif + `child_process`, pas en WASM navigateur, pour rester représentatif d'un usage serveur portable sur le VPS.
-- Binaire Piper pris sur le repo archivé MIT plutôt que le fork actif GPL-3.0, pour éviter toute contrainte de redistribution si le projet est distribué publiquement.
-- CPU uniquement, pas de GPU (Piper est déjà rapide en CPU).
-- Edge TTS repris à l'identique de l'implémentation existante dans NowWeAct plutôt que réinventé : même lib (`edge-tts-universal`), mêmes voix Neural (Denise/Henri en français, Aria/Guy en anglais). Attention : licence AGPL-3.0 de la lib (plus contraignante que la GPL de Piper si le service est exposé en réseau/SaaS — à garder en tête si ce module part vers un vrai déploiement).
+- Piper en binaire natif avec `child_process`, pas en WASM navigateur, pour rester représentatif d'un usage serveur portable sur le VPS.
+- Binaire Piper pris sur le repo archivé MIT plutôt que sur le fork actif GPL-3.0, pour éviter toute contrainte de redistribution si le projet est distribué publiquement.
+- Edge TTS repris à l'identique de NowWeAct: même lib, mêmes voix Neural (Denise et Henri en français, Aria et Guy en anglais). La licence AGPL-3.0 de la lib est plus contraignante que la GPL si le service est exposé en réseau, à garder en tête avant tout vrai déploiement.
+- `onnxruntime-node`, `kokoro-js` et `edge-tts-universal` sont déclarés dans `serverExternalPackages` (`next.config.ts`) pour ne jamais être bundlés.
 
 ## Démarrage
 
-Tout se pilote depuis la racine (`package.json` racine + `concurrently`) :
+Installer les dépendances, le binaire Piper et les voix:
 
 ```bash
-npm install
-npm run setup            # télécharge le binaire piper + voix fr/en, installe server/ et web/
-npm run setup:chatterbox # (optionnel) installe l'environnement Python PyTorch pour Chatterbox
-npm run dev              # lance API (3001) et frontend (5173) en parallèle
-npm run dev:all          # lance tout en 1 commande : API (3001), frontend (5173) et Chatterbox (5002)
+npm run setup
+```
+
+Installer l'environnement Python pour Chatterbox et Faster-Whisper (optionnel):
+
+```bash
+npm run setup:chatterbox
+```
+
+Lancer l'app seule sur `http://localhost:3000`:
+
+```bash
+npm run dev
+```
+
+Lancer l'app et le micro-service Python (port 5002):
+
+```bash
+npm run dev:all
 ```
 
 ## Suite envisagée
 
-- XTTS-v2 : via un mini-service Python séparé, un Space HuggingFace stable, ou un budget HF validé. Licence Coqui CPML non-commerciale par défaut à vérifier avant tout usage au-delà du test.
+- XTTS-v2: via un mini-service Python séparé, un Space HuggingFace stable, ou un budget HF validé. Licence Coqui CPML non commerciale par défaut, à vérifier avant tout usage au-delà du test.
+- Vrai moteur Sherpa-ONNX côté Python (backlog id 22).
 - Déploiement sur le VPS OVH (skill `vps-deploy`).
 - Intégration dans l'app existante une fois la voix validée.
 
 ## Suivi du backlog
 
-Backlog CSV : `.doc/backlog.csv` (actif) et `.doc/archives/backlog-archive-AAAA-MM-JJ.csv` (terminées). Workflow commun décrit dans le skill `backlog-csv-workflow`. Le commit inclut le mouvement de backlog, au format `[id] Résumé court`.
+Backlog CSV: `.doc/backlog.csv` (actif) et `.doc/archives/backlog-archive-AAAA-MM-JJ.csv` (terminées). Workflow commun décrit dans le skill `backlog-csv-workflow`. Le commit inclut le mouvement de backlog, au format `[id] Résumé court`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

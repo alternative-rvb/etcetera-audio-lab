@@ -1,0 +1,24 @@
+import "server-only";
+import { join } from "node:path";
+
+// SECTION: Chemins du projet, résolus depuis la racine (process.cwd() = dossier où tourne `next`).
+
+const PROJECT_ROOT = process.cwd();
+
+export const PROJECT_PATHS = {
+  root: PROJECT_ROOT,
+  binDir: join(PROJECT_ROOT, "bin"),
+  piperVoicesDir: join(PROJECT_ROOT, "voices"),
+  outputDir: join(PROJECT_ROOT, "output"),
+  ttsAudioDir: join(PROJECT_ROOT, "output"),
+  sttAudioDir: join(PROJECT_ROOT, "output", "stt"),
+  ttsHistoryFile: join(PROJECT_ROOT, "output", "history.json"),
+  sttHistoryFile: join(PROJECT_ROOT, "output", "stt_history.json"),
+  logsDir: join(PROJECT_ROOT, "output", "logs"),
+} as const;
+
+export const PYTHON_SERVICE_URL =
+  process.env.AI_SERVICE_URL || process.env.CHATTERBOX_URL || "http://127.0.0.1:5002";
+
+export const PYTHON_SERVICE_START_HINT =
+  "Démarrez le service Python avec `npm run ai-service` (ou `npm run dev:all`).";
