@@ -89,6 +89,16 @@ export const STT_PROVIDER_CATALOG: Record<SttProviderId, ProviderSpec> = {
     requirements: ["Hors ligne, CPU, ~1 Go de RAM", "Modèle dans models/sherpa/ et ffmpeg"],
     license: "Apache 2.0 (sherpa-onnx), CC-BY 4.0 (Parakeet)",
   },
+  groq: {
+    label: "Groq Whisper",
+    runtime: "cloud",
+    tagline: "API cloud Groq",
+    description:
+      "Whisper large-v3 (ou turbo) exécuté sur les puces LPU de Groq : très rapide, sans GPU local, horodatage mot à mot. L'audio est envoyé à Groq.",
+    stack: "API compatible OpenAI (fetch), verbose_json",
+    requirements: ["Connexion Internet, clé GROQ_API_KEY dans .env.local", "Gratuit : 2 000 requêtes et 8 h d'audio par jour, 25 Mo par fichier"],
+    license: "MIT (modèle), service payant à l'usage (0,04 $/h en turbo)",
+  },
 };
 
 export const DEFAULT_TTS_SETTINGS: TtsSettingsByProvider = {
@@ -106,6 +116,7 @@ export const LOG_SOURCE_LABELS: Record<LogSource, string> = {
   "web-speech": "Web Speech",
   whisper: "Whisper",
   sherpa: "Sherpa",
+  groq: "Groq",
   api: "API",
   "python-service": "Service Python",
   system: "Système",

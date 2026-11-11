@@ -4,7 +4,7 @@
 export const TTS_PROVIDER_IDS = ["edge-tts", "piper", "kokoro", "chatterbox"] as const;
 export type TtsProviderId = (typeof TTS_PROVIDER_IDS)[number];
 
-export const STT_PROVIDER_IDS = ["web-speech", "whisper", "sherpa"] as const;
+export const STT_PROVIDER_IDS = ["web-speech", "whisper", "sherpa", "groq"] as const;
 export type SttProviderId = (typeof STT_PROVIDER_IDS)[number];
 
 export const LOG_SOURCES = [
@@ -179,7 +179,8 @@ export interface SttWord {
   word: string;
   start: number;
   end: number;
-  probability: number;
+  /** Absente quand le moteur ne la fournit pas (Groq). */
+  probability?: number;
 }
 
 export interface SttSegment {
@@ -193,6 +194,9 @@ export interface SttSegment {
 }
 
 export type WhisperModelSize = "tiny" | "base" | "small" | "medium";
+
+export const GROQ_WHISPER_MODELS = ["whisper-large-v3-turbo", "whisper-large-v3"] as const;
+export type GroqWhisperModel = (typeof GROQ_WHISPER_MODELS)[number];
 
 export interface SttTranscriptionResult extends RuntimeTrace {
   text: string;

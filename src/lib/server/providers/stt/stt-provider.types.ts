@@ -1,7 +1,7 @@
 import "server-only";
-import type { ProviderHealth, SttProviderId, SttTranscriptionResult, WhisperModelSize } from "@/lib/shared/types";
+import type { GroqWhisperModel, ProviderHealth, SttProviderId, SttTranscriptionResult, WhisperModelSize } from "@/lib/shared/types";
 
-// SECTION: Contrat commun des providers STT exécutés côté serveur (whisper, sherpa).
+// SECTION: Contrat commun des providers STT exécutés côté serveur (whisper, sherpa, groq).
 // Web Speech tourne dans le navigateur : le serveur ne fait qu'enregistrer son résultat.
 
 export interface SttTranscriptionInput {
@@ -12,6 +12,7 @@ export interface SttTranscriptionInput {
   modelSize: WhisperModelSize;
   device: "cpu" | "cuda";
   wordTimestamps: boolean;
+  groqModel: GroqWhisperModel;
   signal?: AbortSignal;
 }
 

@@ -1,4 +1,4 @@
-import type { SttProviderId, WhisperModelSize } from "@/lib/shared/types";
+import type { GroqWhisperModel, SttProviderId, WhisperModelSize } from "@/lib/shared/types";
 
 // SECTION: Réglages STT par provider (côté navigateur, envoyés dans le formulaire de transcription).
 
@@ -15,6 +15,12 @@ export interface WhisperSettings {
 /** Parakeet v3 détecte la langue seul et n'a qu'un modèle : aucun réglage côté interface. */
 export type SherpaSettings = Record<string, never>;
 
+export interface GroqSettings {
+  model: GroqWhisperModel;
+  language: WhisperLanguage;
+  wordTimestamps: boolean;
+}
+
 export interface WebSpeechSettings {
   language: WebSpeechLanguage;
 }
@@ -22,12 +28,14 @@ export interface WebSpeechSettings {
 export interface SttSettingsByProvider {
   whisper: WhisperSettings;
   sherpa: SherpaSettings;
+  groq: GroqSettings;
   "web-speech": WebSpeechSettings;
 }
 
 export const DEFAULT_STT_SETTINGS: SttSettingsByProvider = {
   whisper: { modelSize: "base", device: "cpu", language: "fr", wordTimestamps: true },
   sherpa: {},
+  groq: { model: "whisper-large-v3-turbo", language: "fr", wordTimestamps: true },
   "web-speech": { language: "fr-FR" },
 };
 
@@ -47,6 +55,10 @@ export function buildSttFormFields(provider: SttProviderId, settings: SttSetting
     case "sherpa":
       // NOTE: modelSize et language ne servent qu'au secours Whisper tiny du service Python.
       return { provider, modelSize: "tiny", device: "cpu", language: "auto", wordTimestamps: "false" };
+    case "groq": {
+      const s = settings.groq;
+      return { provider, groqModel: s.model, language: s.language, wordTimestamps: String(s.wordTimestamps) };
+    }
     case "web-speech":
       return { provider, language: settings["web-speech"].language.slice(0, 2) };
   }

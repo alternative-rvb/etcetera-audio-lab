@@ -15,13 +15,14 @@ async function safeCheck(check: () => Promise<ProviderHealth>): Promise<Provider
 }
 
 export async function buildHealthReport(): Promise<HealthReport> {
-  const [edge, piper, kokoro, chatterbox, whisper, sherpa, pythonService] = await Promise.all([
+  const [edge, piper, kokoro, chatterbox, whisper, sherpa, groq, pythonService] = await Promise.all([
     safeCheck(() => TTS_PROVIDERS["edge-tts"].checkHealth()),
     safeCheck(() => TTS_PROVIDERS.piper.checkHealth()),
     safeCheck(() => TTS_PROVIDERS.kokoro.checkHealth()),
     safeCheck(() => TTS_PROVIDERS.chatterbox.checkHealth()),
     safeCheck(() => SERVER_STT_PROVIDERS.whisper.checkHealth()),
     safeCheck(() => SERVER_STT_PROVIDERS.sherpa.checkHealth()),
+    safeCheck(() => SERVER_STT_PROVIDERS.groq.checkHealth()),
     fetchPythonServiceHealth(),
   ]);
   return {
@@ -31,6 +32,7 @@ export async function buildHealthReport(): Promise<HealthReport> {
       "web-speech": { status: "ok", reason: "Dépend du navigateur (Chrome ou Edge)." },
       whisper,
       sherpa,
+      groq,
     },
     pythonService,
   };

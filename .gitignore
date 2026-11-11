@@ -16,3 +16,7 @@ __pycache__/
 
 # NOTE: modèles sherpa-onnx téléchargés par scripts/setup-sherpa.sh
 models/
+
+# NOTE: secrets locaux (GROQ_API_KEY, etc.)
+.env*
+!.env.example

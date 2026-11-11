@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { STT_PROVIDER_IDS, type SttHistoryEntry, type SttProviderId } from "@/lib/shared/types";
+import { GROQ_WHISPER_MODELS, STT_PROVIDER_IDS, type SttHistoryEntry, type SttProviderId } from "@/lib/shared/types";
 import { AppError, toAppError } from "@/lib/server/core/errors";
 import { createLogger } from "@/lib/server/core/logger";
 import { saveSttTranscription } from "@/lib/server/history/stt-history-repository";
@@ -16,6 +16,7 @@ const formFieldsSchema = z.object({
   modelSize: z.enum(["tiny", "base", "small", "medium"]).default("base"),
   device: z.enum(["cpu", "cuda"]).default("cpu"),
   wordTimestamps: z.enum(["true", "false"]).default("true").transform((v) => v === "true"),
+  groqModel: z.enum(GROQ_WHISPER_MODELS).default("whisper-large-v3-turbo"),
   // NOTE: champs propres à Web Speech (transcription faite dans le navigateur).
   browserTranscript: z.string().max(20_000).optional(),
   browserDurationSec: z.coerce.number().min(0).optional(),
@@ -77,7 +78,7 @@ export async function runSttTranscription(request: Request): Promise<SttHistoryE
     return entry;
   }
 
-  // SECTION: Providers serveur (Whisper, Sherpa)
+  // SECTION: Providers serveur (Whisper, Sherpa, Groq)
   if (!audio || !audioFile) {
     throw new AppError("VALIDATION", "Fichier audio manquant.", { provider: providerId });
   }
@@ -96,6 +97,7 @@ export async function runSttTranscription(request: Request): Promise<SttHistoryE
       modelSize: fields.modelSize,
       device: fields.device,
       wordTimestamps: fields.wordTimestamps,
+      groqModel: fields.groqModel,
       signal: request.signal,
     });
     const entry = saveSttTranscription(audio, { provider: providerId, originalFilename: audioFile.name, result });

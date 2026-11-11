@@ -21,7 +21,7 @@ type SourceTab = "all" | LogSource;
 
 const SOURCE_GROUPS: Array<{ label: string; sources: LogSource[] }> = [
   { label: "Synthèse", sources: ["edge-tts", "piper", "kokoro", "chatterbox"] },
-  { label: "Transcription", sources: ["web-speech", "whisper", "sherpa"] },
+  { label: "Transcription", sources: ["web-speech", "whisper", "sherpa", "groq"] },
   { label: "Plateforme", sources: ["api", "python-service", "system", "browser"] },
 ];
 

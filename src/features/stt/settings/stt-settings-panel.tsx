@@ -2,6 +2,7 @@
 
 import type { ProviderHealth, SttProviderId } from "@/lib/shared/types";
 import type { SttSettingsByProvider } from "../stt-settings";
+import { GroqSettingsPanel } from "./groq-settings-panel";
 import { SherpaSettingsPanel } from "./sherpa-settings-panel";
 import { WebSpeechSettingsPanel } from "./web-speech-settings-panel";
 import { WhisperSettingsPanel } from "./whisper-settings-panel";
@@ -25,6 +26,8 @@ export function SttSettingsPanel({
       return <WhisperSettingsPanel settings={settings.whisper} onChange={(value) => onChange("whisper", value)} pythonServiceHealth={pythonServiceHealth} />;
     case "sherpa":
       return <SherpaSettingsPanel />;
+    case "groq":
+      return <GroqSettingsPanel settings={settings.groq} onChange={(value) => onChange("groq", value)} />;
     case "web-speech":
       return <WebSpeechSettingsPanel settings={settings["web-speech"]} onChange={(value) => onChange("web-speech", value)} supported={webSpeechSupported} />;
   }

@@ -126,8 +126,12 @@ export function SttTranscriptView({
                             ? segment.words.map((word, i) => (
                                 <span
                                   key={i}
-                                  title={`${formatTimestamp(word.start)}, confiance ${(word.probability * 100).toFixed(0)} %`}
-                                  className={cn(word.probability < 0.5 && "text-warning underline decoration-dotted")}
+                                  title={
+                                    word.probability === undefined
+                                      ? formatTimestamp(word.start)
+                                      : `${formatTimestamp(word.start)}, confiance ${(word.probability * 100).toFixed(0)} %`
+                                  }
+                                  className={cn(word.probability !== undefined && word.probability < 0.5 && "text-warning underline decoration-dotted")}
                                 >
                                   {word.word}
                                 </span>
