@@ -327,7 +327,7 @@ export function SttWorkbench() {
 
   return (
     <div style={providerStyle(safeProvider)} className="space-y-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-1">
           <div className="order-1 min-w-0 lg:order-none">
             <Panel
@@ -397,7 +397,7 @@ export function SttWorkbench() {
               </div>
             </Panel>
           </div>
-          <div className="order-4 min-w-0 lg:order-none">
+          <div className="order-4 min-w-0 lg:order-none lg:flex lg:flex-1 lg:flex-col lg:[&>section]:flex-1">
           <SttInsightsPanel
             items={history.items}
             onSelect={(id) => {
@@ -422,7 +422,7 @@ export function SttWorkbench() {
               onAnalyze={(id) => void analyzeEntry(id)}
             />
           </div>
-          <div className="order-5 min-w-0 lg:order-none">
+          <div className="order-5 min-w-0 lg:order-none lg:flex lg:flex-1 lg:flex-col lg:[&>section]:flex-1">
           <SttHistoryList
             items={history.items}
             loading={history.loading}

@@ -42,7 +42,7 @@ export function CollapsiblePanel({
   }, [forceOpen, setOpen]);
 
   return (
-    <section className={cn("panel rounded-2xl border border-line bg-surface", className)}>
+    <section className={cn("panel rounded-2xl border border-line bg-surface", open ? "flex min-h-44 flex-col" : "lg:flex-none!", className)}>
       <header className={cn("flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2.5 sm:px-4", open && "border-b border-line")}>
         <button
           type="button"
@@ -58,7 +58,7 @@ export function CollapsiblePanel({
         </button>
         {actions && open && <div className="flex flex-wrap items-center gap-1">{actions}</div>}
       </header>
-      <div id={bodyId} hidden={!open} className={cn("p-3 sm:p-4", bodyClassName)}>
+      <div id={bodyId} hidden={!open} className={cn("flex-1 p-3 sm:p-4", bodyClassName)}>
         {children}
       </div>
     </section>

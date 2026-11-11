@@ -232,10 +232,10 @@ export function EchoWorkbench() {
 
   return (
     <div className="space-y-4">
-      {/* ANCHOR: même mise en page que la page Synthèse : réglages puis Comparatif à gauche, mesure en cours puis liste à droite ; sur mobile, réglages, mesure, Comparatif, liste. */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      {/* ANCHOR: réglages à gauche, mesure en cours puis liste à droite, Comparatif en pleine largeur dessous ; sur mobile, réglages, mesure, Comparatif, liste. */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1.25fr_1fr] lg:items-stretch">
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-[1.25]">
-          <div className="order-1 min-w-0 lg:order-none">
+          <div className="order-1 min-w-0 lg:order-none lg:flex lg:flex-1 lg:flex-col lg:[&>section]:flex-1">
           <Panel
             title="Écho"
             meta={aiMode ? "Parlez, l'IA vous répond" : "Parlez, la voix répète"}
@@ -416,16 +416,6 @@ export function EchoWorkbench() {
             </div>
           </Panel>
           </div>
-          <div className="order-3 min-w-0 lg:order-none">
-            <EchoInsightsPanel
-              rounds={rounds}
-              current={{ sttProvider: safeStt, ttsProvider: safeTts, mode: settings.responseMode }}
-              onSelect={(id) => {
-                const round = rounds.find((item) => item.id === id);
-                if (round) replay(round.audioUrl);
-              }}
-            />
-          </div>
         </div>
 
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4 lg:flex-1">
@@ -502,12 +492,23 @@ export function EchoWorkbench() {
             )}
           </Panel>
           </div>
-          <div className="order-4 min-w-0 lg:order-none">
+          <div className="order-4 min-w-0 lg:order-none lg:flex lg:flex-1 lg:flex-col lg:[&>section]:flex-1">
             <EchoRoundsPanel rounds={rounds} onClear={() => {
                 setRounds([]);
                 startNewConversation();
               }} onScore={setScore} onReplay={replay} />
           </div>
+        </div>
+
+        <div className="order-3 min-w-0 lg:order-none lg:col-span-2">
+          <EchoInsightsPanel
+            rounds={rounds}
+            current={{ sttProvider: safeStt, ttsProvider: safeTts, mode: settings.responseMode }}
+            onSelect={(id) => {
+              const round = rounds.find((item) => item.id === id);
+              if (round) replay(round.audioUrl);
+            }}
+          />
         </div>
       </div>
 

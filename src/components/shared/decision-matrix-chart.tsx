@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LogSource } from "@/lib/shared/types";
+import { Icon } from "@/components/ui/icon";
 import { LOG_SOURCE_LABELS, providerColorVar } from "@/lib/shared/provider-catalog";
 
 // SECTION: Matrice de décision commune TTS/STT : note (axe Y) en fonction de la vitesse (axe X).
@@ -341,25 +342,56 @@ export function DecisionMatrixChart({
         )}
       </div>
 
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        {providersShown.map((provider) => (
-          <li key={provider} className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full" style={{ background: providerColorVar(provider) }} />
-            {LOG_SOURCE_LABELS[provider]}
-          </li>
-        ))}
-        {(unrated > 0 || untimed > 0) && (
-          <li className="text-warning">
-            Non placés : {[unrated > 0 && `${unrated} sans note`, untimed > 0 && `${untimed} sans temps mesuré`].filter(Boolean).join(", ")}
-          </li>
+      {/* ANCHOR: légende en deux colonnes alignées (moteurs en grille, lecture du graphique en liste) ; sur mobile, une colonne. Les repères graphiques ont une largeur fixe pour que tous les textes partent du même bord. */}
+      <div className="mt-3 grid gap-x-8 gap-y-3 text-xs text-muted sm:grid-cols-2">
+        {providersShown.length > 0 && (
+          <section aria-label="Moteurs" className="min-w-0">
+            <h5 className="mb-1.5 font-medium text-ink">Moteurs</h5>
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-1.5">
+              {providersShown.map((provider) => (
+                <li key={provider} className="flex items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: providerColorVar(provider) }} />
+                  <span className="truncate">{LOG_SOURCE_LABELS[provider]}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
-        {rated.some((p) => p.source === "ai") && <li>Anneau : note IA, plein : note manuelle</li>}
-        <li className="flex items-center gap-1.5">
-          <span className="h-2.5 w-8 rounded-sm" style={{ background: "linear-gradient(to right, color-mix(in srgb, var(--success) 45%, transparent), transparent)" }} />
-          Plus c'est vert, meilleur
-        </li>
-        {onSelect && <li className="ml-auto">Un point par moteur, moyenne de ses essais. Clic : réécouter le dernier.</li>}
-      </ul>
+        <section aria-label="Lecture du graphique" className="min-w-0">
+          <h5 className="mb-1.5 font-medium text-ink">Lecture</h5>
+          <ul className="space-y-1.5">
+            <li className="flex items-center gap-2">
+              <span className="flex w-8 shrink-0 justify-center">
+                <span className="h-2.5 w-8 rounded-sm" style={{ background: "linear-gradient(to right, color-mix(in srgb, var(--success) 45%, transparent), transparent)" }} />
+              </span>
+              Plus c&apos;est vert, meilleur
+            </li>
+            {rated.some((p) => p.source === "ai") && (
+              <li className="flex items-center gap-2">
+                <span className="flex w-8 shrink-0 items-center justify-center gap-1">
+                  <span className="size-2.5 rounded-full border-2 border-muted bg-surface" />
+                  <span className="size-2.5 rounded-full bg-muted" />
+                </span>
+                Anneau : note IA, plein : note manuelle
+              </li>
+            )}
+            <li className="flex items-center gap-2">
+              <span className="flex w-8 shrink-0 justify-center">
+                <span className="size-2.5 rounded-full bg-muted" />
+              </span>
+              <span className="min-w-0">Un point par moteur, moyenne de ses essais{onSelect ? ". Clic : réécouter le dernier" : ""}</span>
+            </li>
+            {(unrated > 0 || untimed > 0) && (
+              <li className="flex items-center gap-2 text-warning">
+                <span className="flex w-8 shrink-0 justify-center">
+                  <Icon name="warning" size={14} />
+                </span>
+                Non placés : {[unrated > 0 && `${unrated} sans note`, untimed > 0 && `${untimed} sans temps mesuré`].filter(Boolean).join(", ")}
+              </li>
+            )}
+          </ul>
+        </section>
+      </div>
     </div>
   );
 }

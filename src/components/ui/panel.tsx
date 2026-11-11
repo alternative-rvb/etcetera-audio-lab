@@ -22,7 +22,7 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn("panel rounded-2xl border border-line bg-surface", className)}>
+    <section id={id} className={cn("panel flex min-h-44 flex-col rounded-2xl border border-line bg-surface", className)}>
       {(title || actions) && (
         <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-line px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 items-baseline gap-2">
@@ -32,7 +32,7 @@ export function Panel({
           {actions && <div className="flex flex-wrap items-center gap-1">{actions}</div>}
         </header>
       )}
-      <div className={cn("p-3 sm:p-4", bodyClassName)}>{children}</div>
+      <div className={cn("flex-1 p-3 sm:p-4", bodyClassName)}>{children}</div>
     </section>
   );
 }

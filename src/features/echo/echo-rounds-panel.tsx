@@ -38,7 +38,7 @@ export function EchoRoundsPanel({
       {rounds.length === 0 ? (
         <p className="text-sm text-muted">Aucune mesure pour l&apos;instant. Lancez une mesure et dites une phrase: les temps de chaque étape s&apos;afficheront ici.</p>
       ) : (
-        <ol aria-label="Mesures effectuées" className="divide-y divide-line">
+        <ol aria-label="Mesures effectuées" className="max-h-[28rem] divide-y divide-line overflow-y-auto pr-1">
           {rounds.map((round, index) => (
             <li key={round.id} className="flex items-start gap-3 py-2.5">
               <IconButton label="Réécouter la réponse" onClick={() => onReplay(round.audioUrl)}>
