@@ -12,10 +12,8 @@ export interface WhisperSettings {
   wordTimestamps: boolean;
 }
 
-export interface SherpaSettings {
-  modelSize: Extract<WhisperModelSize, "tiny" | "base">;
-  language: WhisperLanguage;
-}
+/** Parakeet v3 détecte la langue seul et n'a qu'un modèle : aucun réglage côté interface. */
+export type SherpaSettings = Record<string, never>;
 
 export interface WebSpeechSettings {
   language: WebSpeechLanguage;
@@ -29,7 +27,7 @@ export interface SttSettingsByProvider {
 
 export const DEFAULT_STT_SETTINGS: SttSettingsByProvider = {
   whisper: { modelSize: "base", device: "cpu", language: "fr", wordTimestamps: true },
-  sherpa: { modelSize: "tiny", language: "fr" },
+  sherpa: {},
   "web-speech": { language: "fr-FR" },
 };
 
@@ -46,10 +44,9 @@ export function buildSttFormFields(provider: SttProviderId, settings: SttSetting
       const s = settings.whisper;
       return { provider, modelSize: s.modelSize, device: s.device, language: s.language, wordTimestamps: String(s.wordTimestamps) };
     }
-    case "sherpa": {
-      const s = settings.sherpa;
-      return { provider, modelSize: s.modelSize, device: "cpu", language: s.language, wordTimestamps: "false" };
-    }
+    case "sherpa":
+      // NOTE: modelSize et language ne servent qu'au secours Whisper tiny du service Python.
+      return { provider, modelSize: "tiny", device: "cpu", language: "auto", wordTimestamps: "false" };
     case "web-speech":
       return { provider, language: settings["web-speech"].language.slice(0, 2) };
   }

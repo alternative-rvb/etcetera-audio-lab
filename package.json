@@ -4,11 +4,13 @@
   "private": true,
   "description": "Etcetera Audio Lab : banc d'essai de moteurs TTS et STT",
   "scripts": {
-    "setup": "bash scripts/setup-piper.sh && npm install",
+    "setup": "bash scripts/setup-piper.sh && npm install && bash scripts/setup-sherpa.sh",
+    "setup:sherpa": "bash scripts/setup-sherpa.sh",
     "setup:chatterbox": "bash scripts/setup-chatterbox.sh",
-    "dev": "next dev",
-    "dev:all": "concurrently -k -n next,python -c green,magenta \"npm run dev\" \"npm run ai-service\"",
-    "ai-service": "cd python && ./.venv/bin/python app.py",
+    "dev": "concurrently -n next,python -c green,magenta \"npm run dev:next\" \"npm run ai-service\"",
+    "dev:next": "next dev",
+    "dev:all": "npm run dev",
+    "ai-service": "bash scripts/ai-service.sh",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"
@@ -23,6 +25,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
+    "sherpa-onnx-node": "2.0.1",
     "sonner": "2.0.8",
     "zod": "4.6.7"
   },

@@ -74,6 +74,17 @@ export interface ApiErrorBody {
 
 export type ProviderHealthStatus = "ok" | "degraded" | "down";
 
+// SECTION: Exécution d'un moteur
+
+/** Où le moteur a réellement tourné : dans Node (sherpa-onnx), dans le service Python ou via le binaire Piper. */
+export type EngineRuntime = "node" | "python" | "binary";
+
+export interface RuntimeTrace {
+  runtime?: EngineRuntime;
+  /** Vrai quand l'exécution principale (Node) a échoué et que le secours a pris le relais. */
+  fallback?: boolean;
+}
+
 export interface ProviderHealth {
   status: ProviderHealthStatus;
   reason?: string;
@@ -142,7 +153,7 @@ export type TtsSynthesisRequest = {
 
 export type AudioFormat = "wav" | "mp3";
 
-export interface TtsHistoryEntry {
+export interface TtsHistoryEntry extends RuntimeTrace {
   id: string;
   createdAt: string;
   text: string;
@@ -183,7 +194,7 @@ export interface SttSegment {
 
 export type WhisperModelSize = "tiny" | "base" | "small" | "medium";
 
-export interface SttTranscriptionResult {
+export interface SttTranscriptionResult extends RuntimeTrace {
   text: string;
   language: string;
   languageProbability?: number;

@@ -134,23 +134,42 @@ export function SettingChoice<T extends string>({
   );
 }
 
-export function SettingSwitch({ label, checked, onChange, hint }: { label: string; checked: boolean; onChange: (checked: boolean) => void; hint?: string }) {
+export function SettingSwitch({
+  label,
+  checked,
+  onChange,
+  hint,
+  disabledReason,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  hint?: string;
+  /** Interrupteur grisé et forcé à « non », avec la raison affichée en aide. */
+  disabledReason?: string;
+}) {
   const id = useId();
+  const disabled = Boolean(disabledReason);
+  const on = checked && !disabled;
   return (
-    <div className="flex items-center gap-1.5 text-sm text-ink">
-      <label htmlFor={id} className="cursor-pointer">
+    <div className={cn("flex items-center gap-1.5 text-sm text-ink", disabled && "text-muted")}>
+      <label htmlFor={id} className={disabled ? "cursor-not-allowed" : "cursor-pointer"}>
         {label}
       </label>
-      {hint && <SettingHelp text={hint} />}
+      {(disabledReason ?? hint) && <SettingHelp text={disabledReason ?? hint ?? ""} />}
       <button
         id={id}
         type="button"
         role="switch"
-        aria-checked={checked}
+        aria-checked={on}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cn("relative ml-auto h-5 w-9 shrink-0 rounded-full transition sm:ml-2", checked ? "bg-[var(--provider,var(--accent))]" : "bg-line-strong")}
+        className={cn(
+          "relative ml-auto h-5 w-9 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 sm:ml-2",
+          on ? "bg-[var(--provider,var(--accent))]" : "bg-line-strong"
+        )}
       >
-        <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", checked ? "left-[18px]" : "left-0.5")} />
+        <span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", on ? "left-[18px]" : "left-0.5")} />
       </button>
     </div>
   );

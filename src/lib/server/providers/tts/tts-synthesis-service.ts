@@ -67,11 +67,13 @@ export async function runTtsSynthesis(
     format: output.format,
     generationTimeMs,
     settings: { ...settings },
+    runtime: output.runtime,
+    fallback: output.fallback,
   });
 
   providerLogger.info("synthesis.done", `Audio ${output.format.toUpperCase()} généré (${(output.audio.length / 1024).toFixed(1)} Ko).`, {
     durationMs: generationTimeMs,
-    meta: { fileName: entry.fileName, sizeBytes: output.audio.length, ...output.diagnostics },
+    meta: { fileName: entry.fileName, sizeBytes: output.audio.length, runtime: output.runtime, fallback: output.fallback, ...output.diagnostics },
   });
   return { entry, audio: output.audio };
 }

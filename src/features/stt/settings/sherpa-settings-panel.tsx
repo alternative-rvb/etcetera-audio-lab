@@ -1,25 +1,12 @@
 "use client";
 
-import { SettingChoice } from "@/components/ui/form-controls";
-import { WHISPER_LANGUAGE_OPTIONS, type SherpaSettings } from "../stt-settings";
+// SECTION: Réglages Sherpa-ONNX : un seul modèle (Parakeet TDT 0.6B v3) qui détecte la langue seul, donc rien à régler.
 
-// SECTION: Réglages Sherpa-ONNX.
-// FIXME: Sherpa est encore un substitut (Whisper tiny/base sur CPU), voir le ticket 22 du backlog.
-
-export function SherpaSettingsPanel({ settings, onChange }: { settings: SherpaSettings; onChange: (settings: SherpaSettings) => void }) {
+export function SherpaSettingsPanel() {
   return (
-    <div className="space-y-2.5">
-      <p className="text-xs text-warning">Provisoire : en attendant l'intégration de sherpa-onnx, ce moteur exécute Whisper sur CPU.</p>
-      <SettingChoice
-        label="Modèle"
-        value={settings.modelSize}
-        options={[
-          { value: "tiny", label: "Tiny", detail: "39M" },
-          { value: "base", label: "Base", detail: "74M" },
-        ]}
-        onChange={(modelSize) => onChange({ ...settings, modelSize })}
-      />
-      <SettingChoice label="Langue" value={settings.language} options={WHISPER_LANGUAGE_OPTIONS} onChange={(language) => onChange({ ...settings, language })} />
-    </div>
+    <p className="text-xs text-muted">
+      Modèle Parakeet TDT 0.6B v3 : 25 langues européennes, langue détectée automatiquement, exécuté dans l'app sur CPU. Si le modèle manque, Whisper tiny du
+      service Python prend le relais.
+    </p>
   );
 }

@@ -19,7 +19,7 @@ export async function fetchPythonServiceHealth(): Promise<ProviderHealth> {
   } catch (err) {
     value = {
       status: "down",
-      reason: err instanceof AppError ? err.message : "Service Python injoignable.",
+      reason: err instanceof AppError ? err.message : "Service Python arrêté.",
       hint: PYTHON_SERVICE_START_HINT,
     };
   }

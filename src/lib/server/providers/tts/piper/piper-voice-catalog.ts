@@ -6,13 +6,20 @@ import { PROJECT_PATHS } from "@/lib/server/core/paths";
 import { createLogger } from "@/lib/server/core/logger";
 import { filterVoicesByLocale } from "../tts-voice-utils";
 
-// SECTION: Catalogue des voix Piper, construit en scannant voices/*.onnx.json.
+// SECTION: Catalogue des voix Piper, construit en scannant models/sherpa/vits-piper-*/ (exécution Node)
+// et voices/*.onnx.json (binaire Piper, secours). Une voix est listée dès qu'un des deux emplacements l'a.
 
 const piperLogger = createLogger("piper");
+const SHERPA_PIPER_PREFIX = "vits-piper-";
 
 export interface PiperVoice extends TtsVoice {
-  onnxPath: string;
   sampleRate: number;
+  /** Voix espeak-ng utilisée pour la phonémisation (ex. "fr"). */
+  espeakVoice: string;
+  /** Dossier models/sherpa/vits-piper-<id>/ si la voix est disponible en Node. */
+  sherpaDir?: string;
+  /** Fichier voices/<id>.onnx si la voix est disponible pour le binaire. */
+  binaryOnnxPath?: string;
 }
 
 const PIPER_VOICE_DISPLAY_NAMES: Record<string, { name: string; gender: VoiceGender }> = {
@@ -23,30 +30,55 @@ const PIPER_VOICE_DISPLAY_NAMES: Record<string, { name: string; gender: VoiceGen
   "en_US-lessac-medium": { name: "Lessac", gender: "female" },
 };
 
-export function listPiperVoices(locale?: string): PiperVoice[] {
-  const dir = PROJECT_PATHS.piperVoicesDir;
-  if (!existsSync(dir)) return [];
+function readVoiceConfig(id: string, configPath: string): Omit<PiperVoice, "sherpaDir" | "binaryOnnxPath"> | null {
+  try {
+    const config = JSON.parse(readFileSync(configPath, "utf-8"));
+    const known = PIPER_VOICE_DISPLAY_NAMES[id];
+    return {
+      id,
+      name: known?.name ?? config.dataset ?? id,
+      language: (config.language?.code ?? config.language?.family ?? "unknown").replace("_", "-"),
+      gender: known?.gender ?? "unknown",
+      quality: config.audio?.quality ?? "medium",
+      sampleRate: config.audio?.sample_rate ?? 22050,
+      espeakVoice: config.espeak?.voice ?? config.language?.family ?? "fr",
+    };
+  } catch (err) {
+    piperLogger.warn("voices.invalid_config", `Configuration de voix illisible : ${configPath}`, { error: err });
+    return null;
+  }
+}
 
-  const voices: PiperVoice[] = [];
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".onnx.json"))) {
-    const id = file.replace(/\.onnx\.json$/, "");
-    try {
-      const config = JSON.parse(readFileSync(join(dir, file), "utf-8"));
-      const known = PIPER_VOICE_DISPLAY_NAMES[id];
-      voices.push({
-        id,
-        name: known?.name ?? config.dataset ?? id,
-        language: (config.language?.code ?? config.language?.family ?? "unknown").replace("_", "-"),
-        gender: known?.gender ?? "unknown",
-        quality: config.audio?.quality ?? "medium",
-        onnxPath: join(dir, `${id}.onnx`),
-        sampleRate: config.audio?.sample_rate ?? 22050,
-      });
-    } catch (err) {
-      piperLogger.warn("voices.invalid_config", `Configuration de voix illisible : ${file}`, { error: err });
+export function listPiperVoices(locale?: string): PiperVoice[] {
+  const voices = new Map<string, PiperVoice>();
+
+  const sherpaRoot = PROJECT_PATHS.sherpaModelsDir;
+  if (existsSync(sherpaRoot)) {
+    for (const dirName of readdirSync(sherpaRoot).filter((name) => name.startsWith(SHERPA_PIPER_PREFIX))) {
+      const id = dirName.slice(SHERPA_PIPER_PREFIX.length);
+      const dir = join(sherpaRoot, dirName);
+      if (!existsSync(join(dir, `${id}.onnx`))) continue;
+      const base = readVoiceConfig(id, join(dir, `${id}.onnx.json`));
+      if (base) voices.set(id, { ...base, sherpaDir: dir });
     }
   }
-  return filterVoicesByLocale(voices, locale);
+
+  const binaryDir = PROJECT_PATHS.piperVoicesDir;
+  if (existsSync(binaryDir)) {
+    for (const file of readdirSync(binaryDir).filter((f) => f.endsWith(".onnx.json"))) {
+      const id = file.replace(/\.onnx\.json$/, "");
+      const onnxPath = join(binaryDir, `${id}.onnx`);
+      const existing = voices.get(id);
+      if (existing) {
+        existing.binaryOnnxPath = onnxPath;
+        continue;
+      }
+      const base = readVoiceConfig(id, join(binaryDir, file));
+      if (base) voices.set(id, { ...base, binaryOnnxPath: onnxPath });
+    }
+  }
+
+  return filterVoicesByLocale([...voices.values()], locale);
 }
 
 export function findPiperVoice(voiceId: string): PiperVoice | undefined {

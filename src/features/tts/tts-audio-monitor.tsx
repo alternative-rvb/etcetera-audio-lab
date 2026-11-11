@@ -7,6 +7,7 @@ import { AudioPlayer } from "@/components/ui/audio-player";
 import { CopyButton, FavoriteToggle, StarRating } from "@/components/ui/feedback-controls";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
+import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { formatBytes, formatClock, formatSeconds } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 
@@ -75,6 +76,7 @@ export function TtsAudioMonitor({
             </span>
             <span className="tabular-nums">{formatBytes(entry.sizeBytes)}</span>
             <span>{TTS_PROVIDER_CATALOG[entry.provider].output ?? entry.format.toUpperCase()}</span>
+            <RuntimeBadge trace={entry} />
             <span className="flex min-w-0 flex-1 basis-40 items-center justify-end gap-0.5">
               <code className="min-w-0 truncate font-mono">{entry.fileName}</code>
               <CopyButton text={entry.filePath} label="Copier le chemin complet du fichier" />

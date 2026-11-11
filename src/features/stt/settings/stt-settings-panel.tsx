@@ -24,7 +24,7 @@ export function SttSettingsPanel({
     case "whisper":
       return <WhisperSettingsPanel settings={settings.whisper} onChange={(value) => onChange("whisper", value)} pythonServiceHealth={pythonServiceHealth} />;
     case "sherpa":
-      return <SherpaSettingsPanel settings={settings.sherpa} onChange={(value) => onChange("sherpa", value)} />;
+      return <SherpaSettingsPanel />;
     case "web-speech":
       return <WebSpeechSettingsPanel settings={settings["web-speech"]} onChange={(value) => onChange("web-speech", value)} supported={webSpeechSupported} />;
   }

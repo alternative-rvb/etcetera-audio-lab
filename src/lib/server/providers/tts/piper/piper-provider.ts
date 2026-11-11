@@ -8,10 +8,16 @@ import { createLogger } from "@/lib/server/core/logger";
 import { PROJECT_PATHS } from "@/lib/server/core/paths";
 import { wrapPcm16MonoAsWav } from "@/lib/server/core/wav-encoding";
 import { nativeBinaryEnv } from "@/lib/server/core/native-binaries";
+import { ESPEAK_BINARY_PATH } from "@/lib/server/core/espeak";
+import { combineHealth, runWithFallback } from "@/lib/server/core/runtime-fallback";
+import { loadSherpa, SHERPA_SETUP_HINT } from "@/lib/server/core/sherpa-runtime";
+import type { EngineRuntime, PiperSettings, ProviderHealth } from "@/lib/shared/types";
 import type { TtsProvider } from "../tts-provider.types";
-import { findPiperVoice, listPiperVoices } from "./piper-voice-catalog";
+import { findPiperVoice, listPiperVoices, type PiperVoice } from "./piper-voice-catalog";
+import { synthesizePiperWithSherpa } from "./piper-sherpa";
 
-// SECTION: Provider Piper (binaire natif lancé via child_process, voix ONNX locales).
+// SECTION: Provider Piper : exécution principale en Node (sherpa-onnx-node), secours par le binaire natif
+// lancé via child_process (dépôt rhasspy/piper archivé, voix de voices/).
 
 const piperLogger = createLogger("piper");
 const PIPER_BINARY_PATH = join(PROJECT_PATHS.binDir, "piper");
@@ -92,49 +98,81 @@ export const piperProvider: TtsProvider<"piper"> = {
   }),
 
   async listVoices(locale) {
-    return { provider: "piper", voices: listPiperVoices(locale).map(({ onnxPath: _o, sampleRate: _s, ...voice }) => voice) };
+    return {
+      provider: "piper",
+      voices: listPiperVoices(locale).map(({ sampleRate: _s, espeakVoice: _e, sherpaDir: _d, binaryOnnxPath: _b, ...voice }) => voice),
+    };
   },
 
   async synthesize({ text, voiceId, settings, signal }) {
-    if (!existsSync(PIPER_BINARY_PATH)) {
-      throw new AppError("ENGINE_UNAVAILABLE", "Binaire Piper introuvable dans bin/.", { provider: "piper", hint: PIPER_SETUP_HINT });
-    }
     const voice = findPiperVoice(voiceId);
     if (!voice) throw new AppError("VOICE_NOT_FOUND", `Voix Piper inconnue : ${voiceId}.`, { provider: "piper" });
-    if (!existsSync(voice.onnxPath)) {
-      throw new AppError("ENGINE_UNAVAILABLE", `Modèle ONNX manquant pour la voix ${voice.name}.`, {
-        provider: "piper",
-        hint: PIPER_SETUP_HINT,
-      });
-    }
 
-    const args = [
-      "--model", voice.onnxPath,
-      "--output_raw",
-      "--length_scale", String(settings.lengthScale),
-      "--noise_scale", String(settings.noiseScale),
-      "--noise_w", String(settings.noiseW),
-    ];
-    const rawPcm = await runPiperProcess(args, text, signal);
-    if (rawPcm.length === 0) {
-      throw new AppError("ENGINE_FAILED", "Piper n'a produit aucun échantillon audio.", { provider: "piper" });
-    }
+    const startedAt = performance.now();
+    const { result, fallback } = await runWithFallback<{ audio: Buffer; sampleRate: number; runtime: EngineRuntime }>({
+      provider: "piper",
+      primaryLabel: "Piper en Node",
+      fallbackLabel: "binaire Piper",
+      signal,
+      primary: async () => ({ ...(await synthesizePiperWithSherpa(voice, text, settings)), runtime: "node" as const }),
+      fallback: async () => ({ ...(await synthesizeWithBinary(voice, text, settings, signal)), runtime: "binary" as const }),
+    });
     return {
-      audio: wrapPcm16MonoAsWav(rawPcm, voice.sampleRate),
+      audio: result.audio,
       format: "wav",
       voiceName: voice.name,
-      diagnostics: { sampleRate: voice.sampleRate, pcmBytes: rawPcm.length },
+      runtime: result.runtime,
+      fallback,
+      diagnostics: { sampleRate: result.sampleRate, engineMs: Math.round(performance.now() - startedAt) },
     };
   },
 
   async checkHealth() {
-    if (!existsSync(PIPER_BINARY_PATH)) {
-      return { status: "down", reason: "Binaire bin/piper absent.", hint: PIPER_SETUP_HINT };
-    }
-    const voices = listPiperVoices();
-    if (voices.length === 0) {
-      return { status: "down", reason: "Aucune voix dans voices/.", hint: PIPER_SETUP_HINT };
-    }
-    return { status: "ok", details: { voices: voices.length } };
+    return combineHealth(await checkNodeHealth(), checkBinaryHealth(), "binaire Piper");
   },
 };
+
+// SECTION: Exécution Node et secours binaire
+
+async function checkNodeHealth(): Promise<ProviderHealth> {
+  try {
+    await loadSherpa("piper");
+  } catch (err) {
+    return { status: "down", reason: err instanceof AppError ? err.message : "sherpa-onnx-node indisponible.", hint: "Lancez `npm install`." };
+  }
+  const voices = listPiperVoices().filter((voice) => voice.sherpaDir);
+  if (voices.length === 0) return { status: "down", reason: "Aucune voix Piper dans models/sherpa/.", hint: SHERPA_SETUP_HINT };
+  if (!existsSync(ESPEAK_BINARY_PATH)) return { status: "down", reason: "espeak-ng absent de bin/.", hint: PIPER_SETUP_HINT };
+  return { status: "ok", details: { runtime: "node", voices: voices.length } };
+}
+
+function checkBinaryHealth(): ProviderHealth {
+  if (!existsSync(PIPER_BINARY_PATH)) return { status: "down", reason: "Binaire bin/piper absent.", hint: PIPER_SETUP_HINT };
+  const voices = listPiperVoices().filter((voice) => voice.binaryOnnxPath && existsSync(voice.binaryOnnxPath));
+  if (voices.length === 0) return { status: "down", reason: "Aucune voix dans voices/.", hint: PIPER_SETUP_HINT };
+  return { status: "ok", details: { runtime: "binary", voices: voices.length } };
+}
+
+async function synthesizeWithBinary(voice: PiperVoice, text: string, settings: PiperSettings, signal?: AbortSignal) {
+  if (!existsSync(PIPER_BINARY_PATH)) {
+    throw new AppError("ENGINE_UNAVAILABLE", "Binaire Piper introuvable dans bin/.", { provider: "piper", hint: PIPER_SETUP_HINT });
+  }
+  if (!voice.binaryOnnxPath || !existsSync(voice.binaryOnnxPath)) {
+    throw new AppError("ENGINE_UNAVAILABLE", `Modèle ONNX manquant dans voices/ pour la voix ${voice.name}.`, {
+      provider: "piper",
+      hint: PIPER_SETUP_HINT,
+    });
+  }
+  const args = [
+    "--model", voice.binaryOnnxPath,
+    "--output_raw",
+    "--length_scale", String(settings.lengthScale),
+    "--noise_scale", String(settings.noiseScale),
+    "--noise_w", String(settings.noiseW),
+  ];
+  const rawPcm = await runPiperProcess(args, text, signal);
+  if (rawPcm.length === 0) {
+    throw new AppError("ENGINE_FAILED", "Piper n'a produit aucun échantillon audio.", { provider: "piper" });
+  }
+  return { audio: wrapPcm16MonoAsWav(rawPcm, voice.sampleRate), sampleRate: voice.sampleRate };
+}

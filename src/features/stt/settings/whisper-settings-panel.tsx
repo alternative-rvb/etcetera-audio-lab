@@ -5,6 +5,7 @@ import { SettingChoice, SettingSwitch } from "@/components/ui/form-controls";
 import { WHISPER_LANGUAGE_OPTIONS, type WhisperSettings } from "../stt-settings";
 
 // SECTION: Réglages Whisper (taille du modèle, matériel, langue, horodatage mot à mot).
+// NOTE: CPU = exécution dans Node (sherpa-onnx), CUDA = service Python (Faster-Whisper), seul à fournir les mots horodatés.
 
 export function WhisperSettingsPanel({
   settings,
@@ -33,7 +34,7 @@ export function WhisperSettingsPanel({
       <SettingChoice
         label="Matériel"
         value={settings.device}
-        hint="Le CPU reproduit les conditions du VPS."
+        hint="CPU : exécuté dans l'app (Node), comme sur le VPS, avec le service Python en secours. GPU CUDA : exécuté par le service Python."
         options={[
           { value: "cpu", label: "CPU" },
           { value: "cuda", label: "GPU CUDA", disabledReason: cudaAvailable === false ? "Aucun GPU CUDA détecté par le service Python." : undefined },
@@ -44,6 +45,7 @@ export function WhisperSettingsPanel({
       <SettingSwitch
         label="Horodatage mot à mot"
         hint="Affiche la confiance de chaque mot dans le résultat."
+        disabledReason={settings.device === "cpu" ? "Disponible seulement sur GPU CUDA (service Python) : sur CPU, le résultat est découpé en phrases horodatées." : undefined}
         checked={settings.wordTimestamps}
         onChange={(wordTimestamps) => onChange({ ...settings, wordTimestamps })}
       />

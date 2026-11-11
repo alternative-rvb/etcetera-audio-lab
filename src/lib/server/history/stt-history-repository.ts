@@ -34,6 +34,8 @@ function normalizeEntry(raw: LegacySttHistoryEntry): SttHistoryEntry {
     modelSize: raw.modelSize ?? "",
     device: raw.device ?? "",
     segments: raw.segments ?? [],
+    runtime: raw.runtime,
+    fallback: raw.fallback,
     fileName,
     filePath: fileName ? join(PROJECT_PATHS.sttAudioDir, fileName) : undefined,
     url: fileName ? `/audio/stt/${fileName}` : undefined,

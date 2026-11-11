@@ -1,6 +1,6 @@
 import "server-only";
 import type { z } from "zod";
-import type { AudioFormat, ProviderHealth, TtsProviderId, TtsSettingsByProvider, TtsVoiceList } from "@/lib/shared/types";
+import type { AudioFormat, ProviderHealth, RuntimeTrace, TtsProviderId, TtsSettingsByProvider, TtsVoiceList } from "@/lib/shared/types";
 
 // SECTION: Contrat commun que chaque provider TTS implémente (edge-tts, piper, kokoro, chatterbox).
 
@@ -11,7 +11,7 @@ export interface TtsSynthesisInput<P extends TtsProviderId> {
   signal?: AbortSignal;
 }
 
-export interface TtsSynthesisOutput {
+export interface TtsSynthesisOutput extends RuntimeTrace {
   audio: Buffer;
   format: AudioFormat;
   voiceName: string;

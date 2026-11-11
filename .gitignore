@@ -13,3 +13,6 @@ __pycache__/
 *.pyc
 .tmp/
 .playwright-mcp/
+
+# NOTE: modèles sherpa-onnx téléchargés par scripts/setup-sherpa.sh
+models/

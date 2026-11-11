@@ -6,6 +6,7 @@ import { AudioPlayer, type AudioPlayerHandle } from "@/components/ui/audio-playe
 import { CopyButton, FavoriteToggle, StarRating } from "@/components/ui/feedback-controls";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
+import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { formatClock, formatSeconds } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
@@ -85,6 +86,7 @@ export function SttTranscriptView({
                 </span>
               </Tooltip>
             )}
+            <RuntimeBadge trace={entry} />
           </div>
 
           {entry.segments.length > 0 && (

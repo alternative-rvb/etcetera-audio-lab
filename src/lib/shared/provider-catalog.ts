@@ -31,10 +31,10 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
     label: "Piper",
     runtime: "local",
     tagline: "100 % local CPU",
-    description: "Moteur rapide et léger, entièrement local sur CPU, sans GPU ni réseau.",
-    stack: "Binaire C++ natif, child_process, modèles ONNX",
-    requirements: ["Hors ligne, CPU x86_64 standard", "Modèles dans voices/ (~60 Mo de RAM)"],
-    license: "MIT (binaire archivé)",
+    description: "Moteur rapide et léger, entièrement local sur CPU, sans GPU ni réseau. Exécuté dans l'app, avec le binaire Piper en secours.",
+    stack: "sherpa-onnx-node (VITS), espeak-ng IPA ; secours binaire C++",
+    requirements: ["Hors ligne, CPU x86_64 standard", "Modèles dans models/sherpa/ et voices/ (~60 Mo de RAM)"],
+    license: "MIT (voix), Apache 2.0 (sherpa-onnx)",
     output: "WAV 22,05 kHz",
   },
   kokoro: {
@@ -72,21 +72,22 @@ export const STT_PROVIDER_CATALOG: Record<SttProviderId, ProviderSpec> = {
   whisper: {
     label: "Whisper",
     runtime: "local",
-    tagline: "Faster-Whisper local",
-    description: "Modèle de référence : ponctuation, détection de langue et horodatage mot à mot.",
-    stack: "faster-whisper, CTranslate2, FastAPI",
-    requirements: ["Service Python python/ démarré (port 5002)", "CUDA ou CPU"],
+    tagline: "CPU dans l'app, GPU en Python",
+    description:
+      "Modèle de référence d'OpenAI : ponctuation et détection de langue. Sur CPU, exécuté dans l'app ; sur GPU, par Faster-Whisper du service Python, seul à donner l'horodatage mot à mot.",
+    stack: "sherpa-onnx-node (CPU) ; faster-whisper, CTranslate2, FastAPI (CUDA et secours)",
+    requirements: ["CPU : modèles dans models/sherpa/ et ffmpeg", "GPU : service Python démarré (port 5002)"],
     license: "MIT",
   },
   sherpa: {
     label: "Sherpa-ONNX",
     runtime: "local",
-    tagline: "Provisoire : Whisper tiny CPU",
+    tagline: "Parakeet v3 dans l'app",
     description:
-      "Cible : moteur offline léger pour VPS sans GPU. En attendant le ticket 22, cette option exécute Whisper tiny sur CPU.",
-    stack: "Prévu : sherpa-onnx (Next-gen Kaldi)",
-    requirements: ["Service Python python/ démarré (port 5002)"],
-    license: "Apache 2.0",
+      "Moteur hors ligne pour VPS sans GPU : NVIDIA Parakeet TDT 0.6B v3, 25 langues européennes, langue détectée automatiquement. Secours : Whisper tiny du service Python.",
+    stack: "sherpa-onnx-node (Next-gen Kaldi), ONNX int8, VAD Silero",
+    requirements: ["Hors ligne, CPU, ~1 Go de RAM", "Modèle dans models/sherpa/ et ffmpeg"],
+    license: "Apache 2.0 (sherpa-onnx), CC-BY 4.0 (Parakeet)",
   },
 };
 

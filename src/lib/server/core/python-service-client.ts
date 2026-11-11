@@ -57,7 +57,7 @@ export async function callPythonService(path: string, options: PythonRequestOpti
       });
     }
     if (isConnectionRefused(err)) {
-      throw new AppError("PYTHON_SERVICE_DOWN", `Service Python injoignable sur ${PYTHON_SERVICE_URL}.`, {
+      throw new AppError("PYTHON_SERVICE_DOWN", `Service Python arrêté (${PYTHON_SERVICE_URL}).`, {
         provider: options.provider,
         hint: PYTHON_SERVICE_START_HINT,
         cause: err,

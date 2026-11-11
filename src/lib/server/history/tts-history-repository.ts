@@ -1,7 +1,7 @@
 import "server-only";
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AudioFormat, TtsHistoryEntry, TtsProviderId } from "@/lib/shared/types";
+import type { AudioFormat, RuntimeTrace, TtsHistoryEntry, TtsProviderId } from "@/lib/shared/types";
 import { ensureDirectory, readJsonFile, writeJsonFileAtomic } from "@/lib/server/core/json-file-store";
 import { createLogger } from "@/lib/server/core/logger";
 import { PROJECT_PATHS } from "@/lib/server/core/paths";
@@ -40,6 +40,8 @@ function normalizeEntry(raw: LegacyTtsHistoryEntry): TtsHistoryEntry {
     score: raw.score ?? 0,
     generationTimeMs: raw.generationTimeMs ?? 0,
     settings: raw.settings,
+    runtime: raw.runtime,
+    fallback: raw.fallback,
   };
 }
 
@@ -69,7 +71,7 @@ export function saveTtsAudio(
     format: AudioFormat;
     generationTimeMs: number;
     settings?: Record<string, unknown>;
-  }
+  } & RuntimeTrace
 ): TtsHistoryEntry {
   ensureDirectory(PROJECT_PATHS.ttsAudioDir);
   const now = new Date();

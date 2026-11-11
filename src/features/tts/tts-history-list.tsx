@@ -7,6 +7,7 @@ import { ConfirmDeleteButton, CopyButton, FavoriteToggle, StarRating } from "@/c
 import { Icon } from "@/components/ui/icon";
 import { EmptyState, Panel, Skeleton } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
+import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { applyHistoryFilter, countHistoryFilters, HistoryFilterBar, type HistoryFilter } from "@/components/shared/history-filter-bar";
 import { formatBytes, formatDateTime, formatSeconds } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
@@ -118,6 +119,7 @@ export function TtsHistoryList({
                           <span>{item.voiceName}</span>
                           <span className="tabular-nums">{formatSeconds(item.generationTimeMs)}</span>
                           <span className="tabular-nums">{formatDateTime(item.createdAt)}</span>
+                          <RuntimeBadge trace={item} />
                         </span>
                       </button>
                       <div className="ml-auto flex items-center">

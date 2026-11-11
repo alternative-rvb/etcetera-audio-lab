@@ -23,3 +23,13 @@ export function wrapPcm16MonoAsWav(rawPcm: Buffer, sampleRate: number): Buffer {
   header.writeUInt32LE(rawPcm.length, 40);
   return Buffer.concat([header, rawPcm]);
 }
+
+/** Convertit des échantillons float [-1, 1] (sortie sherpa-onnx) en WAV PCM 16 bits mono. */
+export function encodeFloat32MonoAsWav(samples: Float32Array, sampleRate: number): Buffer {
+  const pcm = Buffer.alloc(samples.length * 2);
+  for (let i = 0; i < samples.length; i++) {
+    const clamped = Math.max(-1, Math.min(1, samples[i]));
+    pcm.writeInt16LE(Math.round(clamped * 32767), i * 2);
+  }
+  return wrapPcm16MonoAsWav(pcm, sampleRate);
+}

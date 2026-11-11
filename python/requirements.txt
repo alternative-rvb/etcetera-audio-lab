@@ -1,4 +1,6 @@
 faster-whisper>=1.0.0
+# NOTE: PyAV 19 a retiré av.open(metadata_errors=...), encore utilisé par faster-whisper 1.2.1.
+av>=11,<19
 python-multipart>=0.0.9
 setuptools<70
 chatterbox-tts>=0.1.7

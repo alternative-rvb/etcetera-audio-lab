@@ -101,7 +101,14 @@ export async function runSttTranscription(request: Request): Promise<SttHistoryE
     const entry = saveSttTranscription(audio, { provider: providerId, originalFilename: audioFile.name, result });
     providerLogger.info("transcription.done", `${result.segments.length} segment(s), RTF ${result.rtf}.`, {
       durationMs: Math.round(performance.now() - startedAt),
-      meta: { audioDurationSec: result.durationSec, rtf: result.rtf, modelSize: result.modelSize, device: result.device },
+      meta: {
+          audioDurationSec: result.durationSec,
+          rtf: result.rtf,
+          modelSize: result.modelSize,
+          device: result.device,
+          runtime: result.runtime,
+          fallback: result.fallback,
+        },
     });
     return entry;
   } catch (err) {
