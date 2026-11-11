@@ -2,7 +2,7 @@
 
 Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
 
-Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Le dépôt GitHub est devenu `alternative-rvb/etcetera-audio-lab` ; le dossier local garde encore l'ancien nom.
+Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Le dépôt GitHub (`alternative-rvb/etcetera-audio-lab`) et le dossier local s'appellent désormais `etcetera-audio-lab`.
 
 ## Portée actuelle
 
