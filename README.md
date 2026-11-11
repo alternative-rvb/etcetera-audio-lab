@@ -2,6 +2,8 @@
 
 Banc d'essai open source pour comparer, sur votre propre machine, des moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT) en français: locaux, cloud ou intégrés au navigateur, dans une même interface web.
 
+Le projet est open source (licence MIT) et gratuit: aucun abonnement, aucune clé obligatoire. Les moteurs locaux (Piper, Kokoro, Whisper, Sherpa-ONNX, Chatterbox) tournent sur votre machine sans quota, et seuls Groq Whisper (clé gratuite avec quotas) et Edge TTS (endpoint sans clé) passent par un service distant. Vous pouvez le cloner, le modifier et le réutiliser librement.
+
 ## Pourquoi ce projet
 
 Choisir une voix ou un moteur de transcription pour une application web se fait souvent sur la foi d'une démo en ligne. Les vraies questions arrivent ensuite: la voix française est-elle correcte sur un texte réel, combien de temps attend l'utilisateur, faut-il un GPU, que coûte l'API, que se passe-t-il quand le service tombe?
@@ -16,19 +18,28 @@ Les moteurs locaux tournent côté serveur (Node.js d'abord, Python ou binaire n
 
 Quatre moteurs, réglages propres à chacun, écoute avec spectre audio, historique noté et matrice de décision.
 
-![Page Synthèse vocale: choix du moteur et de la voix, lecteur audio, historique et comparatif](docs/screenshots/tts.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/tts-dark.png">
+  <img src="docs/screenshots/tts.png" alt="Page Synthèse vocale: choix du moteur et de la voix, lecteur audio, historique et comparatif">
+</picture>
 
 ### Transcription
 
 Micro, fichier ou échantillon de démo, avec le temps de traitement et le facteur temps réel de chaque essai.
 
-![Page Transcription: moteurs, résultat horodaté, historique et comparatif](docs/screenshots/stt.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/stt-dark.png">
+  <img src="docs/screenshots/stt.png" alt="Page Transcription: moteurs, résultat horodaté, historique et comparatif">
+</picture>
 
 ### Écho
 
 Chaque mesure chronomètre la transcription et la synthèse, puis la note place le couple STT + TTS sur la matrice de décision.
 
-![Page Écho: réglages, liste des mesures, matrice de décision et tableau comparatif des couples](docs/screenshots/echo.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/echo-dark.png">
+  <img src="docs/screenshots/echo.png" alt="Page Écho: réglages, liste des mesures, matrice de décision et tableau comparatif des couples">
+</picture>
 
 ## Fonctionnalités
 
