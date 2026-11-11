@@ -14,6 +14,7 @@ Les moteurs locaux tournent côté serveur (Node.js d'abord, Python ou binaire n
 
 - Page Synthèse (`/tts`): choix du moteur et de la voix, réglages propres à chaque moteur, écoute avec spectre audio, historique filtrable avec favoris et notes.
 - Page Transcription (`/stt`): enregistrement au micro, fichier audio ou échantillon de démo, texte horodaté par segment ou par mot selon le moteur, historique noté.
+- Page Écho (`/echo`): vous parlez, votre phrase est transcrite puis relue par la voix choisie après une pause réglable, en mains libres si vous le souhaitez. Chaque tour mesure la transcription, la synthèse, la latence perçue et le temps total, compare les couples STT + TTS et les place sur la matrice de décision.
 - Page Logs (`/logs`): événements Node, Python et navigateur en temps réel, filtrables par source, niveau, texte ou identifiant de requête, avec export JSON.
 - Panneau Activité sur chaque page, qui suit en direct la requête en cours.
 - Bascule automatique vers un moteur de secours en cas de panne, signalée dans le résultat et l'historique.

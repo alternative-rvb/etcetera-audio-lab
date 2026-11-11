@@ -25,6 +25,7 @@ import mic from "@iconify-icons/material-symbols/mic-rounded";
 import openInNew from "@iconify-icons/material-symbols/open-in-new-rounded";
 import pause from "@iconify-icons/material-symbols/pause-rounded";
 import playArrow from "@iconify-icons/material-symbols/play-arrow-rounded";
+import recordVoiceOver from "@iconify-icons/material-symbols/record-voice-over-rounded";
 import receiptLong from "@iconify-icons/material-symbols/receipt-long-outline-rounded";
 import refresh from "@iconify-icons/material-symbols/refresh-rounded";
 import restartAlt from "@iconify-icons/material-symbols/restart-alt-rounded";
@@ -54,6 +55,7 @@ const ICONS = {
   tts: textToSpeech,
   stt: speechToText,
   logs: receiptLong,
+  echo: recordVoiceOver,
   voice: voiceSelection,
   play: playArrow,
   pause,

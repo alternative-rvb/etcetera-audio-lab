@@ -13,6 +13,7 @@ import { ThemeToggle } from "./theme-toggle";
 const NAV_ITEMS = [
   { href: "/tts", label: "Synthèse vocale", shortLabel: "TTS", icon: "tts" },
   { href: "/stt", label: "Transcription", shortLabel: "STT", icon: "stt" },
+  { href: "/echo", label: "Écho", shortLabel: "Écho", icon: "echo" },
   { href: "/logs", label: "Logs", shortLabel: "Logs", icon: "logs" },
 ] as const;
 
