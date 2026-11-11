@@ -1,7 +1,7 @@
 "use client";
 
 import type { ProviderHealth } from "@/lib/shared/types";
-import { SettingSelect, SettingSwitch } from "@/components/ui/form-controls";
+import { SettingChoice, SettingSwitch } from "@/components/ui/form-controls";
 import { WHISPER_LANGUAGE_OPTIONS, type WhisperSettings } from "../stt-settings";
 
 // SECTION: Réglages Whisper (taille du modèle, matériel, langue, horodatage mot à mot).
@@ -17,32 +17,36 @@ export function WhisperSettingsPanel({
 }) {
   const cudaAvailable = pythonServiceHealth?.details?.cuda_available;
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <SettingSelect
+    <div className="space-y-2.5">
+      <SettingChoice
         label="Modèle"
         value={settings.modelSize}
+        hint="Plus le modèle est gros, plus il est précis et lent. Le premier appel télécharge puis charge le modèle."
         options={[
-          { value: "tiny", label: "Tiny (39M, le plus rapide)" },
-          { value: "base", label: "Base (74M, équilibré)" },
-          { value: "small", label: "Small (244M, précis)" },
-          { value: "medium", label: "Medium (769M, le plus précis)" },
+          { value: "tiny", label: "Tiny", detail: "39M" },
+          { value: "base", label: "Base", detail: "74M" },
+          { value: "small", label: "Small", detail: "244M" },
+          { value: "medium", label: "Medium", detail: "769M" },
         ]}
-        hint="Le premier appel télécharge puis charge le modèle."
         onChange={(modelSize) => onChange({ ...settings, modelSize })}
       />
-      <SettingSelect
+      <SettingChoice
         label="Matériel"
         value={settings.device}
+        hint="Le CPU reproduit les conditions du VPS."
         options={[
-          { value: "cpu", label: "CPU (équivalent VPS)" },
-          { value: "cuda", label: cudaAvailable === false ? "GPU CUDA (non détecté)" : "GPU CUDA" },
+          { value: "cpu", label: "CPU" },
+          { value: "cuda", label: "GPU CUDA", disabledReason: cudaAvailable === false ? "Aucun GPU CUDA détecté par le service Python." : undefined },
         ]}
         onChange={(device) => onChange({ ...settings, device })}
       />
-      <SettingSelect label="Langue" value={settings.language} options={WHISPER_LANGUAGE_OPTIONS} onChange={(language) => onChange({ ...settings, language })} />
-      <div className="flex items-end pb-2">
-        <SettingSwitch label="Horodatage mot à mot" checked={settings.wordTimestamps} onChange={(wordTimestamps) => onChange({ ...settings, wordTimestamps })} />
-      </div>
+      <SettingChoice label="Langue" value={settings.language} options={WHISPER_LANGUAGE_OPTIONS} onChange={(language) => onChange({ ...settings, language })} />
+      <SettingSwitch
+        label="Horodatage mot à mot"
+        hint="Affiche la confiance de chaque mot dans le résultat."
+        checked={settings.wordTimestamps}
+        onChange={(wordTimestamps) => onChange({ ...settings, wordTimestamps })}
+      />
     </div>
   );
 }

@@ -14,8 +14,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@iconify-icons/material-symbols": "2.0.7",
+    "@iconify/react": "6.0.3",
     "kokoro-js": "^1.2.1",
-    "lucide-react": "1.60.0",
     "msedge-tts": "2.1.1",
     "next": "16.4.3",
     "onnxruntime-node": "^1.30.0",

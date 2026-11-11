@@ -1,8 +1,8 @@
 "use client";
 
-import { Moon, Sun, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 // SECTION: Bascule de thème clair → sombre → rétro Y2K, mémorisée dans localStorage.
 
@@ -38,10 +38,10 @@ export function ThemeToggle() {
     }
   };
 
-  const Icon = theme === "light" ? Moon : theme === "dark" ? Terminal : Sun;
+  const nextIcon = theme === "light" ? "darkMode" : theme === "dark" ? "retro" : "lightMode";
   return (
     <IconButton label={NEXT_THEME_LABEL[theme]} onClick={cycleTheme} className="size-9 border border-line">
-      <Icon size={17} />
+      <Icon name={nextIcon} size={19} />
     </IconButton>
   );
 }

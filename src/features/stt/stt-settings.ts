@@ -36,7 +36,7 @@ export const DEFAULT_STT_SETTINGS: SttSettingsByProvider = {
 export const WHISPER_LANGUAGE_OPTIONS: Array<{ value: WhisperLanguage; label: string }> = [
   { value: "fr", label: "Français" },
   { value: "en", label: "Anglais" },
-  { value: "auto", label: "Détection automatique" },
+  { value: "auto", label: "Automatique" },
 ];
 
 /** Champs du formulaire multipart attendus par POST /api/stt/transcribe. */

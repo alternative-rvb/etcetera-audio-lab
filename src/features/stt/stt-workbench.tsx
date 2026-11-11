@@ -1,6 +1,5 @@
 "use client";
 
-import { AudioWaveform, BookOpen, FileText, History, SlidersHorizontal, Square, TriangleAlert, Wand2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { STT_PROVIDER_IDS, type SttHistoryEntry, type SttProviderId } from "@/lib/shared/types";
@@ -9,55 +8,77 @@ import { ApiClientError, apiRequest, createClientRequestId, showErrorToast } fro
 import { formatTimer } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 import { useHealth } from "@/components/layout/health-provider";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { HintText } from "@/components/ui/hint-text";
-import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
+import { Icon } from "@/components/ui/icon";
 import { Panel } from "@/components/ui/panel";
 import { ActivityPanel } from "@/components/shared/activity-panel";
 import { ProviderPicker } from "@/components/shared/provider-picker";
 import { ProviderSpecCards } from "@/components/shared/provider-spec-cards";
+import { countModifiedSettings, SettingsDisclosure } from "@/components/shared/settings-disclosure";
 import { useElapsedTime } from "@/hooks/use-elapsed-time";
 import { useHistoryCollection } from "@/hooks/use-history-collection";
 import { usePersistentState } from "@/hooks/use-persistent-state";
 import { SttSettingsPanel } from "./settings/stt-settings-panel";
-import { SttAudioSourcePanel, type SttAudioSource } from "./stt-audio-source-panel";
+import { SttAudioSourcePanel, type SttAudioOrigin, type SttAudioSource } from "./stt-audio-source-panel";
 import { SttHistoryList } from "./stt-history-list";
 import { SttInsightsPanel } from "./stt-insights-panel";
 import { buildSttFormFields, DEFAULT_STT_SETTINGS, type SttSettingsByProvider } from "./stt-settings";
 import { useMicrophoneRecorder, type RecordedAudio } from "./use-microphone-recorder";
 import { useWebSpeechRecognition } from "./use-web-speech-recognition";
-import { SttTranscriptView } from "./stt-transcript-view";
+import { SttTranscriptView, type TranscriptOrigin } from "./stt-transcript-view";
 
-// SECTION: Atelier STT : source audio, choix provider/réglages, transcription, lecture par segments, comparaison.
+// SECTION: Atelier STT : source audio, moteur, réglages repliés et barre d'action à un seul bouton principal ; résultat et activité à droite.
 
 interface TranscribeOptions {
   /** Texte déjà obtenu par Web Speech dans le navigateur. */
   browserTranscript?: string;
 }
 
+/** Sous `lg`, les colonnes s'empilent : on fait défiler jusqu'au résultat. */
+function scrollToIfStacked(element: HTMLElement | null) {
+  if (!element || window.matchMedia("(min-width: 1024px)").matches) return;
+  element.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 export function SttWorkbench() {
   const { report, refresh: refreshHealth } = useHealth();
   const [provider, setProvider] = usePersistentState<SttProviderId>("stt-provider", "whisper");
   const [settings, setSettings] = usePersistentState<SttSettingsByProvider>("stt-settings", DEFAULT_STT_SETTINGS);
+  const [tab, setTab] = usePersistentState<SttAudioOrigin>("stt-source-tab", "mic");
+  const [specOpen, setSpecOpen] = useState(false);
   const history = useHistoryCollection<SttHistoryEntry>("/api/stt/history");
   const webSpeech = useWebSpeechRecognition();
 
   const [source, setSource] = useState<SttAudioSource | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
-  const [showSourcePreview, setShowSourcePreview] = useState(false);
+  const [transcriptOrigin, setTranscriptOrigin] = useState<TranscriptOrigin>("latest");
   const [autoPlayToken, setAutoPlayToken] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const elapsedMs = useElapsedTime(transcribing);
 
   const safeProvider: SttProviderId = STT_PROVIDER_IDS.includes(provider) ? provider : "whisper";
+  const providerLabel = STT_PROVIDER_CATALOG[safeProvider].label;
   const providerSettings: SttSettingsByProvider = { ...DEFAULT_STT_SETTINGS, ...settings };
   const providerHealth = report?.stt[safeProvider];
-  const currentEntry = showSourcePreview ? null : (history.items.find((item) => item.id === currentEntryId) ?? history.items[0] ?? null);
-  const sourceIsMic = source?.origin === "mic";
-  const canTranscribe = !transcribing && source !== null && (safeProvider !== "web-speech" || sourceIsMic);
+  const selectedEntry = history.items.find((item) => item.id === currentEntryId);
+  const currentEntry = selectedEntry ?? history.items[0] ?? null;
+  const modifiedCount = countModifiedSettings(providerSettings[safeProvider], DEFAULT_STT_SETTINGS[safeProvider]);
+
+  // ANCHOR: une seule raison de blocage, affichée à côté du bouton principal (seul endroit qui signale l'incompatibilité Web Speech).
+  const blockedReason =
+    providerHealth?.status === "down"
+      ? `${providerLabel} est indisponible.`
+      : safeProvider === "web-speech" && !webSpeech.supported
+        ? "Web Speech n'est pas pris en charge par ce navigateur."
+        : safeProvider === "web-speech" && tab !== "mic"
+          ? "Web Speech ne transcrit que le micro : choisissez Whisper ou Sherpa."
+          : null;
+  const readySource = source?.origin === tab ? source : null;
 
   // NOTE: URL locale de l'audio choisi, révoquée quand la source change.
   useEffect(() => {
@@ -91,12 +112,11 @@ export function SttWorkbench() {
           signal: controller.signal,
           headers: { "X-Request-Id": requestId },
         });
+        // NOTE: pas de toast de succès, le panneau Résultat se met à jour.
         history.prepend(entry);
         setCurrentEntryId(entry.id);
-        setShowSourcePreview(false);
-        toast.success("Transcription terminée", {
-          description: entry.rtf ? `${STT_PROVIDER_CATALOG[entry.provider].label}, RTF ${entry.rtf.toFixed(3)}` : STT_PROVIDER_CATALOG[entry.provider].label,
-        });
+        setTranscriptOrigin("transcribed");
+        scrollToIfStacked(resultRef.current);
       } catch (err) {
         if (err instanceof ApiClientError && err.code === "ABORTED") toast.info("Transcription annulée");
         else {
@@ -111,12 +131,11 @@ export function SttWorkbench() {
     [transcribing, safeProvider, providerSettings, history, refreshHealth]
   );
 
-  // ANCHOR: à l'arrêt du micro, la transcription part automatiquement (comportement de l'ancienne interface).
+  // ANCHOR: à l'arrêt du micro, la transcription part automatiquement, d'où le libellé « Arrêter et transcrire ».
   const handleRecorded = useCallback(
     async (recorded: RecordedAudio) => {
       const audio: SttAudioSource = { ...recorded, origin: "mic" };
       setSource(audio);
-      setShowSourcePreview(true);
       const browserTranscript = safeProvider === "web-speech" ? await webSpeech.stop() : undefined;
       await transcribe(audio, { browserTranscript });
     },
@@ -142,18 +161,90 @@ export function SttWorkbench() {
 
   const openEntry = (entry: SttHistoryEntry) => {
     setCurrentEntryId(entry.id);
-    setShowSourcePreview(false);
+    setTranscriptOrigin("history");
     setAutoPlayToken((n) => n + 1);
+    scrollToIfStacked(resultRef.current);
   };
 
-  return (
-    <div style={providerStyle(safeProvider)} className="space-y-5">
-      <CollapsiblePanel storageKey="stt-specs" icon={<BookOpen size={16} />} title="Les trois moteurs" summary="fiches techniques et état" defaultOpen={false}>
-        <ProviderSpecCards catalog={STT_PROVIDER_CATALOG} health={report?.stt} />
-      </CollapsiblePanel>
+  const actionBar = (() => {
+    if (recorder.recording) {
+      return (
+        <Button variant="danger" size="lg" className="border-danger/50 bg-danger/10" icon={<Icon name="stop" />} onClick={recorder.stop}>
+          Arrêter et transcrire
+        </Button>
+      );
+    }
+    if (transcribing) {
+      return (
+        <>
+          <Button variant="secondary" size="lg" icon={<Icon name="stop" />} tooltip="Échap" onClick={() => abortRef.current?.abort()}>
+            Annuler
+          </Button>
+          <span aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm text-muted">
+            <span className="size-2 shrink-0 rounded-full bg-[var(--provider)] animate-pulse-dot" />
+            <span className="truncate">Transcription {providerLabel}</span>
+            <span className="tabular-nums text-ink">{formatTimer(elapsedMs)}</span>
+          </span>
+        </>
+      );
+    }
+    const reason = blockedReason && <span className="min-w-0 text-xs text-muted">{blockedReason}</span>;
+    if (readySource) {
+      return (
+        <>
+          <Button
+            variant="primary"
+            size="lg"
+            icon={<Icon name="stt" size={20} />}
+            disabled={Boolean(blockedReason)}
+            onClick={() => void transcribe(readySource, { browserTranscript: webSpeech.transcript })}
+            className="min-w-0 max-w-full"
+          >
+            <span className="truncate">Transcrire avec {providerLabel}</span>
+          </Button>
+          {reason}
+        </>
+      );
+    }
+    if (tab === "mic") {
+      return (
+        <>
+          <Button variant="primary" size="lg" icon={<Icon name="mic" size={20} />} disabled={Boolean(blockedReason)} onClick={() => void startRecording()}>
+            Enregistrer
+          </Button>
+          {reason}
+        </>
+      );
+    }
+    return <p className="py-2 text-sm text-muted">{blockedReason ?? (tab === "upload" ? "Choisissez un fichier pour lancer la transcription." : "Choisissez un échantillon pour lancer la transcription.")}</p>;
+  })();
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel icon={<AudioWaveform size={16} />} title="Transcription" bodyClassName="space-y-5">
+  return (
+    <div style={providerStyle(safeProvider)} className="space-y-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <Panel
+          title="Transcription"
+          className="min-w-0"
+          bodyClassName="space-y-3"
+          actions={
+            <IconButton label={specOpen ? `Masquer la fiche ${providerLabel}` : `Fiche technique ${providerLabel}`} aria-pressed={specOpen} onClick={() => setSpecOpen(!specOpen)}>
+              <Icon name="info" />
+            </IconButton>
+          }
+        >
+          <SttAudioSourcePanel
+            provider={safeProvider}
+            tab={tab}
+            onTabChange={setTab}
+            source={source}
+            sourceUrl={sourceUrl}
+            onSourceChange={setSource}
+            recorder={recorder}
+            liveTranscript={webSpeech.transcript}
+            liveError={webSpeech.error}
+            disabled={transcribing}
+          />
+
           <ProviderPicker
             label="Moteur de transcription"
             providers={STT_PROVIDER_IDS}
@@ -164,87 +255,54 @@ export function SttWorkbench() {
             disabled={transcribing || recorder.recording}
           />
 
+          {specOpen && <ProviderSpecCards catalog={STT_PROVIDER_CATALOG} health={report?.stt} only={safeProvider} />}
+
           {providerHealth && providerHealth.status !== "ok" && (
             <div role="status" className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-              <TriangleAlert size={16} className="mt-0.5 shrink-0" />
-              <div>
+              <Icon name="warning" className="mt-0.5" />
+              <div className="min-w-0">
                 <p>
-                  {STT_PROVIDER_CATALOG[safeProvider].label} : {providerHealth.reason ?? "fonctionnement dégradé."}
+                  {providerLabel} : {providerHealth.reason ?? "fonctionnement dégradé."}
                 </p>
-                {providerHealth.hint && <p className="mt-0.5 text-xs"><HintText text={providerHealth.hint} /></p>}
+                {providerHealth.hint && (
+                  <p className="mt-0.5 text-xs">
+                    <HintText text={providerHealth.hint} />
+                  </p>
+                )}
               </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-line px-3.5 py-2.5">
-            <p className="flex items-center gap-2 text-sm font-medium text-ink">
-              <SlidersHorizontal size={15} className="text-muted" /> Réglages {STT_PROVIDER_CATALOG[safeProvider].label}
-            </p>
-            <div className="pt-3 pb-1">
-              <SttSettingsPanel
-                provider={safeProvider}
-                settings={providerSettings}
-                onChange={updateSettings}
-                pythonServiceHealth={report?.pythonService}
-                webSpeechSupported={webSpeech.supported}
-              />
-            </div>
-          </div>
+          <SettingsDisclosure
+            storageKey="stt"
+            providerLabel={providerLabel}
+            modifiedCount={modifiedCount}
+            onReset={() => updateSettings(safeProvider, DEFAULT_STT_SETTINGS[safeProvider])}
+          >
+            <SttSettingsPanel
+              provider={safeProvider}
+              settings={providerSettings}
+              onChange={updateSettings}
+              pythonServiceHealth={report?.pythonService}
+              webSpeechSupported={webSpeech.supported}
+            />
+          </SettingsDisclosure>
 
-          <SttAudioSourcePanel
-            provider={safeProvider}
-            source={source}
-            onSourceChange={(next) => {
-              setSource(next);
-              setShowSourcePreview(true);
-            }}
-            recorder={{ ...recorder, start: () => void startRecording() }}
-            liveTranscript={webSpeech.transcript}
-            liveError={webSpeech.error}
-            disabled={transcribing}
-          />
-
-          <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
-            {transcribing ? (
-              <>
-                <Button variant="secondary" size="lg" icon={<Square size={14} fill="currentColor" />} onClick={() => abortRef.current?.abort()}>
-                  Annuler
-                </Button>
-                <span aria-live="polite" className="flex items-center gap-2 text-sm text-muted">
-                  <span className="size-2 rounded-full bg-[var(--provider)] animate-pulse-dot" />
-                  Transcription {STT_PROVIDER_CATALOG[safeProvider].label}
-                  <span className="font-mono tabular-nums text-ink">{formatTimer(elapsedMs)}</span>
-                </span>
-              </>
-            ) : (
-              <>
-                <Button variant="primary" size="lg" icon={<Wand2 size={16} />} disabled={!canTranscribe} onClick={() => source && void transcribe(source, { browserTranscript: webSpeech.transcript })}>
-                  {source ? "Transcrire" : "Choisissez d'abord un audio"}
-                </Button>
-                {source && (
-                  <span className="min-w-0 truncate text-xs text-muted" title={source.fileName}>
-                    {source.fileName}
-                  </span>
-                )}
-              </>
-            )}
+          {/* ANCHOR: barre d'action collante en bas de l'écran tant que le panneau est visible ; les marges négatives annulent le padding du corps. */}
+          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-b-2xl border-t border-line bg-surface px-3 py-2.5 sm:-mx-4 sm:-mb-4 sm:px-4">
+            {actionBar}
           </div>
-          {safeProvider === "web-speech" && source && !sourceIsMic && (
-            <p className="-mt-3 text-xs text-warning">Web Speech ne transcrit que le micro en direct : choisissez Whisper ou Sherpa pour cet audio.</p>
-          )}
         </Panel>
 
-        <div className="space-y-5">
-          <Panel title="Résultat" icon={<FileText size={16} />}>
-            <SttTranscriptView
-              entry={currentEntry}
-              sourceUrl={showSourcePreview ? sourceUrl : null}
-              autoPlayToken={autoPlayToken}
-              onToggleFavorite={history.toggleFavorite}
-              onScore={history.setScore}
-            />
-          </Panel>
-          <ActivityPanel storageKey="stt-activity" sources={[...STT_PROVIDER_IDS, "python-service", "api"]} requestId={activeRequestId} />
+        <div ref={resultRef} className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-20">
+          <SttTranscriptView
+            entry={currentEntry}
+            origin={selectedEntry ? transcriptOrigin : "latest"}
+            autoPlayToken={autoPlayToken}
+            onToggleFavorite={history.toggleFavorite}
+            onScore={history.setScore}
+          />
+          <ActivityPanel storageKey="stt-activity" sources={[...STT_PROVIDER_IDS, "python-service", "api"]} requestId={activeRequestId} live={transcribing} />
         </div>
       </div>
 
@@ -256,23 +314,21 @@ export function SttWorkbench() {
         }}
       />
 
-      <Panel icon={<History size={16} />} title="Historique" actions={<span className="text-xs text-muted">{history.items.length} / 100</span>}>
-        <SttHistoryList
-          items={history.items}
-          loading={history.loading}
-          loadError={history.loadError}
-          activeEntryId={currentEntry?.id ?? null}
-          onOpen={openEntry}
-          onToggleFavorite={history.toggleFavorite}
-          onScore={history.setScore}
-          onDelete={(id) => {
-            void history.remove(id);
-            if (id === currentEntryId) setCurrentEntryId(null);
-          }}
-          onClear={() => void history.clear()}
-          onRetry={() => void history.reload()}
-        />
-      </Panel>
+      <SttHistoryList
+        items={history.items}
+        loading={history.loading}
+        loadError={history.loadError}
+        activeEntryId={currentEntry?.id ?? null}
+        onOpen={openEntry}
+        onToggleFavorite={history.toggleFavorite}
+        onScore={history.setScore}
+        onDelete={(id) => {
+          void history.remove(id);
+          if (id === currentEntryId) setCurrentEntryId(null);
+        }}
+        onClear={() => void history.clear()}
+        onRetry={() => void history.reload()}
+      />
     </div>
   );
 }

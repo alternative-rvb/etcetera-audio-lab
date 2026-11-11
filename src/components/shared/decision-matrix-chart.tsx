@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LogSource } from "@/lib/shared/types";
 import { LOG_SOURCE_LABELS, providerColorVar } from "@/lib/shared/provider-catalog";
 
@@ -16,12 +16,10 @@ export interface DecisionMatrixPoint {
   subtitle?: string;
 }
 
-const WIDTH = 640;
-const HEIGHT = 250;
-const PADDING = { top: 18, right: 24, bottom: 38, left: 40 };
-const PLOT_WIDTH = WIDTH - PADDING.left - PADDING.right;
+// NOTE: la largeur du viewBox suit celle du conteneur (ResizeObserver) pour garder un texte à sa taille réelle.
+const HEIGHT = 220;
+const PADDING = { top: 14, right: 16, bottom: 36, left: 36 };
 const PLOT_HEIGHT = HEIGHT - PADDING.top - PADDING.bottom;
-const X_TICKS = 4;
 
 export function DecisionMatrixChart({
   points,
@@ -40,12 +38,27 @@ export function DecisionMatrixChart({
   emptyMessage: string;
 }) {
   const [hovered, setHovered] = useState<DecisionMatrixPoint | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(640);
+  const hasRated = points.some((p) => p.score > 0 && p.x > 0);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.round(entry.contentRect.width))));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [hasRated]);
+
+  const WIDTH = width;
+  const PLOT_WIDTH = WIDTH - PADDING.left - PADDING.right;
+  const X_TICKS = width < 480 ? 3 : 4;
   const rated = points.filter((p) => p.score > 0 && p.x > 0);
   const maxX = Math.max(minXDomain, ...rated.map((p) => p.x)) * 1.12;
   const providersShown = [...new Set(rated.map((p) => p.provider))];
 
   if (rated.length === 0) {
-    return <p className="rounded-xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">{emptyMessage}</p>;
+    return <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{emptyMessage}</p>;
   }
 
   const toX = (value: number) => PADDING.left + (value / maxX) * PLOT_WIDTH;
@@ -53,8 +66,8 @@ export function DecisionMatrixChart({
 
   return (
     <div>
-      <div className="relative overflow-x-auto">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full min-w-[480px]" role="img" aria-label={`Matrice de décision : note en fonction de ${xLabel.toLowerCase()}`}>
+      <div ref={containerRef} className="relative">
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} className="block max-w-full" role="img" aria-label={`Matrice de décision : note en fonction de ${xLabel.toLowerCase()}`}>
           {/* NOTE: zone idéale (rapide et bien noté) légèrement teintée */}
           <rect x={PADDING.left} y={PADDING.top} width={PLOT_WIDTH / 2} height={PLOT_HEIGHT / 3} fill="var(--success)" opacity={0.07} rx={4} />
 
@@ -118,14 +131,14 @@ export function DecisionMatrixChart({
           >
             <p className="font-semibold text-ink">{hovered.title}</p>
             <p className="text-muted">
-              {LOG_SOURCE_LABELS[hovered.provider]} · {hovered.score}/3 · {formatX(hovered.x)}
+              {LOG_SOURCE_LABELS[hovered.provider]}, {hovered.score}/3, {formatX(hovered.x)}
             </p>
             {hovered.subtitle && <p className="mt-1 line-clamp-2 text-muted">{hovered.subtitle}</p>}
           </div>
         )}
       </div>
 
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         {providersShown.map((provider) => (
           <li key={provider} className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full" style={{ background: providerColorVar(provider) }} />

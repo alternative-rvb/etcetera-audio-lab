@@ -7,7 +7,7 @@ import { SettingSlider } from "@/components/ui/form-controls";
 
 export function PiperSettingsPanel({ settings, onChange }: { settings: PiperSettings; onChange: (settings: PiperSettings) => void }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <SettingSlider
         label="Lenteur (length scale)"
         value={settings.lengthScale}

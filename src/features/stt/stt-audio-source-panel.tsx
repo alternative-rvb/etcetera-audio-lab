@@ -1,18 +1,19 @@
 "use client";
 
-import { FileAudio, Mic, Square, Upload, UserRound } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
 import type { SttProviderId } from "@/lib/shared/types";
 import { providerColorVar } from "@/lib/shared/provider-catalog";
+import { AudioPlayer } from "@/components/ui/audio-player";
 import { Button } from "@/components/ui/button";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { useMediaStreamSpectrum } from "@/hooks/use-audio-spectrum";
 import { useElapsedTime } from "@/hooks/use-elapsed-time";
-import { usePersistentState } from "@/hooks/use-persistent-state";
 import { reportBrowserLog } from "@/lib/client/browser-logger";
 import { formatBytes, formatTimer } from "@/lib/client/format";
 import { cn } from "@/lib/client/cn";
 
-// SECTION: Source audio à transcrire : micro (avec spectre et texte Web Speech en direct), fichier importé, échantillon de démo.
+// SECTION: Source audio à transcrire : micro (spectre et texte Web Speech pendant l'enregistrement), fichier importé, échantillon de démo.
+// NOTE: les boutons Enregistrer, Arrêter et Transcrire sont dans la barre d'action du workbench, un seul bouton principal à la fois.
 
 export const MAX_STT_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -30,15 +31,20 @@ const DEMO_SAMPLES = [
   { id: "male", label: "Voix masculine", path: "/samples/sample_male_fr.wav" },
 ] as const;
 
-const SOURCE_TABS: Array<{ id: SttAudioOrigin; label: string; icon: typeof Mic }> = [
-  { id: "mic", label: "Micro", icon: Mic },
-  { id: "upload", label: "Fichier", icon: Upload },
-  { id: "demo", label: "Démo", icon: UserRound },
+const SOURCE_TABS: Array<{ id: SttAudioOrigin; label: string; icon: IconName }> = [
+  { id: "mic", label: "Micro", icon: "mic" },
+  { id: "upload", label: "Fichier", icon: "upload" },
+  { id: "demo", label: "Démo", icon: "demo" },
 ];
+
+const ORIGIN_LABELS: Record<SttAudioOrigin, string> = { mic: "Enregistrement micro", upload: "Fichier importé", demo: "Échantillon de démo" };
 
 export function SttAudioSourcePanel({
   provider,
+  tab,
+  onTabChange,
   source,
+  sourceUrl,
   onSourceChange,
   recorder,
   liveTranscript,
@@ -46,14 +52,16 @@ export function SttAudioSourcePanel({
   disabled,
 }: {
   provider: SttProviderId;
+  tab: SttAudioOrigin;
+  onTabChange: (tab: SttAudioOrigin) => void;
   source: SttAudioSource | null;
-  onSourceChange: (source: SttAudioSource) => void;
-  recorder: { start: () => void; stop: () => void; recording: boolean; stream: MediaStream | null; error: string | null };
+  sourceUrl: string | null;
+  onSourceChange: (source: SttAudioSource | null) => void;
+  recorder: { recording: boolean; stream: MediaStream | null; error: string | null };
   liveTranscript: string;
   liveError: string | null;
   disabled: boolean;
 }) {
-  const [tab, setTab] = usePersistentState<SttAudioOrigin>("stt-source-tab", "mic");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState<string | null>(null);
@@ -63,6 +71,7 @@ export function SttAudioSourcePanel({
   useMediaStreamSpectrum(recorder.stream, canvasRef, { color: providerColorVar(provider) });
 
   const isWebSpeech = provider === "web-speech";
+  const readySource = source?.origin === tab && !recorder.recording ? source : null;
 
   const acceptFile = (file: File | undefined) => {
     if (!file) return;
@@ -80,6 +89,7 @@ export function SttAudioSourcePanel({
 
   const loadDemo = async (sample: (typeof DEMO_SAMPLES)[number]) => {
     setLoadingDemo(sample.id);
+    setUploadError(null);
     try {
       const response = await fetch(sample.path);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -99,133 +109,118 @@ export function SttAudioSourcePanel({
   };
 
   return (
-    <div className="space-y-4">
-      <div role="tablist" aria-label="Source audio" className="inline-flex rounded-lg border border-line bg-sunken p-0.5">
-        {SOURCE_TABS.map(({ id, label, icon: Icon }) => (
+    <div className="space-y-2.5">
+      <div role="tablist" aria-label="Source audio" className="flex rounded-lg border border-line bg-sunken p-0.5">
+        {SOURCE_TABS.map(({ id, label, icon }) => (
           <button
             key={id}
             type="button"
             role="tab"
             aria-selected={tab === id}
-            disabled={recorder.recording}
-            onClick={() => setTab(id)}
+            disabled={recorder.recording || disabled}
+            onClick={() => onTabChange(id)}
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition disabled:opacity-50",
-              tab === id ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
+              "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-sm transition disabled:opacity-50",
+              tab === id ? "bg-surface font-medium text-ink shadow-sm" : "text-muted enabled:hover:text-ink"
             )}
           >
-            <Icon size={14} /> {label}
+            <Icon name={icon} size={17} /> {label}
           </button>
         ))}
       </div>
 
-      {tab === "mic" && (
-        <div className="space-y-3">
-          <div className="relative h-24 overflow-hidden rounded-xl border border-line bg-sunken">
-            <canvas ref={canvasRef} className="absolute inset-0 size-full" aria-hidden />
-            {!recorder.recording && (
-              <p className="absolute inset-0 flex items-center justify-center text-sm text-muted">
-                {isWebSpeech ? "Parlez après avoir lancé l'enregistrement : le texte s'affiche en direct." : "La transcription démarre automatiquement à l'arrêt de l'enregistrement."}
+      {readySource && sourceUrl ? (
+        // ANCHOR: audio prêt dans l'onglet courant : on l'identifie et on peut l'écouter avant de lancer la transcription.
+        <div className="space-y-1.5 rounded-xl border border-line px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Icon name="audioFile" className="text-[var(--provider)]" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-ink">{readySource.fileName}</p>
+              <p className="text-xs text-muted">
+                {ORIGIN_LABELS[readySource.origin]}, <span className="tabular-nums">{formatBytes(readySource.blob.size)}</span>
               </p>
-            )}
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => onSourceChange(null)} disabled={disabled}>
+              Changer
+            </Button>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {recorder.recording ? (
-              <Button variant="danger" size="lg" className="border-danger/50 bg-danger/10" icon={<Square size={14} fill="currentColor" />} onClick={recorder.stop}>
-                Arrêter l'enregistrement
-              </Button>
-            ) : (
-              <Button variant="primary" size="lg" icon={<Mic size={16} />} onClick={recorder.start} disabled={disabled}>
-                {source?.origin === "mic" ? "Enregistrer à nouveau" : "Enregistrer"}
-              </Button>
-            )}
-            {recorder.recording && (
-              <span aria-live="polite" className="flex items-center gap-2 font-mono text-sm tabular-nums text-ink">
+          <AudioPlayer src={sourceUrl} compact />
+        </div>
+      ) : tab === "mic" ? (
+        <div className="space-y-2">
+          {recorder.recording ? (
+            <div className="relative h-16 overflow-hidden rounded-xl border border-line bg-sunken">
+              <canvas ref={canvasRef} className="absolute inset-0 size-full" aria-hidden />
+              <span aria-live="polite" className="absolute top-1.5 left-2 flex items-center gap-1.5 rounded-md bg-surface/80 px-1.5 text-xs tabular-nums text-ink">
                 <span className="size-2 rounded-full bg-danger animate-pulse-dot" />
                 {formatTimer(elapsedMs)}
               </span>
-            )}
-          </div>
-          {recorder.error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{recorder.error}</p>}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              {isWebSpeech ? "Le texte s'affiche en direct pendant que vous parlez." : "La transcription démarre dès l'arrêt de l'enregistrement."}
+            </p>
+          )}
           {isWebSpeech && (recorder.recording || liveTranscript) && (
             <div aria-live="polite" className="rounded-xl border border-dashed border-[var(--provider)] px-3 py-2 text-sm text-ink">
               {liveTranscript || <span className="text-muted">En écoute...</span>}
             </div>
           )}
+          {recorder.error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{recorder.error}</p>}
           {isWebSpeech && liveError && <p className="text-sm text-warning">{liveError}</p>}
         </div>
-      )}
-
-      {tab === "upload" && (
-        <div className="space-y-2">
-          {isWebSpeech && <WebSpeechSourceNotice />}
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragging(true);
+      ) : tab === "upload" ? (
+        <div
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          className={cn(
+            "flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-xl border-2 border-dashed px-3 py-4 text-center transition",
+            dragging ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_8%,transparent)]" : "border-line"
+          )}
+        >
+          <div>
+            <p className="text-sm text-ink">Déposez un fichier audio ou vidéo</p>
+            <p className="text-xs text-muted">WAV, MP3, M4A, WebM, MP4, jusqu'à 50 Mo</p>
+          </div>
+          <Button size="sm" icon={<Icon name="upload" size={17} />} onClick={() => fileInputRef.current?.click()} disabled={disabled}>
+            Choisir un fichier
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*,video/*"
+            className="hidden"
+            onChange={(event) => {
+              acceptFile(event.target.files?.[0]);
+              event.target.value = "";
             }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition",
-              dragging ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_8%,transparent)]" : "border-line"
-            )}
-          >
-            <FileAudio size={22} className="text-muted" />
-            <p className="text-sm text-ink">Déposez un fichier audio ou vidéo ici</p>
-            <p className="text-xs text-muted">WAV, MP3, M4A, WebM, MP4... jusqu'à 50 Mo</p>
-            <Button size="sm" className="mt-1" onClick={() => fileInputRef.current?.click()} disabled={disabled}>
-              Choisir un fichier
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*,video/*"
-              className="hidden"
-              onChange={(event) => {
-                acceptFile(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
-          </div>
+          />
         </div>
-      )}
-
-      {tab === "demo" && (
-        <div className="space-y-2">
-          {isWebSpeech && <WebSpeechSourceNotice />}
-          <div className="grid gap-2 sm:grid-cols-2">
-            {DEMO_SAMPLES.map((sample) => (
-              <button
-                key={sample.id}
-                type="button"
-                disabled={disabled || loadingDemo !== null}
-                onClick={() => void loadDemo(sample)}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition disabled:opacity-50",
-                  source?.origin === "demo" && source.fileName === sample.path.split("/").pop() ? "border-[var(--provider)]" : "border-line hover:border-line-strong"
-                )}
-              >
-                <UserRound size={18} className="text-muted" />
-                <span>
-                  <span className="block text-sm font-medium text-ink">{sample.label}</span>
-                  <span className="text-xs text-muted">{loadingDemo === sample.id ? "Chargement..." : "Échantillon français, quelques secondes"}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {DEMO_SAMPLES.map((sample) => (
+            <button
+              key={sample.id}
+              type="button"
+              disabled={disabled || loadingDemo !== null}
+              onClick={() => void loadDemo(sample)}
+              className="flex items-center gap-2.5 rounded-xl border border-line px-3 py-2 text-left transition enabled:hover:border-line-strong disabled:opacity-50"
+            >
+              <Icon name="demo" className="text-muted" />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-ink">{sample.label}</span>
+                <span className="block truncate text-xs text-muted">{loadingDemo === sample.id ? "Chargement..." : "Français, quelques secondes"}</span>
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
       {uploadError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{uploadError}</p>}
     </div>
-  );
-}
-
-function WebSpeechSourceNotice() {
-  return (
-    <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-      Web Speech ne transcrit qu'en direct au micro. Pour un fichier ou un échantillon, choisissez Whisper ou Sherpa.
-    </p>
   );
 }

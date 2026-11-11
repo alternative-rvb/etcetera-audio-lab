@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import { reportBrowserLog } from "@/lib/client/browser-logger";
 
 // SECTION: Spectre de fréquences dessiné sur un canvas, alimenté par un <audio> ou un flux micro.
@@ -51,61 +51,10 @@ function drawSpectrumLoop(canvas: HTMLCanvasElement, analyser: AnalyserNode, opt
 }
 
 let sharedAudioContext: AudioContext | null = null;
-const connectedElements = new WeakMap<HTMLMediaElement, AnalyserNode>();
 
 function getAudioContext(): AudioContext {
   sharedAudioContext ??= new AudioContext();
   return sharedAudioContext;
-}
-
-/** Spectre d'un élément <audio> (un MediaElementSource ne peut être créé qu'une fois par élément). */
-export function useMediaElementSpectrum(
-  audioRef: RefObject<HTMLAudioElement | null>,
-  canvasRef: RefObject<HTMLCanvasElement | null>,
-  options: SpectrumOptions
-) {
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    const canvas = canvasRef.current;
-    if (!audio || !canvas) return;
-    let stopDrawing: (() => void) | null = null;
-
-    const start = () => {
-      try {
-        const context = getAudioContext();
-        if (context.state === "suspended") void context.resume();
-        let analyser = connectedElements.get(audio);
-        if (!analyser) {
-          analyser = context.createAnalyser();
-          analyser.fftSize = 256;
-          const source = context.createMediaElementSource(audio);
-          source.connect(analyser);
-          analyser.connect(context.destination);
-          connectedElements.set(audio, analyser);
-        }
-        stopDrawing?.();
-        stopDrawing = drawSpectrumLoop(canvas, analyser, optionsRef.current);
-      } catch (err) {
-        reportBrowserLog("warn", "browser", "audio.spectrum_failed", "Spectre audio indisponible (AudioContext).", { error: err });
-      }
-    };
-    const stop = () => {
-      stopDrawing?.();
-      stopDrawing = null;
-    };
-    audio.addEventListener("play", start);
-    audio.addEventListener("pause", stop);
-    audio.addEventListener("ended", stop);
-    return () => {
-      stop();
-      audio.removeEventListener("play", start);
-      audio.removeEventListener("pause", stop);
-      audio.removeEventListener("ended", stop);
-    };
-  }, [audioRef, canvasRef]);
 }
 
 /** Spectre d'un flux micro (MediaStream), sans sortie vers les haut-parleurs. */

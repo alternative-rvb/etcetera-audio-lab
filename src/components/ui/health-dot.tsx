@@ -1,5 +1,6 @@
 import type { ProviderHealth } from "@/lib/shared/types";
 import { cn } from "@/lib/client/cn";
+import { Tooltip } from "./tooltip";
 
 // ANCHOR: témoin d'état d'un provider (vert ok, orange dégradé, rouge indisponible, gris inconnu).
 const STATUS_CLASSES = {
@@ -19,11 +20,12 @@ export function healthLabel(health?: ProviderHealth): string {
 export function HealthDot({ health, className }: { health?: ProviderHealth; className?: string }) {
   const status = health?.status ?? "unknown";
   return (
-    <span
-      role="img"
-      aria-label={healthLabel(health)}
-      title={healthLabel(health)}
-      className={cn("inline-block size-2 shrink-0 rounded-full retro:shadow-[0_0_8px_currentColor]", STATUS_CLASSES[status], className)}
-    />
+    <Tooltip label={healthLabel(health)}>
+      <span
+        role="img"
+        aria-label={healthLabel(health)}
+        className={cn("inline-block size-2 shrink-0 rounded-full retro:shadow-[0_0_8px_currentColor]", STATUS_CLASSES[status], className)}
+      />
+    </Tooltip>
   );
 }

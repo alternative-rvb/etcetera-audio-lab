@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownToLine, Download, Pause, Play, ScrollText, Search, Trash2, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LOG_LEVELS, type LogEntry, type LogLevel, type LogSource } from "@/lib/shared/types";
@@ -129,7 +129,7 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
           active ? "bg-sunken font-medium text-ink retro:shadow-[inset_2px_0_0_var(--accent)]" : "text-muted hover:bg-sunken/60 hover:text-ink"
         )}
       >
-        {color ? <span className="size-2 shrink-0 rounded-full" style={{ background: color }} /> : <ScrollText size={13} className="shrink-0" />}
+        {color ? <span className="size-2 shrink-0 rounded-full" style={{ background: color }} /> : <Icon name="logs" size={14} />}
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {errors > 0 && (
           <span className="rounded-full bg-danger/15 px-1.5 text-[0.7rem] font-semibold tabular-nums text-danger" title={`${errors} erreur${errors > 1 ? "s" : ""}`}>
@@ -158,7 +158,6 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
       </nav>
 
       <Panel
-        icon={<ScrollText size={16} />}
         title={tab === "all" ? "Toutes les sources" : LOG_SOURCE_LABELS[tab]}
         actions={
           <span className="flex items-center gap-1.5 text-xs text-muted">
@@ -172,7 +171,7 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
           <label className="relative min-w-[200px] flex-1">
             <span className="sr-only">Rechercher dans les logs</span>
-            <Search size={14} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted" />
+            <Icon name="search" size={16} className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted" />
             <input
               type="search"
               value={search}
@@ -193,19 +192,19 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
               </option>
             ))}
           </select>
-          <Button icon={paused ? <Play size={14} /> : <Pause size={14} />} onClick={() => setPaused(!paused)}>
+          <Button icon={paused ? <Icon name="play" /> : <Icon name="pause" />} onClick={() => setPaused(!paused)}>
             {paused ? "Reprendre" : "Pause"}
           </Button>
           <Button
             variant={autoScroll ? "secondary" : "ghost"}
-            icon={<ArrowDownToLine size={14} />}
+            icon={<Icon name="scrollBottom" />}
             aria-pressed={autoScroll}
             onClick={() => setAutoScroll(!autoScroll)}
             title="Suivre automatiquement les nouvelles entrées"
           >
             Suivre
           </Button>
-          <Button variant="ghost" icon={<Download size={14} />} onClick={exportVisible} disabled={visible.length === 0}>
+          <Button variant="ghost" icon={<Icon name="download" />} onClick={exportVisible} disabled={visible.length === 0}>
             Exporter
           </Button>
           <ConfirmDeleteButton label="Vider" confirmLabel="Vider tous les logs" onConfirm={() => void clearAll()} />
@@ -216,7 +215,7 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
             <span className="text-muted">Requête</span>
             <code className="font-mono text-ink">{requestId}</code>
             <button type="button" onClick={() => selectRequestId(null)} className="ml-auto inline-flex items-center gap-1 text-xs text-muted hover:text-ink">
-              <X size={12} /> Retirer le filtre
+              <Icon name="close" size={14} /> Retirer le filtre
             </button>
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useState } from "react";
 import type { LogEntry, LogLevel } from "@/lib/shared/types";
 import { ProviderBadge } from "@/components/ui/provider-badge";
@@ -43,7 +43,7 @@ export function LogEntryRow({
         aria-expanded={hasDetails ? expanded : undefined}
         className={cn("flex w-full items-start gap-2 px-3 py-1.5 text-left", hasDetails && "hover:bg-sunken")}
       >
-        <ChevronRight size={12} className={cn("mt-0.5 shrink-0 text-muted transition-transform", expanded && "rotate-90", !hasDetails && "invisible")} />
+        <Icon name="chevronRight" size={14} className={cn("mt-0.5 shrink-0 text-muted transition-transform", expanded && "rotate-90", !hasDetails && "invisible")} />
         <time className="shrink-0 tabular-nums text-muted">{formatLogTime(entry.ts)}</time>
         <span className={cn("w-10 shrink-0 font-semibold", LEVEL_CLASSES[entry.level])}>{LEVEL_LABELS[entry.level]}</span>
         <ProviderBadge provider={entry.source} className="shrink-0" />

@@ -1,8 +1,8 @@
 "use client";
 
-import { Heart } from "lucide-react";
 import type { LogSource } from "@/lib/shared/types";
 import { LOG_SOURCE_LABELS, providerColorVar } from "@/lib/shared/provider-catalog";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/client/cn";
 
 // SECTION: Filtres d'historique communs : tout, favoris, puis un filtre par provider avec son compteur.
@@ -31,6 +31,8 @@ export function HistoryFilterBar<P extends LogSource>({
       {options.map((option) => {
         const active = value === option.id;
         const count = counts[option.id] ?? 0;
+        // NOTE: un filtre vide n'apporte rien, il est masqué (sauf s'il est actif).
+        if (count === 0 && option.id !== "all" && !active) return null;
         return (
           <button
             key={option.id}
@@ -38,13 +40,12 @@ export function HistoryFilterBar<P extends LogSource>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(option.id)}
-            disabled={count === 0 && option.id !== "all" && !active}
             className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition disabled:opacity-40",
-              active ? "border-ink bg-ink text-bg retro:border-accent retro:bg-accent retro:text-accent-contrast" : "border-line text-muted enabled:hover:border-line-strong enabled:hover:text-ink"
+              "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition",
+              active ? "border-ink bg-ink text-bg retro:border-accent retro:bg-accent retro:text-accent-contrast" : "border-line text-muted hover:border-line-strong hover:text-ink"
             )}
           >
-            {option.id === "favorites" && <Heart size={11} />}
+            {option.id === "favorites" && <Icon name="favorite" size={13} />}
             {option.color && <span className="size-2 rounded-full" style={{ background: option.color }} />}
             {option.label}
             <span className="tabular-nums opacity-70">{count}</span>

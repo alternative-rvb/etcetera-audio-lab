@@ -1,17 +1,28 @@
 "use client";
 
-import { Activity, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import type { LogSource } from "@/lib/shared/types";
 import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
+import { Icon } from "@/components/ui/icon";
 import { useLogStream } from "@/hooks/use-log-stream";
 import { LogEntryRow } from "./log-entry-row";
 
 // SECTION: Panneau Activité des pages TTS et STT.
 // ANCHOR: pendant une requête, trace en direct de ses logs (filtre requestId) ; sinon, derniers événements des providers de la page.
 
-export function ActivityPanel({ storageKey, sources, requestId }: { storageKey: string; sources: LogSource[]; requestId?: string | null }) {
+export function ActivityPanel({
+  storageKey,
+  sources,
+  requestId,
+  live = false,
+}: {
+  storageKey: string;
+  sources: LogSource[];
+  requestId?: string | null;
+  /** Vrai pendant une requête : le panneau s'ouvre pour suivre sa trace. */
+  live?: boolean;
+}) {
   const sourcesKey = sources.join(",");
   const filters = useMemo(
     () => (requestId ? { requestId } : { sources: sourcesKey.split(",") as LogSource[], minLevel: "info" as const }),
@@ -25,7 +36,7 @@ export function ActivityPanel({ storageKey, sources, requestId }: { storageKey: 
     <CollapsiblePanel
       storageKey={storageKey}
       defaultOpen={false}
-      icon={<Activity size={16} />}
+      forceOpen={live}
       title="Activité"
       summary={
         <span className="flex items-center gap-1.5">
@@ -35,13 +46,13 @@ export function ActivityPanel({ storageKey, sources, requestId }: { storageKey: 
       }
       actions={
         <Link href={logsHref} className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink">
-          Ouvrir dans les logs <ExternalLink size={12} />
+          Ouvrir dans les logs <Icon name="openInNew" size={14} />
         </Link>
       }
       bodyClassName="p-0 sm:p-0"
     >
       {visible.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted">Aucun événement pour l'instant. Lancez une génération pour la suivre ici.</p>
+        <p className="px-3 py-4 text-center text-sm text-muted">Aucun événement pour l'instant. Lancez une génération pour la suivre ici.</p>
       ) : (
         <ul aria-live="polite" className="max-h-72 overflow-y-auto">
           {visible.map((entry) => (

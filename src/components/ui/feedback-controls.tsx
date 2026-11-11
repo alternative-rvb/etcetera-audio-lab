@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Copy, Heart, Star, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/client/cn";
 import { Button, IconButton } from "./button";
+import { Icon } from "./icon";
 
 // SECTION: Notation, favori, copie et suppression avec confirmation intégrée (pas de confirm()).
 
@@ -24,9 +24,9 @@ export function StarRating({ value, onChange, size = 15, label = "Note" }: { val
               event.stopPropagation();
               onChange?.(value === score ? 0 : score);
             }}
-            className={cn("rounded p-0.5 transition enabled:hover:scale-110", active ? "text-amber-400" : "text-line-strong enabled:hover:text-amber-300")}
+            className={cn("rounded p-px transition enabled:hover:scale-110", active ? "text-amber-400" : "text-line-strong enabled:hover:text-amber-300")}
           >
-            <Star size={size} fill={active ? "currentColor" : "none"} />
+            <Icon name={active ? "star" : "starOutline"} size={size + 2} />
           </button>
         );
       })}
@@ -45,7 +45,7 @@ export function FavoriteToggle({ active, onToggle }: { active: boolean; onToggle
       }}
       className={cn(active && "text-rose-500 hover:text-rose-500")}
     >
-      <Heart size={15} fill={active ? "currentColor" : "none"} />
+      <Icon name={active ? "favorite" : "favoriteOutline"} size={18} />
     </IconButton>
   );
 }
@@ -70,7 +70,7 @@ export function CopyButton({ text, label = "Copier" }: { text: string; label?: s
         }
       }}
     >
-      {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+      {copied ? <Icon name="check" size={17} className="text-success" /> : <Icon name="copy" size={17} />}
     </IconButton>
   );
 }
@@ -103,12 +103,12 @@ export function ConfirmDeleteButton({ onConfirm, label, confirmLabel = "Confirme
   if (compact) {
     return (
       <IconButton label={label} className="hover:text-danger" onClick={(event) => { event.stopPropagation(); setArmed(true); }}>
-        <Trash2 size={14} />
+        <Icon name="delete" size={18} />
       </IconButton>
     );
   }
   return (
-    <Button size="sm" variant="ghost" icon={<Trash2 size={13} />} onClick={(event) => { event.stopPropagation(); setArmed(true); }}>
+    <Button size="sm" variant="ghost" icon={<Icon name="delete" size={16} />} onClick={(event) => { event.stopPropagation(); setArmed(true); }}>
       {label}
     </Button>
   );

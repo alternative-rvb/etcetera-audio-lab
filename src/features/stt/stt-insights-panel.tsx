@@ -1,6 +1,5 @@
 "use client";
 
-import { ChartScatter } from "lucide-react";
 import type { SttHistoryEntry } from "@/lib/shared/types";
 import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
 import { DecisionMatrixChart } from "@/components/shared/decision-matrix-chart";
@@ -17,11 +16,11 @@ export function SttInsightsPanel({ items, onSelect }: { items: SttHistoryEntry[]
   return (
     <CollapsiblePanel
       storageKey="stt-insights"
-      icon={<ChartScatter size={16} />}
       title="Comparatif"
-      summary={`${items.length} transcription${items.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
+      disabled={rated.length === 0}
+      summary={rated.length === 0 ? "Notez une transcription pour comparer" : `${items.length} transcription${items.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <StatTiles
           tiles={[
             { label: "Transcriptions", value: items.length },
@@ -36,7 +35,7 @@ export function SttInsightsPanel({ items, onSelect }: { items: SttHistoryEntry[]
             provider: item.provider,
             score: item.score,
             x: item.rtf,
-            title: `${item.modelSize} · ${item.device}`,
+            title: `${item.modelSize}, ${item.device.toUpperCase()}`,
             subtitle: item.text,
           }))}
           xLabel="RTF"

@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { reportBrowserLog } from "@/lib/client/browser-logger";
@@ -21,7 +21,7 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
       <p className="mt-2 text-sm text-muted">{error.message}</p>
       <p className="mt-1 text-xs text-muted">Le détail a été enregistré dans les logs (source Navigateur).</p>
       <div className="mt-5 flex gap-2">
-        <Button variant="primary" icon={<RotateCcw size={15} />} onClick={reset}>
+        <Button variant="primary" icon={<Icon name="reset" />} onClick={reset}>
           Réessayer
         </Button>
         <Button onClick={() => window.location.assign("/logs?sources=browser")}>Ouvrir les logs</Button>

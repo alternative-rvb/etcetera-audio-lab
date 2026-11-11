@@ -1,6 +1,5 @@
 "use client";
 
-import { ChartScatter } from "lucide-react";
 import type { TtsHistoryEntry } from "@/lib/shared/types";
 import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
 import { DecisionMatrixChart } from "@/components/shared/decision-matrix-chart";
@@ -16,11 +15,11 @@ export function TtsInsightsPanel({ items, onSelect }: { items: TtsHistoryEntry[]
   return (
     <CollapsiblePanel
       storageKey="tts-insights"
-      icon={<ChartScatter size={16} />}
       title="Comparatif"
-      summary={`${items.length} audio${items.length > 1 ? "s" : ""}, ${rated.length} noté${rated.length > 1 ? "s" : ""}`}
+      disabled={rated.length === 0}
+      summary={rated.length === 0 ? "Notez un audio pour comparer" : `${items.length} audio${items.length > 1 ? "s" : ""}, ${rated.length} noté${rated.length > 1 ? "s" : ""}`}
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <StatTiles
           tiles={[
             { label: "Générations", value: items.length },

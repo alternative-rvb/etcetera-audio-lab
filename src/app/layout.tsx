@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh">
         <HealthProvider>
           <AppHeader />
-          <main className="mx-auto max-w-[1400px] px-4 pt-5 pb-16 sm:px-6">{children}</main>
+          <main className="mx-auto max-w-[1400px] px-4 pt-4 pb-10 sm:px-6">{children}</main>
         </HealthProvider>
         <Toaster position="bottom-right" richColors closeButton theme="system" />
       </body>

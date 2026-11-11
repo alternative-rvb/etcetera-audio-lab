@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChatterboxSettings, ProviderHealth } from "@/lib/shared/types";
-import { SettingSelect, SettingSlider } from "@/components/ui/form-controls";
+import { SettingChoice, SettingSlider } from "@/components/ui/form-controls";
 
 // SECTION: Réglages Chatterbox (matériel d'exécution, exagération émotionnelle, température).
 
@@ -16,15 +16,15 @@ export function ChatterboxSettingsPanel({
 }) {
   const cudaAvailable = pythonServiceHealth?.details?.cuda_available;
   return (
-    <div className="space-y-4">
-      <SettingSelect
+    <div className="space-y-3">
+      <SettingChoice
         label="Matériel"
         value={settings.device}
         options={[
-          { value: "cpu", label: "CPU (lent, toujours disponible)" },
-          { value: "cuda", label: cudaAvailable === false ? "GPU CUDA (non détecté)" : "GPU CUDA (rapide)" },
+          { value: "cpu", label: "CPU" },
+          { value: "cuda", label: "GPU CUDA", disabledReason: cudaAvailable === false ? "Aucun GPU CUDA détecté par le service Python." : undefined },
         ]}
-        hint={settings.device === "cpu" ? "Sur CPU, comptez plusieurs dizaines de secondes par phrase." : undefined}
+        note={settings.device === "cpu" ? "Sur CPU, comptez plusieurs dizaines de secondes par phrase." : undefined}
         onChange={(device) => onChange({ ...settings, device })}
       />
       <SettingSlider

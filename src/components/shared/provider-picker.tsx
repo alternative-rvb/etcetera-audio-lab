@@ -2,7 +2,7 @@
 
 import type { LogSource, ProviderHealth } from "@/lib/shared/types";
 import type { ProviderSpec } from "@/lib/shared/provider-catalog";
-import { HealthDot, healthLabel } from "@/components/ui/health-dot";
+import { HealthDot } from "@/components/ui/health-dot";
 import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 
@@ -26,7 +26,7 @@ export function ProviderPicker<P extends LogSource>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={cn("grid grid-cols-2 gap-2", providers.length === 4 ? "lg:grid-cols-4" : "sm:grid-cols-3")}>
+    <div role="radiogroup" aria-label={label} className={cn("grid grid-cols-2 gap-1.5", providers.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
       {providers.map((provider) => {
         const spec = catalog[provider];
         const active = provider === value;
@@ -39,11 +39,10 @@ export function ProviderPicker<P extends LogSource>({
             role="radio"
             aria-checked={active}
             disabled={disabled}
-            title={healthLabel(providerHealth)}
             onClick={() => onChange(provider)}
             style={providerStyle(provider)}
             className={cn(
-              "group relative flex flex-col items-start rounded-xl border px-3 py-2.5 text-left transition disabled:cursor-not-allowed",
+              "group relative flex min-w-0 flex-col items-start rounded-xl border px-2.5 py-2 text-left transition disabled:cursor-not-allowed",
               active
                 ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,var(--surface))] shadow-[inset_0_0_0_1px_var(--provider)] retro:shadow-[0_0_16px_color-mix(in_srgb,var(--provider)_45%,transparent)]"
                 : "border-line bg-surface hover:border-line-strong",
@@ -51,10 +50,10 @@ export function ProviderPicker<P extends LogSource>({
             )}
           >
             <span className="flex w-full items-center justify-between gap-2">
-              <span className={cn("font-semibold", active ? "text-[var(--provider)]" : "text-ink")}>{spec.label}</span>
+              <span className={cn("truncate font-semibold", active ? "text-[var(--provider)]" : "text-ink")}>{spec.label}</span>
               <HealthDot health={providerHealth} />
             </span>
-            <span className="text-xs text-muted">{spec.tagline}</span>
+            <span className="w-full truncate text-xs text-muted">{spec.tagline}</span>
           </button>
         );
       })}
