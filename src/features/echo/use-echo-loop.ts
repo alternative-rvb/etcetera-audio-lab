@@ -11,7 +11,7 @@ import { useWebSpeechRecognition } from "@/features/stt/use-web-speech-recogniti
 import type { EchoPhase, EchoRound, EchoSettings, EchoTimes } from "./echo-types";
 import { useSilenceDetector } from "./use-silence-detector";
 
-// SECTION: Cycle de l'écho : écoute, transcription, pause, synthèse, lecture, puis reprise en mode mains libres.
+// SECTION: Cycle de l'écho : écoute, transcription, pause, synthèse, lecture. Un démarrage = un tour mesuré.
 // NOTE: le micro est coupé pendant la lecture, sinon la voix de synthèse serait retranscrite en boucle.
 
 export interface EchoConfig {
@@ -222,14 +222,12 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
         `Tour d'écho ${cfg.sttProvider} + ${cfg.ttsProvider} : latence perçue ${Math.round(times.latencyMs ?? 0)} ms, temps total ${Math.round(times.totalMs)} ms.`,
         { meta: { ...times, sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider } }
       );
-      if (cfg.settings.handsFree) void listen();
-      else setPhase("idle");
+      setPhase("idle");
     } catch (err) {
       if (stale() || (err instanceof ApiClientError && err.code === "ABORTED")) return;
       if (err instanceof EchoSkip) {
         toast.info(err.message, { description: "Parlez plus près du micro ou baissez le seuil de parole.", id: "echo-skip" });
-        if (cfg.settings.handsFree) void listen();
-        else setPhase("idle");
+        setPhase("idle");
         return;
       }
       showErrorToast(err, "Écho interrompu");

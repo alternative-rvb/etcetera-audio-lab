@@ -12,11 +12,9 @@ export interface EchoSettings {
   silenceMs: number;
   /** Seuil RMS de parole (0 à 1). */
   threshold: number;
-  /** Reprise de l'écoute à la fin de chaque lecture. */
-  handsFree: boolean;
 }
 
-export const DEFAULT_ECHO_SETTINGS: EchoSettings = { delayMs: 1000, autoStop: true, silenceMs: 1200, threshold: 0.02, handsFree: true };
+export const DEFAULT_ECHO_SETTINGS: EchoSettings = { delayMs: 1000, autoStop: true, silenceMs: 1200, threshold: 0.02 };
 
 /** Temps mesurés pendant un tour, en millisecondes (durée de parole en secondes). */
 export interface EchoTimes {

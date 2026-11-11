@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { StarRating } from "@/components/ui/feedback-controls";
 import { STT_PROVIDER_IDS, TTS_PROVIDER_IDS, type SttProviderId, type TtsProviderId, type TtsSettingsByProvider } from "@/lib/shared/types";
 import { DEFAULT_TTS_SETTINGS, providerColorVar, STT_PROVIDER_CATALOG, TTS_PROVIDER_CATALOG } from "@/lib/shared/provider-catalog";
 import { formatSeconds, formatTimer } from "@/lib/client/format";
@@ -20,6 +21,7 @@ import { usePersistentState } from "@/hooks/use-persistent-state";
 import { DEFAULT_STT_SETTINGS, type SttSettingsByProvider } from "@/features/stt/stt-settings";
 import { TtsVoicePicker } from "@/features/tts/tts-voice-picker";
 import { useTtsVoices } from "@/features/tts/use-tts-voices";
+import { EchoInsightsPanel } from "./echo-insights-panel";
 import { EchoRoundsPanel } from "./echo-rounds-panel";
 import { DEFAULT_ECHO_SETTINGS, MAX_ECHO_ROUNDS, type EchoPhase, type EchoRound, type EchoSettings } from "./echo-types";
 import { useEchoLoop, type LiveRound } from "./use-echo-loop";
@@ -99,6 +101,15 @@ export function EchoWorkbench() {
   );
 
   const running = echo.phase !== "idle";
+  // NOTE: dernier tour terminé, à noter tout de suite pour le placer sur la matrice.
+  const lastRound = !running && echo.live?.times.totalMs !== undefined ? rounds[0] : undefined;
+  const replayRef = useRef<HTMLAudioElement | null>(null);
+  const replay = (url: string) => {
+    replayRef.current?.pause();
+    replayRef.current = new Audio(url);
+    void replayRef.current.play();
+  };
+  const setScore = (id: string, score: number) => setRounds((current) => current.map((round) => (round.id === id ? { ...round, score } : round)));
   const listening = echo.phase === "listening";
   const elapsedMs = useElapsedTime(listening);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -228,12 +239,6 @@ export function EchoWorkbench() {
                   />
                 </>
               )}
-              <SettingSwitch
-                label="Mains libres"
-                checked={settings.handsFree}
-                onChange={(handsFree) => updateSettings({ handsFree })}
-                hint="Réécoute automatiquement après chaque réponse, jusqu'à Arrêter ou Échap. Le micro reste coupé pendant la lecture."
-              />
             </section>
 
             {/* ANCHOR: barre d'action collante, comme sur les pages Synthèse et Transcription. */}
@@ -252,7 +257,7 @@ export function EchoWorkbench() {
               ) : (
                 <>
                   <Button variant="primary" size="lg" icon={<Icon name="mic" size={20} />} disabled={Boolean(blockedReason)} onClick={echo.start}>
-                    Démarrer l&apos;écho
+                    {rounds.length > 0 ? "Nouvelle mesure" : "Démarrer une mesure"}
                   </Button>
                   {blockedReason && <span className="text-xs text-muted">{blockedReason}</span>}
                 </>
@@ -262,7 +267,7 @@ export function EchoWorkbench() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 lg:flex-1">
-          <Panel title="Tour en cours" meta={PHASE_LABELS[echo.phase]} bodyClassName="space-y-3">
+          <Panel title={`Mesure ${lastRound ? rounds.length : rounds.length + 1}`} meta={PHASE_LABELS[echo.phase]} bodyClassName="space-y-3">
             <div style={providerStyle(safeStt)} className="relative h-16 overflow-hidden rounded-xl border border-line bg-sunken">
               {listening ? (
                 <>
@@ -274,7 +279,7 @@ export function EchoWorkbench() {
                 </>
               ) : (
                 <p className="flex h-full items-center justify-center px-3 text-center text-sm text-muted">
-                  {running ? PHASE_LABELS[echo.phase] : "Cliquez sur Démarrer l'écho, puis dites une phrase."}
+                  {running ? PHASE_LABELS[echo.phase] : "Cliquez sur Démarrer une mesure, puis dites une phrase. Chaque clic lance une nouvelle mesure."}
                 </p>
               )}
             </div>
@@ -288,7 +293,7 @@ export function EchoWorkbench() {
             {echo.micError && <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{echo.micError}</p>}
 
             {echo.live && (
-              <ol aria-label="Étapes du tour" className="space-y-1.5">
+              <ol aria-label="Étapes de la mesure" className="space-y-1.5">
                 {STEPS.map((step, index) => {
                   const value = step.value(echo.live as LiveRound);
                   const active = index === activeIndex;
@@ -312,11 +317,29 @@ export function EchoWorkbench() {
                 </li>
               </ol>
             )}
+
+            {lastRound && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-sunken px-3 py-2 text-sm">
+                <span className="text-ink">Notez cette réponse pour la placer sur la matrice</span>
+                <StarRating
+                  value={lastRound.score}
+                  onChange={(score) => setScore(lastRound.id, score === lastRound.score ? 0 : score)}
+                  label="Note de la réponse"
+                />
+              </div>
+            )}
           </Panel>
 
-          <EchoRoundsPanel rounds={rounds} current={{ sttProvider: safeStt, ttsProvider: safeTts }} onClear={() => setRounds([])}
-            onScore={(id, score) => setRounds((current) => current.map((round) => (round.id === id ? { ...round, score } : round)))}
+          <EchoInsightsPanel
+            rounds={rounds}
+            current={{ sttProvider: safeStt, ttsProvider: safeTts }}
+            onSelect={(id) => {
+              const round = rounds.find((item) => item.id === id);
+              if (round) replay(round.audioUrl);
+            }}
           />
+
+          <EchoRoundsPanel rounds={rounds} onClear={() => setRounds([])} onScore={setScore} onReplay={replay} />
         </div>
       </div>
 
