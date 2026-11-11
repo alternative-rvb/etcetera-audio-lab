@@ -108,6 +108,7 @@ export function AudioPlayer({
   downloadName,
   autoPlayToken = 0,
   onTimeUpdate,
+  onDurationChange,
   handleRef,
   compact = false,
   className,
@@ -118,6 +119,8 @@ export function AudioPlayer({
   /** Change à chaque demande explicite de lecture (nouvelle génération, clic dans l'historique). */
   autoPlayToken?: number;
   onTimeUpdate?: (seconds: number) => void;
+  /** Durée réelle de l'audio, connue une fois les métadonnées chargées. */
+  onDurationChange?: (seconds: number) => void;
   handleRef?: RefObject<AudioPlayerHandle | null>;
   compact?: boolean;
   className?: string;
@@ -259,7 +262,11 @@ export function AudioPlayer({
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
-        onDurationChange={(event) => setDuration(event.currentTarget.duration)}
+        onDurationChange={(event) => {
+          const total = event.currentTarget.duration;
+          setDuration(total);
+          if (Number.isFinite(total) && total > 0) onDurationChange?.(total);
+        }}
         onTimeUpdate={(event) => {
           setCurrentTime(event.currentTarget.currentTime);
           onTimeUpdate?.(event.currentTarget.currentTime);

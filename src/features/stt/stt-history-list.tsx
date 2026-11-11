@@ -9,7 +9,7 @@ import { EmptyState, Panel, Skeleton } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
 import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { applyHistoryFilter, countHistoryFilters, HistoryFilterBar, type HistoryFilter } from "@/components/shared/history-filter-bar";
-import { formatDateTime } from "@/lib/client/format";
+import { formatDateTime, formatSeconds } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 
@@ -113,8 +113,9 @@ export function SttHistoryList({
                         <span className={cn("block text-sm text-ink", !expanded && "truncate")}>{item.text || "(aucune parole détectée)"}</span>
                         <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                           <ProviderBadge provider={item.provider} />
+                          <span className="font-semibold text-ink tabular-nums">{item.processingTimeMs ? formatSeconds(item.processingTimeMs) : "direct"}</span>
                           <span>{item.modelSize}</span>
-                          <span className="tabular-nums">{item.durationSec.toFixed(1)} s</span>
+                          <span className="tabular-nums">audio {item.durationSec.toFixed(1)} s</span>
                           {item.rtf > 0 && <span className="tabular-nums">RTF {item.rtf.toFixed(3)}</span>}
                           <span className="tabular-nums">{formatDateTime(item.createdAt)}</span>
                           <RuntimeBadge trace={item} />

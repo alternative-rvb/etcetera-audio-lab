@@ -283,6 +283,7 @@ export function SttWorkbench() {
         <div ref={resultRef} className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-20">
           <SttTranscriptView
             entry={currentEntry}
+            peers={history.items}
             origin={selectedEntry ? transcriptOrigin : "latest"}
             autoPlayToken={autoPlayToken}
             onToggleFavorite={history.toggleFavorite}

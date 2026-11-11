@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { TtsHistoryEntry, TtsProviderId } from "@/lib/shared/types";
 import { TTS_PROVIDER_CATALOG } from "@/lib/shared/provider-catalog";
 import { AudioPlayer } from "@/components/ui/audio-player";
-import { CopyButton, FavoriteToggle, StarRating } from "@/components/ui/feedback-controls";
+import { CopyButton, FavoriteToggle } from "@/components/ui/feedback-controls";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
-import { RuntimeBadge } from "@/components/ui/runtime-badge";
-import { formatBytes, formatClock, formatSeconds } from "@/lib/client/format";
+import { compareToPeers, MeasureHeadline } from "@/components/ui/measure-headline";
+import { formatBytes, formatClock } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 
 // SECTION: Panneau Écoute : dit quel audio est chargé (origine, moteur, voix, texte, fichier), le lit et permet de le juger.
+// Les deux mesures du banc d'essai (temps de génération et qualité perçue) sont en tête, en grand.
 
 /** D'où vient l'audio affiché : génération qui vient de finir, clic dans l'historique, ou dernier audio au chargement de la page. */
 export type ListenOrigin = "generated" | "history" | "latest";
@@ -24,6 +25,7 @@ const ORIGIN_LABELS: Record<ListenOrigin, string> = {
 
 export function TtsAudioMonitor({
   entry,
+  peers,
   origin,
   selectedProvider,
   autoPlayToken,
@@ -31,6 +33,8 @@ export function TtsAudioMonitor({
   onScore,
 }: {
   entry: TtsHistoryEntry | null;
+  /** Historique complet, pour comparer le temps de génération aux essais précédents du même moteur. */
+  peers: TtsHistoryEntry[];
   origin: ListenOrigin;
   selectedProvider: TtsProviderId;
   /** Change à chaque nouvelle génération ou clic dans l'historique, déclenche la lecture automatique. */
@@ -39,6 +43,16 @@ export function TtsAudioMonitor({
   onScore: (id: string, score: number) => void;
 }) {
   const [textExpanded, setTextExpanded] = useState(false);
+  const [audioDuration, setAudioDuration] = useState<{ url: string; seconds: number } | null>(null);
+
+  // NOTE: comparaison en temps par caractère, le temps brut dépend trop de la longueur du texte.
+  const comparison = useMemo(() => {
+    if (!entry) return undefined;
+    const costOf = (item: TtsHistoryEntry) => item.generationTimeMs / Math.max(item.text.length, 1);
+    const others = peers.filter((item) => item.provider === entry.provider && item.id !== entry.id && item.generationTimeMs > 0);
+    return compareToPeers(costOf(entry), others.map(costOf), TTS_PROVIDER_CATALOG[entry.provider].label, "temps par caractère");
+  }, [entry, peers]);
+  const durationSec = entry && audioDuration?.url === entry.url ? audioDuration.seconds : 0;
 
   return (
     <Panel title="Écoute" meta={entry ? `${ORIGIN_LABELS[origin]}, ${formatClock(entry.createdAt)}` : undefined}>
@@ -50,13 +64,23 @@ export function TtsAudioMonitor({
             <ProviderBadge provider={entry.provider} />
             <span className="min-w-0 truncate text-sm font-medium text-ink">{entry.voiceName}</span>
             <div className="ml-auto flex items-center">
-              <StarRating value={entry.score} onChange={(score) => onScore(entry.id, score)} />
               <FavoriteToggle active={entry.isFavorite} onToggle={() => onToggleFavorite(entry.id)} />
             </div>
             {entry.provider !== selectedProvider && (
               <p className="w-full text-xs text-muted">Moteur sélectionné pour la prochaine génération : {TTS_PROVIDER_CATALOG[selectedProvider].label}.</p>
             )}
           </div>
+
+          <MeasureHeadline
+            timeLabel="Généré en"
+            timeMs={entry.generationTimeMs}
+            realtimeFactor={durationSec && entry.generationTimeMs ? durationSec / (entry.generationTimeMs / 1000) : undefined}
+            realtimeDetail={durationSec ? `${durationSec.toFixed(1)} s d'audio produites en ${(entry.generationTimeMs / 1000).toFixed(2)} s.` : undefined}
+            comparison={comparison}
+            trace={entry}
+            score={entry.score}
+            onScore={(score) => onScore(entry.id, score)}
+          />
 
           <button
             type="button"
@@ -68,15 +92,16 @@ export function TtsAudioMonitor({
             <span className="sr-only">{textExpanded ? ", réduire le texte" : ", afficher tout le texte"}</span>
           </button>
 
-          <AudioPlayer src={entry.url} downloadName={entry.fileName} autoPlayToken={autoPlayToken} />
+          <AudioPlayer
+            src={entry.url}
+            downloadName={entry.fileName}
+            autoPlayToken={autoPlayToken}
+            onDurationChange={(seconds) => setAudioDuration({ url: entry.url, seconds })}
+          />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <span>
-              Généré en <span className="font-medium text-ink tabular-nums">{formatSeconds(entry.generationTimeMs)}</span>
-            </span>
             <span className="tabular-nums">{formatBytes(entry.sizeBytes)}</span>
             <span>{TTS_PROVIDER_CATALOG[entry.provider].output ?? entry.format.toUpperCase()}</span>
-            <RuntimeBadge trace={entry} />
             <span className="flex min-w-0 flex-1 basis-40 items-center justify-end gap-0.5">
               <code className="min-w-0 truncate font-mono">{entry.fileName}</code>
               <CopyButton text={entry.filePath} label="Copier le chemin complet du fichier" />

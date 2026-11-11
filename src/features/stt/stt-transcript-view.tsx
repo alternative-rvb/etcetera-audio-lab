@@ -1,14 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { SttHistoryEntry } from "@/lib/shared/types";
 import { AudioPlayer, type AudioPlayerHandle } from "@/components/ui/audio-player";
-import { CopyButton, FavoriteToggle, StarRating } from "@/components/ui/feedback-controls";
+import { CopyButton, FavoriteToggle } from "@/components/ui/feedback-controls";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
-import { RuntimeBadge } from "@/components/ui/runtime-badge";
-import { Tooltip } from "@/components/ui/tooltip";
-import { formatClock, formatSeconds } from "@/lib/client/format";
+import { compareToPeers, MeasureHeadline } from "@/components/ui/measure-headline";
+import { STT_PROVIDER_CATALOG } from "@/lib/shared/provider-catalog";
+import { formatClock } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 
@@ -30,12 +30,15 @@ function formatTimestamp(seconds: number): string {
 
 export function SttTranscriptView({
   entry,
+  peers,
   origin,
   autoPlayToken,
   onToggleFavorite,
   onScore,
 }: {
   entry: SttHistoryEntry | null;
+  /** Historique complet, pour comparer le RTF aux essais précédents du même moteur. */
+  peers: SttHistoryEntry[];
   origin: TranscriptOrigin;
   autoPlayToken: number;
   onToggleFavorite: (id: string) => void;
@@ -45,6 +48,12 @@ export function SttTranscriptView({
   const [currentTime, setCurrentTime] = useState(0);
   const [showWords, setShowWords] = useState(false);
   const hasWords = entry?.segments.some((segment) => segment.words?.length) ?? false;
+  // NOTE: comparaison sur le RTF, indépendant de la durée de l'audio ; même moteur et même modèle.
+  const comparison = useMemo(() => {
+    if (!entry || entry.rtf <= 0) return undefined;
+    const others = peers.filter((item) => item.provider === entry.provider && item.modelSize === entry.modelSize && item.id !== entry.id);
+    return compareToPeers(entry.rtf, others.map((item) => item.rtf), `${STT_PROVIDER_CATALOG[entry.provider].label} ${entry.modelSize}`, "RTF");
+  }, [entry, peers]);
 
   return (
     <Panel title="Résultat" meta={entry ? `${ORIGIN_LABELS[origin]}, ${formatClock(entry.createdAt)}` : undefined}>
@@ -56,7 +65,6 @@ export function SttTranscriptView({
             <ProviderBadge provider={entry.provider} />
             <span className="min-w-0 truncate text-sm font-medium text-ink">{entry.originalFilename ?? "Enregistrement micro"}</span>
             <div className="ml-auto flex items-center">
-              <StarRating value={entry.score} onChange={(score) => onScore(entry.id, score)} />
               <FavoriteToggle active={entry.isFavorite} onToggle={() => onToggleFavorite(entry.id)} />
               <CopyButton text={entry.text} label="Copier le texte" />
             </div>
@@ -66,28 +74,22 @@ export function SttTranscriptView({
             </p>
           </div>
 
+          <MeasureHeadline
+            timeLabel="Transcrit en"
+            timeMs={entry.processingTimeMs}
+            realtimeFactor={entry.rtf > 0 ? 1 / entry.rtf : undefined}
+            realtimeDetail={`RTF ${entry.rtf.toFixed(3)} : temps de traitement divisé par la durée de l'audio (${entry.durationSec.toFixed(1)} s).`}
+            comparison={comparison}
+            trace={entry}
+            score={entry.score}
+            onScore={(score) => onScore(entry.id, score)}
+          />
+
           <p className="rounded-lg bg-sunken px-3 py-2 text-[0.95rem] leading-relaxed text-ink">{entry.text || <span className="text-muted">Aucune parole détectée.</span>}</p>
 
           {entry.url && (
             <AudioPlayer src={entry.url} downloadName={entry.fileName} autoPlayToken={autoPlayToken} handleRef={playerRef} onTimeUpdate={setCurrentTime} />
           )}
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <span>
-              Audio de <span className="font-medium text-ink tabular-nums">{entry.durationSec.toFixed(1)} s</span>
-            </span>
-            <span>
-              Traité en <span className="font-medium text-ink tabular-nums">{entry.processingTimeMs ? formatSeconds(entry.processingTimeMs) : "direct"}</span>
-            </span>
-            {entry.rtf > 0 && (
-              <Tooltip label="Real-time factor : temps de traitement divisé par la durée de l'audio. En dessous de 1, plus rapide que le temps réel.">
-                <span tabIndex={0} className="cursor-help underline decoration-dotted underline-offset-2">
-                  RTF <span className="font-medium text-ink tabular-nums">{entry.rtf.toFixed(3)}</span>
-                </span>
-              </Tooltip>
-            )}
-            <RuntimeBadge trace={entry} />
-          </div>
 
           {entry.segments.length > 0 && (
             <div>

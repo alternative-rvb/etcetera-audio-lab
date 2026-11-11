@@ -21,17 +21,18 @@
   --glow: transparent;
 
   /* ANCHOR: une couleur par provider, utilisée partout (sélecteurs, spectre, historique, logs) */
+  /* NOTE: ni rouge, ni orange, ni jaune, ni vert : ces teintes sont réservées aux statuts (erreur, alerte, succès). */
   --color-edge-tts: #7c3aed;
   --color-piper: #0284c7;
-  --color-kokoro: #059669;
-  --color-chatterbox: #e11d48;
+  --color-kokoro: #4f46e5;
+  --color-chatterbox: #c026d3;
   --color-web-speech: #2563eb;
   --color-whisper: #9333ea;
-  --color-sherpa: #0d9488;
+  --color-sherpa: #0891b2;
   --color-api: #475569;
-  --color-python-service: #ca8a04;
+  --color-python-service: #78716c;
   --color-system: #64748b;
-  --color-browser: #0891b2;
+  --color-browser: #3b5bdb;
 }
 
 /* SECTION: Palette sombre */
@@ -52,15 +53,15 @@
 
   --color-edge-tts: #a78bfa;
   --color-piper: #38bdf8;
-  --color-kokoro: #34d399;
-  --color-chatterbox: #fb7185;
+  --color-kokoro: #818cf8;
+  --color-chatterbox: #e879f9;
   --color-web-speech: #60a5fa;
-  --color-whisper: #f472b6;
-  --color-sherpa: #fbbf24;
+  --color-whisper: #c084fc;
+  --color-sherpa: #22d3ee;
   --color-api: #94a3b8;
-  --color-python-service: #facc15;
+  --color-python-service: #a8a29e;
   --color-system: #94a3b8;
-  --color-browser: #22d3ee;
+  --color-browser: #93c5fd;
 }
 
 /* SECTION: Palette rétro Y2K (grille cyan, néons) */
@@ -82,15 +83,15 @@
 
   --color-edge-tts: #a855f7;
   --color-piper: #00f0ff;
-  --color-kokoro: #00ff66;
-  --color-chatterbox: #ff0055;
-  --color-web-speech: #00ffaa;
-  --color-whisper: #ff00ea;
-  --color-sherpa: #ffaa00;
+  --color-kokoro: #7b7bff;
+  --color-chatterbox: #ff3df5;
+  --color-web-speech: #4d9dff;
+  --color-whisper: #c86bff;
+  --color-sherpa: #00b3ff;
   --color-api: #7d8fa9;
-  --color-python-service: #ffe600;
+  --color-python-service: #b3a8a0;
   --color-system: #7d8fa9;
-  --color-browser: #00d0ff;
+  --color-browser: #8fb8ff;
 }
 
 /* SECTION: Jetons exposés à Tailwind (bg-surface, text-muted, border-line...) */

@@ -116,8 +116,8 @@ export function TtsHistoryList({
                         <span className={cn("block text-sm text-ink", !expanded && "truncate")}>{item.text}</span>
                         <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                           <ProviderBadge provider={item.provider} />
+                          <span className="font-semibold text-ink tabular-nums">{formatSeconds(item.generationTimeMs)}</span>
                           <span>{item.voiceName}</span>
-                          <span className="tabular-nums">{formatSeconds(item.generationTimeMs)}</span>
                           <span className="tabular-nums">{formatDateTime(item.createdAt)}</span>
                           <RuntimeBadge trace={item} />
                         </span>

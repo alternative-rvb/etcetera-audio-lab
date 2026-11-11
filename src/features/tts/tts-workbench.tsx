@@ -270,6 +270,7 @@ export function TtsWorkbench() {
         <div ref={listenRef} className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-20">
           <TtsAudioMonitor
             entry={currentEntry}
+            peers={history.items}
             origin={effectiveOrigin}
             selectedProvider={safeProvider}
             autoPlayToken={autoPlayToken}
