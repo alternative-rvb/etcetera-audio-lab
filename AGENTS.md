@@ -2,13 +2,15 @@
 
 Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
 
+C'est le laboratoire voix de NowWeAct (`/home/nicolas/projets/_github/NowWeAct`): toute nouvelle fonctionnalité TTS ou STT (nouveau moteur, nouvelle voix, changement de lib, diagnostic de panne) se teste et se compare ici avant d'être portée dans NowWeAct. NowWeAct le référence dans son propre `AGENTS.md`.
+
 Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Le dépôt GitHub (`alternative-rvb/etcetera-audio-lab`) et le dossier local s'appellent désormais `etcetera-audio-lab`.
 
 ## Portée actuelle
 
 ### Synthèse vocale (TTS)
 
-- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0): endpoint gratuit non officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur déjà utilisé en production dans NowWeAct (`app/api/tts/speak/route.ts`).
+- **Edge TTS** (`edge-tts-universal`, licence AGPL-3.0): endpoint gratuit non officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur utilisé en production dans NowWeAct (`app/api/tts/speak/route.ts`), qui est passé à `msedge-tts` 2.1.1 (licence MIT) le 2026-11-11 : depuis octobre 2026, Microsoft a déplacé la synthèse vers `api.msedgeservices.com` et `edge-tts-universal` 1.4.0 reste bloquée sur l'ancien hôte (backlog NowWeAct #257). Ici, Edge TTS est donc en panne tant que l'adaptateur n'a pas migré lui aussi.
 - **Piper** (rhasspy/piper): moteur local, binaire natif lancé via `child_process`, voix ONNX (Siwis, UPMC, etc.).
 - **Kokoro** (82M paramètres, licence Apache 2.0): qualité supérieure à Piper, exécuté en Node.js via ONNX Runtime (`kokoro-js`). Voix française `ff_siwis` et voix anglaises expressives.
 - **Chatterbox** (Resemble AI, licence MIT): clonage vocal zéro-shot à partir d'échantillons de référence, avec réglage de l'exagération émotionnelle, exécuté par le micro-service Python (PyTorch, CUDA sur RTX 3070 ou CPU).
@@ -55,7 +57,7 @@ Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus
 
 - Piper en binaire natif avec `child_process`, pas en WASM navigateur, pour rester représentatif d'un usage serveur portable sur le VPS.
 - Binaire Piper pris sur le repo archivé MIT plutôt que sur le fork actif GPL-3.0, pour éviter toute contrainte de redistribution si le projet est distribué publiquement.
-- Edge TTS repris à l'identique de NowWeAct: même lib, mêmes voix Neural (Denise et Henri en français, Aria et Guy en anglais). La licence AGPL-3.0 de la lib est plus contraignante que la GPL si le service est exposé en réseau, à garder en tête avant tout vrai déploiement.
+- Edge TTS repris de l'ancienne implémentation de NowWeAct: même lib à l'origine, mêmes voix Neural (Denise et Henri en français, Aria et Guy en anglais). La licence AGPL-3.0 de la lib est plus contraignante que la GPL si le service est exposé en réseau, à garder en tête avant tout vrai déploiement.
 - `onnxruntime-node`, `kokoro-js` et `edge-tts-universal` sont déclarés dans `serverExternalPackages` (`next.config.ts`) pour ne jamais être bundlés.
 
 ## Démarrage
