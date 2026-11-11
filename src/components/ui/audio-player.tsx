@@ -278,7 +278,7 @@ export function AudioPlayer({
         aria-label={playing ? "Mettre en pause" : "Lire"}
         onClick={togglePlay}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--provider,var(--accent))] text-white shadow-sm transition hover:brightness-110 retro:text-[#040914] retro:shadow-[0_0_14px_var(--provider,var(--accent))]",
+          "inline-flex shrink-0 items-center justify-center rounded-full bg-[var(--provider,var(--accent))] text-white shadow-sm transition hover:brightness-110",
           compact ? "size-8" : "size-10"
         )}
       >

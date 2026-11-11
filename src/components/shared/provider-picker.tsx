@@ -49,7 +49,7 @@ export function ProviderPicker<P extends LogSource>({
               className={cn(
                 "flex h-9 min-w-0 items-center gap-1.5 rounded-lg border px-2.5 text-left text-sm transition disabled:cursor-not-allowed",
                 active
-                  ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,var(--surface))] shadow-[inset_0_0_0_1px_var(--provider)] retro:shadow-[0_0_16px_color-mix(in_srgb,var(--provider)_45%,transparent)]"
+                  ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,var(--surface))] shadow-[inset_0_0_0_1px_var(--provider)]"
                   : "border-line bg-surface hover:border-line-strong",
                 isDown && !active && "opacity-60"
               )}

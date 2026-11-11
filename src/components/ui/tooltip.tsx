@@ -125,7 +125,7 @@ export function Tooltip({
             role="tooltip"
             aria-hidden={!describe}
             style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? "visible" : "hidden" }}
-            className="pointer-events-none fixed z-50 max-w-64 rounded-md bg-ink px-2 py-1 text-xs leading-snug text-bg shadow-lg retro:border retro:border-accent retro:bg-surface retro:text-accent"
+            className="pointer-events-none fixed z-50 max-w-64 rounded-md bg-ink px-2 py-1 text-xs leading-snug text-bg shadow-lg"
           >
             {label}
           </div>,

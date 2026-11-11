@@ -34,7 +34,6 @@ import speed from "@iconify-icons/material-symbols/speed-rounded";
 import star from "@iconify-icons/material-symbols/star-rounded";
 import starOutline from "@iconify-icons/material-symbols/star-outline-rounded";
 import stop from "@iconify-icons/material-symbols/stop-rounded";
-import terminal from "@iconify-icons/material-symbols/terminal-rounded";
 import textToSpeech from "@iconify-icons/material-symbols/text-to-speech-rounded";
 import translate from "@iconify-icons/material-symbols/translate-rounded";
 import tune from "@iconify-icons/material-symbols/tune-rounded";
@@ -92,7 +91,6 @@ const ICONS = {
   unfoldLess,
   lightMode,
   darkMode,
-  retro: terminal,
   openInNew,
   search,
   scrollBottom: verticalAlignBottom,

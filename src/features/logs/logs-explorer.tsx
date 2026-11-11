@@ -126,7 +126,7 @@ export function LogsExplorer({ initialSource, initialRequestId }: { initialSourc
         onClick={() => selectTab(id)}
         className={cn(
           "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition",
-          active ? "bg-sunken font-medium text-ink retro:shadow-[inset_2px_0_0_var(--accent)]" : "text-muted hover:bg-sunken/60 hover:text-ink"
+          active ? "bg-sunken font-medium text-ink" : "text-muted hover:bg-sunken/60 hover:text-ink"
         )}
       >
         {color ? <span className="size-2 shrink-0 rounded-full" style={{ background: color }} /> : <Icon name="logs" size={14} />}

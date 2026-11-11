@@ -24,7 +24,7 @@ export function HealthDot({ health, className, tooltip = true }: { health?: Prov
     <span
       role="img"
       aria-label={healthLabel(health)}
-      className={cn("inline-block size-2 shrink-0 rounded-full retro:shadow-[0_0_8px_currentColor]", STATUS_CLASSES[status], className)}
+      className={cn("inline-block size-2 shrink-0 rounded-full", STATUS_CLASSES[status], className)}
     />
   );
   return tooltip ? <Tooltip label={healthLabel(health)}>{dot}</Tooltip> : dot;

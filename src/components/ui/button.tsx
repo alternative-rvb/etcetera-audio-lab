@@ -9,7 +9,7 @@ type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--provider,var(--accent))] text-white shadow-sm enabled:hover:brightness-110 retro:text-[#040914] retro:shadow-[0_0_18px_var(--provider,var(--accent))]",
+    "bg-[var(--provider,var(--accent))] text-white shadow-sm enabled:hover:brightness-110",
   secondary: "border border-line bg-surface text-ink enabled:hover:border-line-strong enabled:hover:bg-sunken",
   ghost: "text-muted enabled:hover:bg-sunken enabled:hover:text-ink",
   danger: "border border-transparent text-danger enabled:hover:border-danger/40 enabled:hover:bg-danger/10",

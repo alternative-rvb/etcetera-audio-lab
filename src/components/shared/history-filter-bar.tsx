@@ -42,7 +42,7 @@ export function HistoryFilterBar<P extends LogSource>({
             onClick={() => onChange(option.id)}
             className={cn(
               "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs transition",
-              active ? "border-ink bg-ink text-bg retro:border-accent retro:bg-accent retro:text-accent-contrast" : "border-line text-muted hover:border-line-strong hover:text-ink"
+              active ? "border-ink bg-ink text-bg" : "border-line text-muted hover:border-line-strong hover:text-ink"
             )}
           >
             {option.id === "favorites" && <Icon name="favorite" size={13} />}
