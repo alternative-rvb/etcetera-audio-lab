@@ -98,7 +98,7 @@ async function transcribeWithGroq(input: SttTranscriptionInput): Promise<SttTran
     text: (data.text ?? "").trim(),
     language: input.language !== "auto" ? input.language : (detected && LANGUAGE_NAME_TO_CODE[detected]) || detected || "auto",
     durationSec,
-    // NOTE: temps aller-retour réseau compris, c'est ce que verrait NowWeAct.
+    // NOTE: temps aller-retour réseau compris, comme pour une app en conditions réelles.
     processingTimeMs,
     rtf: durationSec > 0 ? Number((processingTimeMs / 1000 / durationSec).toFixed(3)) : 0,
     modelSize: input.groqModel,

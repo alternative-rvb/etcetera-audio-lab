@@ -1,38 +1,128 @@
 # Etcetera Audio Lab
 
-Banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
+Banc d'essai open source (licence MIT) de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), centré sur le français. Une app Next.js compare dans une même interface des moteurs locaux, cloud et navigateur, et mesure pour chaque essai la qualité perçue, le temps de traitement et le moteur réellement utilisé.
 
-C'est le laboratoire voix de NowWeAct (`/home/nicolas/projets/_github/NowWeAct`): toute nouvelle fonctionnalité TTS ou STT (nouveau moteur, nouvelle voix, changement de lib, diagnostic de panne) se teste et se compare ici avant d'être portée dans NowWeAct. NowWeAct le référence dans son propre `AGENTS.md`.
+Ce fichier sert aux agents de code: il décrit l'installation pas à pas, la vérification, le dépannage, puis l'architecture et les conventions à respecter pour modifier le projet. La présentation générale est dans [README.md](README.md).
 
-Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Son nom complet est Etcetera Audio Lab, à ne pas abréger en Etcetera, qui désigne un autre projet plus ancien (dépôt `alternative-rvb/etcetera`). Le dépôt GitHub (`alternative-rvb/etcetera-audio-lab`) et le dossier local s'appellent désormais `etcetera-audio-lab`.
+## Installation
 
-## Portée actuelle
+### Accompagner une installation
+
+Quand une personne demande de l'aide pour installer le projet, il faut vérifier chaque prérequis par une commande avant de lancer quoi que ce soit, signaler ce qui manque avec la commande d'installation adaptée à son système, et lui demander son accord avant toute installation système (`apt`, `brew`, `winget`, etc.). Le service Python et la clé Groq sont facultatifs: les proposer, pas les imposer.
+
+### Prérequis
+
+| Élément | Vérification | Obligatoire | Remarque |
+| ------- | ------------ | ----------- | -------- |
+| Linux x86_64 ou WSL2 | `uname -sm` | Oui | `scripts/setup-piper.sh` télécharge `piper_linux_x86_64`, qui fournit aussi espeak-ng. Sur macOS ou ARM, Piper et Kokoro en Node échouent sans adaptation du script. |
+| Node.js 20.9 ou plus | `node -v` | Oui | Minimum imposé par Next.js 16. |
+| ffmpeg | `ffmpeg -version` | Oui | Décode l'audio à transcrire en PCM 16 kHz. |
+| curl, tar, bzip2 | `command -v curl tar bzip2` | Oui | Téléchargement et extraction des modèles. |
+| Espace disque | `df -h .` | Oui | Environ 3,5 Go (`models/`, `voices/`, `bin/`), 1,8 Go de plus avec Whisper medium. |
+| uv | `uv --version` | Non | Crée le virtualenv Python 3.12 du service Python. |
+| GPU NVIDIA et CUDA | `nvidia-smi` | Non | Accélère Chatterbox et Whisper. Sans GPU, Chatterbox tourne lentement sur CPU. |
+
+### Étapes
+
+Installer les dépendances npm, le binaire Piper et espeak-ng dans `bin/`, les voix Piper dans `voices/` et les modèles sherpa-onnx dans `models/sherpa/`:
+
+```bash
+npm run setup
+```
+
+Les scripts sont idempotents: un fichier déjà présent est sauté, on peut relancer après une coupure réseau. Pour retélécharger seulement les modèles sherpa-onnx:
+
+```bash
+npm run setup:sherpa
+```
+
+Pour ajouter Whisper medium (1,8 Go):
+
+```bash
+npm run setup:sherpa -- --whisper-medium
+```
+
+Facultatif, installer le service Python (Chatterbox, Whisper sur GPU, secours Python) dans `python/.venv`. Le script fixe Python 3.12 car torch 2.6, imposé par Chatterbox, n'existe pas pour les versions plus récentes:
+
+```bash
+npm run setup:chatterbox
+```
+
+Facultatif, activer Groq Whisper: copier `.env.example` en `.env.local` à la racine, puis y renseigner `GROQ_API_KEY` ([clé gratuite sur la console Groq](https://console.groq.com/keys)). Ne jamais demander la clé dans la conversation ni l'écrire dans un fichier suivi par git: la personne la colle elle-même dans `.env.local`.
+
+### Lancement et vérification
+
+Lancer Next.js sur `http://localhost:3000` et, s'il est installé, le service Python sur `127.0.0.1:5002`:
+
+```bash
+npm run dev
+```
+
+Lancer Next.js seul:
+
+```bash
+npm run dev:next
+```
+
+Vérifier l'état de chaque moteur: `ok`, `degraded` (secours actif) ou `down`, avec la raison et une piste dans `hint`:
+
+```bash
+curl -s http://localhost:3000/api/health
+```
+
+Ouvrir ensuite `http://localhost:3000/tts`, générer un texte avec Piper, puis transcrire un échantillon de démo sur `/stt` avec Whisper.
+
+Pour la production:
+
+```bash
+npm run build
+```
+
+```bash
+npm start
+```
+
+### Dépannage
+
+| Symptôme | Cause probable | Solution |
+| -------- | -------------- | -------- |
+| Piper, Whisper ou Sherpa `down`, message de modèle introuvable | Téléchargement incomplet de `models/sherpa/` | Relancer `npm run setup:sherpa`. |
+| Voix Piper muette ou erreur de phonèmes | `bin/espeak-ng` absent ou non exécutable | Relancer `bash scripts/setup-piper.sh`, vérifier `ls -l bin/`. |
+| Transcription en erreur de décodage | `ffmpeg` absent du `PATH` | Installer ffmpeg (`sudo apt install ffmpeg` sous Ubuntu), relancer `npm run dev`. |
+| Chatterbox `down`, `PYTHON_SERVICE_DOWN` | Service Python non installé ou arrêté | `npm run setup:chatterbox`, puis `npm run dev` (et non `dev:next`). |
+| Chatterbox très lent | Pas de CUDA, exécution sur CPU | Normal sans GPU; vérifier `nvidia-smi` et le message de fin de `setup:chatterbox`. |
+| Edge TTS en erreur 403 ou réseau | Endpoint Microsoft non officiel modifié ou bloqué | Vérifier la connexion, puis une version plus récente de `msedge-tts`. |
+| Groq `down`, clé absente | `.env.local` absent ou sans `GROQ_API_KEY` | Créer le fichier depuis `.env.example`, redémarrer le serveur. |
+| Web Speech indisponible | Navigateur sans SpeechRecognition (Firefox) | Utiliser Chrome ou Edge. |
+
+La page `/logs` et le fichier `output/logs/app.jsonl` donnent le détail de chaque erreur, filtrable par identifiant de requête.
+
+## Moteurs
 
 ### Synthèse vocale (TTS)
 
-- **Edge TTS** (`msedge-tts`, licence MIT): endpoint gratuit non officiel des voix Microsoft Edge Neural, aucune clé API. C'est le moteur utilisé en production dans NowWeAct (`app/api/tts/speak/route.ts`). Les deux projets sont passés de `edge-tts-universal` 1.4.0 à `msedge-tts` 2.1.1 le 2026-11-11: depuis octobre 2026, Microsoft a déplacé la synthèse vers `api.msedgeservices.com` et l'ancienne lib restait bloquée sur l'ancien hôte (backlog id 24 ici, #257 dans NowWeAct).
-- **Piper** (rhasspy/piper): moteur local, voix ONNX (Siwis, UPMC, etc.). Exécuté dans Node par `sherpa-onnx-node` (modèles de `models/sherpa/`, phonèmes fournis par `bin/espeak-ng`), avec en secours le binaire natif lancé via `child_process` (voix de `voices/`).
-- **Kokoro** (82M paramètres, licence Apache 2.0): qualité supérieure à Piper, exécuté en Node.js via ONNX Runtime (`kokoro-js`). Voix française `ff_siwis` et voix anglaises expressives.
-- **Chatterbox** (Resemble AI, licence MIT): clonage vocal zéro-shot à partir d'échantillons de référence, avec réglage de l'exagération émotionnelle, exécuté par le micro-service Python (PyTorch, CUDA sur RTX 3070 ou CPU).
+- **Edge TTS** (`msedge-tts`, licence MIT): endpoint gratuit et non officiel des voix Microsoft Edge Neural, sans clé API. Voix retenues (`edge-tts-voices.ts`): Denise, Éloïse, Henri, et les voix multilingues Vivienne et Rémy. Depuis octobre 2026, la synthèse passe par `api.msedgeservices.com`; l'endpoint peut de nouveau changer sans prévenir.
+- **Piper** (rhasspy/piper): voix ONNX (Siwis, UPMC, Tom, Gilles, Lessac). Exécuté dans Node par `sherpa-onnx-node` (modèles de `models/sherpa/`, phonèmes fournis par `bin/espeak-ng`), avec en secours le binaire natif lancé via `child_process` (voix de `voices/`).
+- **Kokoro** (82M paramètres, Apache 2.0): exécuté en Node.js via ONNX Runtime (`kokoro-js`). Voix française `ff_siwis` et voix anglaises.
+- **Chatterbox** (Resemble AI, MIT): clonage vocal à partir des échantillons de `python/tts/references/`, réglage de l'exagération émotionnelle, exécuté par le service Python (PyTorch, CUDA ou CPU).
 
 ### Reconnaissance vocale (STT)
 
-- **Whisper**: sur CPU, exécuté dans Node par `sherpa-onnx-node` (modèles int8 tiny, base, small, medium en option), segments horodatés, Faster-Whisper du service Python en secours. Sur CUDA, Faster-Whisper du service Python directement, seul à fournir l'horodatage mot à mot.
-- **Sherpa-ONNX**: NVIDIA Parakeet TDT 0.6B v3 (25 langues européennes, détection automatique) exécuté dans Node par `sherpa-onnx-node`, avec Whisper `tiny` du service Python en secours.
-- **Groq Whisper**: API cloud compatible OpenAI (`whisper-large-v3-turbo` ou `whisper-large-v3`), horodatage mot à mot sans score de confiance. Clé `GROQ_API_KEY` dans `.env.local` (ignoré par git). Offre gratuite: 2 000 requêtes et 8 h d'audio par jour, 25 Mo par fichier.
+- **Whisper**: sur CPU, exécuté dans Node par `sherpa-onnx-node` (modèles int8 tiny, base, small, medium en option), segments horodatés, Faster-Whisper du service Python en secours. Sur CUDA, Faster-Whisper directement, seul à fournir l'horodatage mot à mot.
+- **Sherpa-ONNX**: NVIDIA Parakeet TDT 0.6B v3 (25 langues européennes, détection automatique) exécuté dans Node, avec Whisper `tiny` du service Python en secours.
+- **Groq Whisper**: API cloud compatible OpenAI (`whisper-large-v3-turbo` ou `whisper-large-v3`), horodatage mot à mot sans score de confiance. Offre gratuite: 2 000 requêtes et 8 h d'audio par jour, 25 Mo par fichier.
 - **Web Speech API**: transcription en direct dans le navigateur, sans serveur, uniquement depuis le micro.
-- **Analyse IA des transcriptions** (Groq, modèle `openai/gpt-oss-20b`, surchargeable par `GROQ_ANALYSIS_MODEL`): lancée automatiquement après chaque transcription (route `POST /api/stt/history/[id]/analyze`), elle note le texte de 1 à 3 (ponctuation, cohérence, fluidité, mots suspects, résumé) dans `aiScore` et `analysis`, champs séparés de la note manuelle `score`. Sans texte de référence, elle juge la lisibilité, pas l'exactitude. Le texte transcrit part chez Groq. La matrice du Comparatif prend la note manuelle si elle existe, sinon la note IA (point en anneau).
 
 ## Architecture
 
-Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus un micro-service Python pour Chatterbox et Faster-Whisper.
+Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus un micro-service Python facultatif.
 
 - `src/app/`: pages et routes.
   - `tts/`, `stt/`, `logs/`: les trois pages de l'interface (`/` redirige vers `/tts`).
   - `api/`: routes API (`health`, `voices`, `tts`, `tts/history`, `stt/transcribe`, `stt/history`, `logs`, `logs/stream` en SSE).
   - `audio/[...path]/route.ts`: sert les fichiers de `output/` avec support des requêtes Range.
 - `src/lib/server/`: code serveur uniquement (`server-only`).
-  - `core/`: socle commun (erreurs `AppError`, `api-handler`, logger, `request-context`, chemins, client et pont de logs du service Python, timeouts). Pour les moteurs Node: `sherpa-runtime.ts` (chargement de `sherpa-onnx-node`, chemins des modèles, cache d'instances), `audio-decode.ts` (ffmpeg vers PCM 16 kHz), `espeak.ts` (phonémisation IPA), `runtime-fallback.ts` (bascule vers le secours et santé combinée).
+  - `core/`: socle commun (erreurs `AppError`, `api-handler`, logger, `request-context`, chemins, client et pont de logs du service Python, timeouts, client Groq). Pour les moteurs Node: `sherpa-runtime.ts` (chargement de `sherpa-onnx-node`, chemins des modèles, cache d'instances), `audio-decode.ts` (ffmpeg vers PCM 16 kHz), `espeak.ts` (phonémisation IPA), `runtime-fallback.ts` (bascule vers le secours et santé combinée).
   - `providers/tts/<provider>/` et `providers/stt/<provider>/`: un dossier par provider, fichiers nommés `<provider>-provider.ts` (plus catalogue de voix si besoin). Chaque domaine a son registre (`*-provider-registry.ts`), ses types et son service d'orchestration (`tts-synthesis-service.ts`, `stt-transcription-service.ts`).
   - `history/`: dépôts d'historique TTS et STT (écriture JSON atomique).
 - `src/lib/shared/`: types et catalogue des providers partagés entre client et serveur.
@@ -40,16 +130,16 @@ Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus
 - `src/features/tts/`, `src/features/stt/`, `src/features/logs/`: composants propres à chaque page. Les réglages par provider sont dans `settings/<provider>-settings-panel.tsx`.
 - `src/components/`: `layout/` (en-tête, thème, état de santé), `shared/` (panneau Activité, matrice décisionnelle, historique filtrable, sélecteur et fiches des providers, ligne de log), `ui/` (briques génériques).
 - `src/hooks/`: hooks transverses (spectre audio, flux de logs, historique, état persistant).
-- `python/`: micro-service FastAPI (`app.py`) exposant `/health`, `/references`, `/tts`, `/stt/transcribe` et `/logs`.
-  - `tts/chatterbox.py` et `tts/references/` (échantillons pour le clonage vocal).
+- `python/`: micro-service FastAPI (`app.py`, écoute sur `127.0.0.1:5002`) exposant `/health`, `/references`, `/tts`, `/stt/transcribe` et `/logs`.
+  - `tts/chatterbox.py` et `tts/references/` (échantillons de synthèse pour le clonage vocal).
   - `stt/whisper.py`: transcription Faster-Whisper.
   - `log_buffer.py`: tampon de logs interrogé par Next.
-- `scripts/setup-piper.sh`: télécharge le binaire Piper dans `bin/` et les voix dans `voices/`.
-- `scripts/setup-sherpa.sh`: télécharge dans `models/sherpa/` les voix Piper, Parakeet v3, Whisper int8 et la VAD Silero.
-- `scripts/setup-chatterbox.sh`: crée le virtualenv `python/.venv` en Python 3.12 avec uv et installe les dépendances.
+- `scripts/setup-piper.sh`: binaire Piper dans `bin/` et voix dans `voices/`.
+- `scripts/setup-sherpa.sh`: voix Piper, Parakeet v3, Whisper int8 et VAD Silero dans `models/sherpa/`.
+- `scripts/setup-chatterbox.sh`: virtualenv `python/.venv` en Python 3.12 avec uv.
 - `scripts/ai-service.sh`: lance le service Python s'il est installé, sinon s'arrête sans erreur (appelé par `npm run dev`).
 
-`bin/`, `voices/`, `models/` et `output/` (audios générés, historiques, logs) ne sont pas commités (voir `.gitignore`).
+`bin/`, `voices/`, `models/`, `output/` (audios générés, historiques, logs) et `.env.local` ne sont pas commités (voir `.gitignore`).
 
 ## Erreurs et logs
 
@@ -57,51 +147,30 @@ Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus
 - Le client génère un identifiant `req_xxx` envoyé dans l'en-tête `X-Request-Id`, ce qui permet au panneau Activité de suivre une requête en direct.
 - Le logger garde un tampon circulaire en mémoire, écrit dans `output/logs/app.jsonl` et diffuse en SSE sur `/api/logs/stream`. Les logs Python sont récupérés en interrogeant `/logs` du service tant qu'un client SSE est connecté. Les erreurs navigateur (micro, Web Speech, rendu) arrivent par `POST /api/logs`.
 
-## Décisions notables
+## Décisions techniques
 
-- Moteurs locaux exécutés côté serveur (Node, ou binaire natif en secours), pas en WASM navigateur, pour rester représentatif d'un usage serveur portable sur le VPS.
+- Moteurs locaux exécutés côté serveur (Node, ou binaire natif en secours), pas en WASM navigateur, pour que les mesures restent représentatives d'un déploiement serveur.
 - Moteurs locaux en Node d'abord (`sherpa-onnx-node`), Python ou binaire en secours: la bascule n'a lieu que sur une panne du moteur, jamais sur une annulation, un délai ou une entrée invalide. Le résultat et l'historique indiquent le moteur réellement utilisé (`runtime`, `fallback`).
 - Depuis sherpa-onnx 2.0, les voix Piper attendent des phonèmes déjà calculés: espeak-ng (livré avec l'archive Piper) les fournit. `piper-phonemize-node` est écarté car sous GPL.
-- Binaire Piper pris sur le repo archivé MIT plutôt que sur le fork actif GPL-3.0, pour éviter toute contrainte de redistribution si le projet est distribué publiquement.
-- Edge TTS aligné sur NowWeAct: même lib (`msedge-tts`), mêmes voix Neural (Denise et Henri en français, Aria et Guy en anglais). L'endpoint reste non documenté par Microsoft et peut de nouveau changer sans prévenir.
+- Binaire Piper pris sur le dépôt archivé sous MIT plutôt que sur le fork actif GPL-3.0, pour garder le projet redistribuable sous MIT.
 - `onnxruntime-node`, `kokoro-js`, `sherpa-onnx-node`, `msedge-tts` et `ws` sont déclarés dans `serverExternalPackages` (`next.config.ts`) pour ne jamais être bundlés.
+- Clés d'API lues uniquement côté serveur depuis `.env.local`, jamais exposées au navigateur.
 
-## Démarrage
+## Conventions
 
-Installer les dépendances, le binaire Piper, les voix et les modèles sherpa-onnx (`ffmpeg` requis sur la machine):
-
-```bash
-npm run setup
-```
-
-Installer l'environnement Python pour Chatterbox, Whisper sur GPU et le secours Python (optionnel, nécessite uv):
+- Interface, messages d'erreur, commentaires et documentation en français.
+- Un nouveau provider suit le modèle des dossiers existants: fichier `<provider>-provider.ts`, inscription dans le registre du domaine, fiche dans `src/lib/shared/provider-catalog.ts`, panneau de réglages dans `src/features/<domaine>/settings/`.
+- Toute erreur prévisible lève une `AppError` avec un code, un message et une piste (`hint`) utilisable par la personne.
+- Vérifier les types avant de proposer un changement:
 
 ```bash
-npm run setup:chatterbox
+npm run typecheck
 ```
 
-Lancer l'app sur `http://localhost:3000` et le micro-service Python (port 5002) s'il est installé:
+## Pistes envisagées
 
-```bash
-npm run dev
-```
-
-Lancer l'app seule:
-
-```bash
-npm run dev:next
-```
-
-## Suite envisagée
-
-- XTTS-v2: via un mini-service Python séparé, un Space HuggingFace stable, ou un budget HF validé. Licence Coqui CPML non commerciale par défaut, à vérifier avant tout usage au-delà du test.
-- Chatterbox en Node quand transformers.js gérera le modèle multilingue (backlog id 27).
-- Déploiement sur le VPS OVH (skill `vps-deploy`), avec `ffmpeg` installé sur le serveur.
-- Intégration dans l'app existante une fois la voix validée.
-
-## Suivi du backlog
-
-Backlog CSV: `.doc/backlog.csv` (actif) et `.doc/archives/backlog-archive-AAAA-MM-JJ.csv` (terminées). Workflow commun décrit dans le skill `backlog-csv-workflow`. Le commit inclut le mouvement de backlog, au format `[id] Résumé court`.
+- XTTS-v2, via un service Python séparé (licence Coqui CPML non commerciale à vérifier avant tout usage au-delà du test).
+- Chatterbox en Node quand transformers.js gérera le modèle multilingue.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

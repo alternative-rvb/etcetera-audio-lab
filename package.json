@@ -2,6 +2,7 @@
   "name": "etcetera-audio-lab",
   "version": "0.2.0",
   "private": true,
+  "license": "MIT",
   "description": "Etcetera Audio Lab : banc d'essai de moteurs TTS et STT",
   "scripts": {
     "setup": "bash scripts/setup-piper.sh && npm install && bash scripts/setup-sherpa.sh",

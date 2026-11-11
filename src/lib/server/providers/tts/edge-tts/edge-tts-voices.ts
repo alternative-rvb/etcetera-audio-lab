@@ -1,6 +1,6 @@
 import type { TtsVoice } from "@/lib/shared/types";
 
-// SECTION: Voix Edge TTS retenues (mêmes voix Neural que NowWeAct).
+// SECTION: Voix Edge TTS retenues (voix Neural françaises).
 
 export const EDGE_TTS_VOICES: TtsVoice[] = [
   { id: "fr-FR-DeniseNeural", name: "Denise", language: "fr-FR", gender: "female", quality: "Neural" },

@@ -23,3 +23,9 @@ models/
 
 # Playwright CLI
 .playwright-cli/
+
+# NOTE: backlog de suivi personnel, conservé en local uniquement
+/.doc/
+
+# NOTE: contexte privé pour Claude Code, jamais publié
+CLAUDE.local.md
