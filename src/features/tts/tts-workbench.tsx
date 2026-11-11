@@ -10,10 +10,10 @@ import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 import { useHealth } from "@/components/layout/health-provider";
 import { Button, IconButton } from "@/components/ui/button";
-import { HintText } from "@/components/ui/hint-text";
 import { Icon } from "@/components/ui/icon";
 import { Panel } from "@/components/ui/panel";
 import { ActivityPanel } from "@/components/shared/activity-panel";
+import { ProviderHealthAlert } from "@/components/shared/provider-health-alert";
 import { ProviderPicker } from "@/components/shared/provider-picker";
 import { ProviderSpecCards } from "@/components/shared/provider-spec-cards";
 import { countModifiedSettings, SettingsDisclosure } from "@/components/shared/settings-disclosure";
@@ -85,8 +85,9 @@ export function TtsWorkbench() {
   const selectedVoiceName = voices.find((v) => v.id === selectedVoiceId)?.name;
 
   const tooLong = text.length > MAX_TEXT_LENGTH;
-  const canGenerate = !generating && text.trim().length > 0 && !tooLong && Boolean(selectedVoiceId);
-  const disabledReason = !selectedVoiceId ? "Choisissez une voix" : text.trim().length === 0 ? "Écrivez un texte" : tooLong ? "Texte trop long" : null;
+  const providerDown = providerHealth?.status === "down";
+  const canGenerate = !generating && !providerDown && text.trim().length > 0 && !tooLong && Boolean(selectedVoiceId);
+  const disabledReason = providerDown ? `${providerLabel} est indisponible` : !selectedVoiceId ? "Choisissez une voix" : text.trim().length === 0 ? "Écrivez un texte" : tooLong ? "Texte trop long" : null;
   const modifiedCount = countModifiedSettings(providerSettings[safeProvider], DEFAULT_TTS_SETTINGS[safeProvider]);
 
   const generate = useCallback(async () => {
@@ -183,21 +184,7 @@ export function TtsWorkbench() {
 
           {specOpen && <ProviderSpecCards catalog={TTS_PROVIDER_CATALOG} health={report?.tts} only={safeProvider} />}
 
-          {providerHealth && providerHealth.status !== "ok" && (
-            <div role="status" className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-              <Icon name="warning" className="mt-0.5" />
-              <div className="min-w-0">
-                <p>
-                  {providerLabel} : {providerHealth.reason ?? "fonctionnement dégradé."}
-                </p>
-                {providerHealth.hint && (
-                  <p className="mt-0.5 text-xs">
-                    <HintText text={providerHealth.hint} />
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          <ProviderHealthAlert health={providerHealth} />
 
           <section aria-label="Voix">
             <TtsVoicePicker
@@ -208,6 +195,7 @@ export function TtsWorkbench() {
               onSelect={(voiceId) => setSelectedVoices((current) => ({ ...current, [safeProvider]: voiceId }))}
               onRetry={retryVoices}
               emptyHint={EMPTY_VOICE_HINTS[safeProvider]}
+              healthAlertShown={Boolean(providerHealth && providerHealth.status !== "ok")}
             />
           </section>
 

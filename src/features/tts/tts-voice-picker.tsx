@@ -2,6 +2,7 @@
 
 import type { TtsVoice, TtsVoiceList } from "@/lib/shared/types";
 import { Skeleton } from "@/components/ui/panel";
+import { HintText } from "@/components/ui/hint-text";
 import { IconButton } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -30,6 +31,7 @@ export function TtsVoicePicker({
   onSelect,
   onRetry,
   emptyHint,
+  healthAlertShown = false,
 }: {
   voiceList: TtsVoiceList | null;
   loading: boolean;
@@ -38,6 +40,8 @@ export function TtsVoicePicker({
   onSelect: (voiceId: string) => void;
   onRetry: () => void;
   emptyHint: string;
+  /** L'alerte de santé du moteur est déjà affichée au-dessus : on ne répète pas la même cause ici. */
+  healthAlertShown?: boolean;
 }) {
   if (loading) {
     return (
@@ -64,10 +68,10 @@ export function TtsVoicePicker({
   const showLanguage = new Set(voices.map((v) => v.language)).size > 1;
   return (
     <div className="space-y-2">
-      {voiceList?.degraded && (
+      {voiceList?.degraded && !healthAlertShown && (
         <p className="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
           <Icon name="warning" size={16} className="mt-px" />
-          {voiceList.degradedReason ?? "Liste de voix de secours : le service n'a pas répondu."}
+          <span><HintText text={voiceList.degradedReason ?? "Liste de voix de secours : le service n'a pas répondu."} /></span>
         </p>
       )}
       {voices.length === 0 ? (

@@ -9,10 +9,10 @@ import { formatTimer } from "@/lib/client/format";
 import { providerStyle } from "@/lib/client/provider-style";
 import { useHealth } from "@/components/layout/health-provider";
 import { Button, IconButton } from "@/components/ui/button";
-import { HintText } from "@/components/ui/hint-text";
 import { Icon } from "@/components/ui/icon";
 import { Panel } from "@/components/ui/panel";
 import { ActivityPanel } from "@/components/shared/activity-panel";
+import { ProviderHealthAlert } from "@/components/shared/provider-health-alert";
 import { ProviderPicker } from "@/components/shared/provider-picker";
 import { ProviderSpecCards } from "@/components/shared/provider-spec-cards";
 import { countModifiedSettings, SettingsDisclosure } from "@/components/shared/settings-disclosure";
@@ -257,21 +257,7 @@ export function SttWorkbench() {
 
           {specOpen && <ProviderSpecCards catalog={STT_PROVIDER_CATALOG} health={report?.stt} only={safeProvider} />}
 
-          {providerHealth && providerHealth.status !== "ok" && (
-            <div role="status" className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-              <Icon name="warning" className="mt-0.5" />
-              <div className="min-w-0">
-                <p>
-                  {providerLabel} : {providerHealth.reason ?? "fonctionnement dégradé."}
-                </p>
-                {providerHealth.hint && (
-                  <p className="mt-0.5 text-xs">
-                    <HintText text={providerHealth.hint} />
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          <ProviderHealthAlert health={providerHealth} />
 
           <SettingsDisclosure
             storageKey="stt"

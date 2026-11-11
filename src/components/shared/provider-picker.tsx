@@ -38,7 +38,7 @@ export function ProviderPicker<P extends LogSource>({
         const isDown = providerHealth?.status === "down";
         // NOTE: le sous-titre et l'état passent en infobulle, la carte tient sur une ligne.
         return (
-          <Tooltip key={provider} label={`${spec.tagline}. ${healthLabel(providerHealth)}.`}>
+          <Tooltip key={provider} label={`${spec.tagline}. ${healthLabel(providerHealth).replace(/\.$/, "")}.`}>
             <button
               type="button"
               role="radio"
