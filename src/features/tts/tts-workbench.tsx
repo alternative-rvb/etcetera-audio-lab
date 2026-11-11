@@ -150,6 +150,9 @@ export function TtsWorkbench() {
     toast.info("Texte et voix repris dans l'éditeur");
   };
 
+  // NOTE: sans note, le comparatif n'est qu'une barre repliée : il passe pleine largeur au lieu de laisser un vide.
+  const hasRated = history.items.some((item) => item.score > 0);
+
   return (
     <div style={providerStyle(safeProvider)} className="space-y-4">
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
@@ -267,7 +270,7 @@ export function TtsWorkbench() {
           </div>
         </Panel>
 
-        <div ref={listenRef} className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-20">
+        <div ref={listenRef} className="min-w-0 scroll-mt-20 space-y-4">
           <TtsAudioMonitor
             entry={currentEntry}
             peers={history.items}
@@ -281,30 +284,36 @@ export function TtsWorkbench() {
         </div>
       </div>
 
-      <TtsInsightsPanel
-        items={history.items}
-        onSelect={(id) => {
-          const entry = history.items.find((item) => item.id === id);
-          if (entry) playEntry(entry);
-        }}
-      />
-
-      <TtsHistoryList
-        items={history.items}
-        loading={history.loading}
-        loadError={history.loadError}
-        activeEntryId={currentEntry?.id ?? null}
-        onPlay={playEntry}
-        onReuseText={reuseEntry}
-        onToggleFavorite={history.toggleFavorite}
-        onScore={history.setScore}
-        onDelete={(id) => {
-          void history.remove(id);
-          if (id === currentEntryId) setCurrentEntryId(null);
-        }}
-        onClear={() => void history.clear()}
-        onRetry={() => void history.reload()}
-      />
+      {/* ANCHOR: comparatif et historique côte à côte sur grand écran ; l'historique est plafonné pour finir au niveau du comparatif. */}
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+          <TtsInsightsPanel
+            items={history.items}
+            onSelect={(id) => {
+              const entry = history.items.find((item) => item.id === id);
+              if (entry) playEntry(entry);
+            }}
+          />
+        </div>
+        <div className={cn("min-w-0", !hasRated && "xl:col-span-2")}>
+          <TtsHistoryList
+            items={history.items}
+            loading={history.loading}
+            loadError={history.loadError}
+            activeEntryId={currentEntry?.id ?? null}
+            onPlay={playEntry}
+            onReuseText={reuseEntry}
+            onToggleFavorite={history.toggleFavorite}
+            onScore={history.setScore}
+            onDelete={(id) => {
+              void history.remove(id);
+              if (id === currentEntryId) setCurrentEntryId(null);
+            }}
+            onClear={() => void history.clear()}
+            onRetry={() => void history.reload()}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -92,7 +92,7 @@ export function SttHistoryList({
           {visible.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted">Aucune entrée pour ce filtre.</p>
           ) : (
-            <ul className="max-h-[560px] space-y-1 overflow-y-auto pr-1">
+            <ul className="max-h-[380px] space-y-1 overflow-y-auto pr-1">
               {visible.map((item) => {
                 const expanded = expandedIds.has(item.id);
                 return (

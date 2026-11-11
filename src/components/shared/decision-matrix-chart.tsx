@@ -61,7 +61,8 @@ export function DecisionMatrixChart({
     return <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{emptyMessage}</p>;
   }
 
-  const toX = (value: number) => PADDING.left + (value / maxX) * PLOT_WIDTH;
+  // NOTE: échelle en racine carrée, sinon un seul essai lent (ex. Chatterbox sur CPU) tasse tous les autres à gauche.
+  const toX = (value: number) => PADDING.left + Math.sqrt(Math.max(value, 0) / maxX) * PLOT_WIDTH;
   const toY = (score: number) => PADDING.top + PLOT_HEIGHT - ((score - 0.5) / 3) * PLOT_HEIGHT;
 
   return (
@@ -82,7 +83,7 @@ export function DecisionMatrixChart({
 
           <line x1={PADDING.left} x2={PADDING.left + PLOT_WIDTH} y1={PADDING.top + PLOT_HEIGHT} y2={PADDING.top + PLOT_HEIGHT} stroke="var(--border-strong)" />
           {Array.from({ length: X_TICKS + 1 }, (_, i) => {
-            const value = (maxX / X_TICKS) * i;
+            const value = maxX * (i / X_TICKS) ** 2;
             return (
               <text key={i} x={toX(value)} y={PADDING.top + PLOT_HEIGHT + 16} textAnchor="middle" fontSize={10} fill="var(--text-muted)">
                 {formatX(value)}
@@ -90,7 +91,7 @@ export function DecisionMatrixChart({
             );
           })}
           <text x={PADDING.left + PLOT_WIDTH} y={HEIGHT - 4} textAnchor="end" fontSize={10} fill="var(--text-muted)">
-            {xLabel} →
+            {xLabel}, échelle resserrée →
           </text>
 
           {rated.map((point) => {
