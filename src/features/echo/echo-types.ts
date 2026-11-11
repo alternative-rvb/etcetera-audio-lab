@@ -2,9 +2,13 @@ import type { EngineRuntime, SttProviderId, TtsProviderId } from "@/lib/shared/t
 
 // SECTION: Types de la page Écho (un tour = parole, transcription, pause, synthèse, lecture).
 
-export type EchoPhase = "idle" | "listening" | "transcribing" | "waiting" | "synthesizing" | "speaking";
+export type EchoPhase = "idle" | "listening" | "transcribing" | "thinking" | "waiting" | "synthesizing" | "speaking";
+
+/** "echo" : la voix répète la phrase ; "ai" : Groq formule une réponse avec le contexte de la conversation. */
+export type EchoMode = "echo" | "ai";
 
 export interface EchoSettings {
+  responseMode: EchoMode;
   /** Pause insérée entre la fin de la transcription et le début de la synthèse. */
   delayMs: number;
   /** Arrêt automatique de l'écoute après un silence. */
@@ -14,7 +18,7 @@ export interface EchoSettings {
   threshold: number;
 }
 
-export const DEFAULT_ECHO_SETTINGS: EchoSettings = { delayMs: 1000, autoStop: true, silenceMs: 1200, threshold: 0.02 };
+export const DEFAULT_ECHO_SETTINGS: EchoSettings = { responseMode: "echo", delayMs: 1000, autoStop: true, silenceMs: 1200, threshold: 0.02 };
 
 /** Temps mesurés pendant un tour, en millisecondes (durée de parole en secondes). */
 export interface EchoTimes {
@@ -24,6 +28,9 @@ export interface EchoTimes {
   /** Arrêt de l'écoute jusqu'au texte reçu (finalisation Web Speech comprise). */
   sttMs?: number;
   sttServerMs?: number;
+  /** Requête de réponse IA, aller-retour client (0 en mode écho). */
+  llmMs?: number;
+  llmServerMs?: number;
   delayMs?: number;
   /** Requête de synthèse, aller-retour client. */
   ttsMs?: number;
@@ -42,7 +49,15 @@ export interface EchoRound {
   sttProvider: SttProviderId;
   ttsProvider: TtsProviderId;
   voiceName: string;
+  /** Phrase transcrite. */
   text: string;
+  /** Mode du tour ; absent sur les tours enregistrés avant le mode IA (= "echo"). */
+  mode?: EchoMode;
+  /** Texte lu par la voix : la réponse IA, ou la phrase elle-même en mode écho. */
+  reply?: string;
+  /** Conversation IA à laquelle appartient le tour (mémoire envoyée à Groq). */
+  conversationId?: string;
+  llmModel?: string;
   audioUrl: string;
   times: Required<EchoTimes>;
   sttRuntime?: EngineRuntime;
@@ -53,3 +68,7 @@ export interface EchoRound {
 }
 
 export const MAX_ECHO_ROUNDS = 50;
+/** Tours IA envoyés à Groq comme mémoire de la conversation (même limite côté serveur). */
+export const ECHO_AI_MEMORY = 10;
+
+export const roundMode = (round: Pick<EchoRound, "mode">): EchoMode => round.mode ?? "echo";

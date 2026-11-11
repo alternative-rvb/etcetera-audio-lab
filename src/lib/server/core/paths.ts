@@ -15,6 +15,7 @@ export const PROJECT_PATHS = {
   sttAudioDir: join(PROJECT_ROOT, "output", "stt"),
   ttsHistoryFile: join(PROJECT_ROOT, "output", "history.json"),
   sttHistoryFile: join(PROJECT_ROOT, "output", "stt_history.json"),
+  echoRoundsFile: join(PROJECT_ROOT, "output", "echo_rounds.json"),
   logsDir: join(PROJECT_ROOT, "output", "logs"),
 } as const;
 

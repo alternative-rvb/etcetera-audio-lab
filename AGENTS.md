@@ -113,34 +113,6 @@ La page `/logs` et le fichier `output/logs/app.jsonl` donnent le détail de chaq
 - **Groq Whisper**: API cloud compatible OpenAI (`whisper-large-v3-turbo` ou `whisper-large-v3`), horodatage mot à mot sans score de confiance. Offre gratuite: 2 000 requêtes et 8 h d'audio par jour, 25 Mo par fichier.
 - **Web Speech API**: transcription en direct dans le navigateur, sans serveur, uniquement depuis le micro.
 
-## Architecture
-
-Une seule app Next.js (App Router, React 19, Tailwind CSS v4) à la racine, plus un micro-service Python facultatif.
-
-- `src/app/`: pages et routes.
-  - `tts/`, `stt/`, `logs/`: les trois pages de l'interface (`/` redirige vers `/tts`).
-  - `api/`: routes API (`health`, `voices`, `tts`, `tts/history`, `stt/transcribe`, `stt/history`, `logs`, `logs/stream` en SSE).
-  - `audio/[...path]/route.ts`: sert les fichiers de `output/` avec support des requêtes Range.
-- `src/lib/server/`: code serveur uniquement (`server-only`).
-  - `core/`: socle commun (erreurs `AppError`, `api-handler`, logger, `request-context`, chemins, client et pont de logs du service Python, timeouts, client Groq). Pour les moteurs Node: `sherpa-runtime.ts` (chargement de `sherpa-onnx-node`, chemins des modèles, cache d'instances), `audio-decode.ts` (ffmpeg vers PCM 16 kHz), `espeak.ts` (phonémisation IPA), `runtime-fallback.ts` (bascule vers le secours et santé combinée).
-  - `providers/tts/<provider>/` et `providers/stt/<provider>/`: un dossier par provider, fichiers nommés `<provider>-provider.ts` (plus catalogue de voix si besoin). Chaque domaine a son registre (`*-provider-registry.ts`), ses types et son service d'orchestration (`tts-synthesis-service.ts`, `stt-transcription-service.ts`).
-  - `history/`: dépôts d'historique TTS et STT (écriture JSON atomique).
-- `src/lib/shared/`: types et catalogue des providers partagés entre client et serveur.
-- `src/lib/client/`: client API typé (`api-client.ts`), logger navigateur, utilitaires.
-- `src/features/tts/`, `src/features/stt/`, `src/features/logs/`: composants propres à chaque page. Les réglages par provider sont dans `settings/<provider>-settings-panel.tsx`.
-- `src/components/`: `layout/` (en-tête, thème, état de santé), `shared/` (panneau Activité, matrice décisionnelle, historique filtrable, sélecteur et fiches des providers, ligne de log), `ui/` (briques génériques).
-- `src/hooks/`: hooks transverses (spectre audio, flux de logs, historique, état persistant).
-- `python/`: micro-service FastAPI (`app.py`, écoute sur `127.0.0.1:5002`) exposant `/health`, `/references`, `/tts`, `/stt/transcribe` et `/logs`.
-  - `tts/chatterbox.py` et `tts/references/` (échantillons de synthèse pour le clonage vocal).
-  - `stt/whisper.py`: transcription Faster-Whisper.
-  - `log_buffer.py`: tampon de logs interrogé par Next.
-- `scripts/setup-piper.sh`: binaire Piper dans `bin/` et voix dans `voices/`.
-- `scripts/setup-sherpa.sh`: voix Piper, Parakeet v3, Whisper int8 et VAD Silero dans `models/sherpa/`.
-- `scripts/setup-chatterbox.sh`: virtualenv `python/.venv` en Python 3.12 avec uv.
-- `scripts/ai-service.sh`: lance le service Python s'il est installé, sinon s'arrête sans erreur (appelé par `npm run dev`).
-
-`bin/`, `voices/`, `models/`, `output/` (audios générés, historiques, logs) et `.env.local` ne sont pas commités (voir `.gitignore`).
-
 ## Erreurs et logs
 
 - Toute route passe par `withApiHandler`, qui renvoie une enveloppe `{ error: { code, message, hint, provider, requestId } }` avec le statut HTTP adapté. Une erreur inconnue devient `INTERNAL`, sans stack côté client.

@@ -5,20 +5,20 @@ import { formatSeconds } from "@/lib/client/format";
 import { cn } from "@/lib/client/cn";
 import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
 import { Icon } from "@/components/ui/icon";
-import { DecisionMatrixChart } from "@/components/shared/decision-matrix-chart";
+import { DecisionMatrixChart, shortProviderLabel } from "@/components/shared/decision-matrix-chart";
 import { averageOf, StatTiles } from "@/components/shared/stat-tiles";
-import type { EchoRound } from "./echo-types";
+import { roundMode, type EchoRound } from "./echo-types";
 
-// SECTION: Comparatif de l'écho : moyennes du couple choisi, matrice note / temps et tableau par couple STT + TTS.
+// SECTION: Comparatif de l'écho : moyennes du couple choisi, matrice note / temps et tableau par couple STT + TTS (mode écho et mode IA séparés).
 
-type Couple = Pick<EchoRound, "sttProvider" | "ttsProvider">;
+type Couple = Pick<EchoRound, "sttProvider" | "ttsProvider" | "mode">;
 
-export const coupleKey = (round: Couple) => `${round.sttProvider}+${round.ttsProvider}`;
+export const coupleKey = (round: Couple) => `${round.sttProvider}+${roundMode(round)}+${round.ttsProvider}`;
 export const coupleLabel = (round: Couple) =>
-  `${STT_PROVIDER_CATALOG[round.sttProvider]?.label ?? round.sttProvider} + ${TTS_PROVIDER_CATALOG[round.ttsProvider]?.label ?? round.ttsProvider}`;
+  `${STT_PROVIDER_CATALOG[round.sttProvider]?.label ?? round.sttProvider} + ${roundMode(round) === "ai" ? "IA + " : ""}${TTS_PROVIDER_CATALOG[round.ttsProvider]?.label ?? round.ttsProvider}`;
 
-/** Latence perçue sans la pause volontaire : ce que coûtent réellement les moteurs. */
-export const engineLatency = (round: EchoRound) => round.times.latencyMs - round.times.delayMs;
+/** Temps de traitement des moteurs : transcription + synthèse. Ni la réponse de l'IA, ni la pause, ni la lecture ne comptent. */
+export const engineLatency = (round: EchoRound) => round.times.sttMs + round.times.ttsMs;
 
 function formatAverage(values: number[]): string {
   const average = averageOf(values);
@@ -30,7 +30,7 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
   const rated = rounds.filter((round) => round.score > 0);
   const averageScore = averageOf(currentRounds.filter((round) => round.score > 0).map((round) => round.score));
 
-  // NOTE: un couple par ligne, trié du plus rapide au plus lent sur la latence hors pause.
+  // NOTE: un couple par ligne, trié du plus rapide au plus lent sur le temps de traitement.
   const couples = [...new Map(rounds.map((round) => [coupleKey(round), round])).values()]
     .map((sample) => {
       const items = rounds.filter((round) => coupleKey(round) === coupleKey(sample));
@@ -43,7 +43,6 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
         engine: averageOf(items.map(engineLatency)) ?? 0,
         stt: averageOf(items.map((round) => round.times.sttMs)) ?? 0,
         tts: averageOf(items.map((round) => round.times.ttsMs)) ?? 0,
-        total: averageOf(items.map((round) => round.times.totalMs)) ?? 0,
       };
     })
     .sort((a, b) => a.engine - b.engine);
@@ -52,26 +51,25 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
     <CollapsiblePanel
       storageKey="echo-insights"
       title="Comparatif"
-      summary={rated.length === 0 ? "Notez une réponse pour comparer" : `${rounds.length} tour${rounds.length > 1 ? "s" : ""}, ${rated.length} noté${rated.length > 1 ? "s" : ""}`}
+      summary={rated.length === 0 ? "Notez une réponse pour comparer" : `${rounds.length} mesure${rounds.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
     >
       <div className="space-y-3">
         <p className="text-sm text-muted">
-          Couple choisi: <span className="font-medium text-ink">{coupleLabel(current)}</span>, {currentRounds.length} tour{currentRounds.length > 1 ? "s" : ""}
+          Moyennes du couple choisi: <span className="font-medium text-ink">{coupleLabel(current)}</span>
         </p>
         <StatTiles
           tiles={[
+            { label: "Mesures", value: currentRounds.length },
             { label: "Note moyenne", value: averageScore === null ? "-" : `${averageScore.toFixed(1)}★` },
             {
-              label: "Latence moteurs",
+              label: "Traitement",
               value: formatAverage(currentRounds.map(engineLatency)),
-              hint: "Fin de votre phrase jusqu'au début de la réponse, pause volontaire retirée (détection du silence comprise).",
+              hint: "Transcription + synthèse. La réponse de l'IA, la pause et la durée de lecture ne sont pas comptées.",
             },
-            { label: "Transcription", value: formatAverage(currentRounds.map((round) => round.times.sttMs)), hint: "Arrêt de l'écoute jusqu'au texte reçu, mesuré dans le navigateur." },
-            { label: "Synthèse", value: formatAverage(currentRounds.map((round) => round.times.ttsMs)), hint: "Envoi du texte jusqu'à l'audio prêt, mesuré dans le navigateur." },
             {
-              label: "Temps total",
-              value: formatAverage(currentRounds.map((round) => round.times.totalMs)),
-              hint: "Tour complet : début de l'écoute jusqu'à la fin de la lecture de la réponse (parole, transcription, pause, synthèse et lecture).",
+              label: "STT / TTS",
+              value: `${formatAverage(currentRounds.map((round) => round.times.sttMs))} / ${formatAverage(currentRounds.map((round) => round.times.ttsMs))}`,
+              hint: "Temps moyen de transcription, puis de synthèse.",
             },
           ]}
         />
@@ -84,9 +82,12 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
             score: round.score ?? 0,
             x: Math.max(1, engineLatency(round)),
             title: `${coupleLabel(round)}, ${round.voiceName}`,
-            subtitle: round.text,
+            subtitle: roundMode(round) === "ai" ? `${round.text} → ${round.reply ?? ""}` : round.text,
+            createdAt: round.createdAt,
+            altProvider: round.sttProvider,
+            badge: `${shortProviderLabel(round.sttProvider)}+${roundMode(round) === "ai" ? "IA+" : ""}${shortProviderLabel(round.ttsProvider)}`,
           }))}
-          xLabel="Latence moteurs"
+          xLabel="Temps de traitement"
           formatX={(ms) => `${(ms / 1000).toFixed(1)} s`}
           minXDomain={3000}
           onSelect={onSelect}
@@ -99,12 +100,11 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
               <thead className="text-left text-xs text-muted">
                 <tr>
                   <th className="py-1 pr-3 font-normal">Couple STT + TTS</th>
-                  <th className="py-1 pr-3 text-right font-normal">Tours</th>
+                  <th className="py-1 pr-3 text-right font-normal">Mesures</th>
                   <th className="py-1 pr-3 text-right font-normal">Note</th>
-                  <th className="py-1 pr-3 text-right font-normal">Latence moteurs</th>
+                  <th className="py-1 pr-3 text-right font-normal">Traitement</th>
                   <th className="py-1 pr-3 text-right font-normal">STT</th>
-                  <th className="py-1 pr-3 text-right font-normal">TTS</th>
-                  <th className="py-1 text-right font-normal">Total</th>
+                  <th className="py-1 text-right font-normal">TTS</th>
                 </tr>
               </thead>
               <tbody className="tabular-nums">
@@ -118,8 +118,7 @@ export function EchoInsightsPanel({ rounds, current, onSelect }: { rounds: EchoR
                     <td className="py-1.5 pr-3 text-right">{couple.score === null ? "-" : `${couple.score.toFixed(1)}★`}</td>
                     <td className="py-1.5 pr-3 text-right">{formatSeconds(couple.engine)}</td>
                     <td className="py-1.5 pr-3 text-right">{formatSeconds(couple.stt)}</td>
-                    <td className="py-1.5 pr-3 text-right">{formatSeconds(couple.tts)}</td>
-                    <td className="py-1.5 text-right">{formatSeconds(couple.total)}</td>
+                    <td className="py-1.5 text-right">{formatSeconds(couple.tts)}</td>
                   </tr>
                 ))}
               </tbody>

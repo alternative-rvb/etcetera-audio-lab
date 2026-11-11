@@ -32,6 +32,7 @@ export function TtsVoicePicker({
   onRetry,
   emptyHint,
   healthAlertShown = false,
+  neutral = false,
 }: {
   voiceList: TtsVoiceList | null;
   loading: boolean;
@@ -42,6 +43,8 @@ export function TtsVoicePicker({
   emptyHint: string;
   /** L'alerte de santé du moteur est déjà affichée au-dessus : on ne répète pas la même cause ici. */
   healthAlertShown?: boolean;
+  /** Bouton de voix sélectionné en style neutre, sans la couleur du moteur (page Écho). */
+  neutral?: boolean;
 }) {
   if (loading) {
     return (
@@ -93,11 +96,13 @@ export function TtsVoicePicker({
                   className={cn(
                     "inline-flex h-8 max-w-full min-w-0 items-center gap-1 rounded-lg border pr-2.5 pl-1.5 text-sm transition",
                     active
-                      ? "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,transparent)] font-medium text-ink"
+                      ? neutral
+                        ? "border-line-strong bg-line/50 font-medium text-ink"
+                        : "border-[var(--provider)] bg-[color-mix(in_srgb,var(--provider)_10%,transparent)] font-medium text-ink"
                       : "border-line text-muted hover:border-line-strong hover:text-ink"
                   )}
                 >
-                  {GENDER_ICONS[voice.gender] && <Icon name={GENDER_ICONS[voice.gender]!} size={17} className={active ? "text-[var(--provider)]" : undefined} />}
+                  {GENDER_ICONS[voice.gender] && <Icon name={GENDER_ICONS[voice.gender]!} size={17} className={active && !neutral ? "text-[var(--provider)]" : undefined} />}
                   <span className="truncate">{voice.name}</span>
                   {/multiling/i.test(voice.quality) && <Icon name="multilingual" size={15} className="text-muted" />}
                 </button>

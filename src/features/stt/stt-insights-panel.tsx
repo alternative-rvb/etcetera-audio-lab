@@ -9,7 +9,7 @@ import { isVpsComparable, sttHardware } from "@/lib/shared/hardware";
 import { averageOf, StatTiles } from "@/components/shared/stat-tiles";
 
 // SECTION: Statistiques et matrice de décision STT (note en fonction du RTF).
-// NOTE: Web Speech n'a pas de RTF mesurable (traitement dans le navigateur), il n'apparaît pas sur la matrice.
+// NOTE: Web Speech n'a pas de RTF mesurable (traitement dans le navigateur), ses points sont posés sur l'axe à « direct ».
 
 export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHistoryEntry[]; onSelect: (id: string) => void }) {
   // NOTE: filtre actif par défaut, le banc d'essai vise un VPS sans GPU.
@@ -44,8 +44,10 @@ export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHist
             score: effectiveScore(item),
             source: item.score > 0 ? "manual" : "ai",
             x: item.rtf,
+            direct: item.rtf <= 0,
             title: `${item.modelSize}, ${item.device.toUpperCase()}`,
             subtitle: item.text,
+            createdAt: item.createdAt,
           }))}
           xLabel="RTF"
           formatX={(rtf) => `${rtf.toFixed(2)}×`}

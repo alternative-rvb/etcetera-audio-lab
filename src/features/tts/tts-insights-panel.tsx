@@ -42,6 +42,7 @@ export function TtsInsightsPanel({ items: allItems, onSelect }: { items: TtsHist
             x: item.generationTimeMs,
             title: item.voiceName,
             subtitle: item.text,
+            createdAt: item.createdAt,
           }))}
           xLabel="Temps de génération"
           formatX={(ms) => `${(ms / 1000).toFixed(1)} s`}

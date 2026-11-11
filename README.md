@@ -14,7 +14,7 @@ Les moteurs locaux tournent côté serveur (Node.js d'abord, Python ou binaire n
 
 - Page Synthèse (`/tts`): choix du moteur et de la voix, réglages propres à chaque moteur, écoute avec spectre audio, historique filtrable avec favoris et notes.
 - Page Transcription (`/stt`): enregistrement au micro, fichier audio ou échantillon de démo, texte horodaté par segment ou par mot selon le moteur, historique noté.
-- Page Écho (`/echo`): vous parlez, votre phrase est transcrite puis relue par la voix choisie après une pause réglable. Chaque clic lance une mesure: la page chronomètre la transcription, la synthèse, la latence perçue et le temps total, puis vous notez la réponse pour placer le couple STT + TTS sur la matrice de décision.
+- Page Écho (`/echo`): vous parlez, votre phrase est transcrite puis relue par la voix choisie après une pause réglable. En mode Réponse IA, Groq vous répond à la place de l'écho: il garde le fil de la conversation et connaît les moteurs et les temps mesurés, ce qui permet de l'interroger sur la qualité des échanges. Chaque clic lance une mesure: la page chronomètre la transcription, la synthèse, la latence perçue et le temps total, puis vous notez la réponse pour placer le couple STT + TTS sur la matrice de décision.
 - Page Logs (`/logs`): événements Node, Python et navigateur en temps réel, filtrables par source, niveau, texte ou identifiant de requête, avec export JSON.
 - Panneau Activité sur chaque page, qui suit en direct la requête en cours.
 - Bascule automatique vers un moteur de secours en cas de panne, signalée dans le résultat et l'historique.
@@ -111,7 +111,7 @@ Sans le service Python, seuls Chatterbox et Whisper sur GPU sont indisponibles. 
 - Edge TTS passe par un endpoint de Microsoft non documenté, qui peut changer ou être coupé sans préavis. Son usage commercial n'est pas encadré par une licence.
 - Les modèles téléchargés par les scripts gardent leur propre licence (voix Piper, Kokoro, Parakeet en CC-BY 4.0, Whisper): vérifiez-la avant tout usage au-delà du test.
 - Le clonage vocal de Chatterbox ne doit servir qu'avec des voix dont vous avez le droit d'usage. Les échantillons fournis dans `python/tts/references/` et `public/samples/` sont des voix de synthèse.
-- Groq reçoit l'audio que vous lui envoyez: n'y transcrivez pas de données confidentielles.
+- Groq reçoit l'audio que vous lui envoyez, ainsi que le texte des conversations en mode Réponse IA: n'y faites pas passer de données confidentielles.
 
 ## Licence
 

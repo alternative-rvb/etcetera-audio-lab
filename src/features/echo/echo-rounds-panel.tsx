@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
 import { StarRating } from "@/components/ui/feedback-controls";
-import type { EchoRound } from "./echo-types";
+import { roundMode, type EchoRound } from "./echo-types";
 
 // SECTION: Liste des mesures de l'écho, une ligne par tour, avec réécoute et note.
 
@@ -50,18 +50,19 @@ export function EchoRoundsPanel({
                     {/* NOTE: liste du plus récent au plus ancien, la mesure 1 est la plus ancienne conservée. */}
                     <span className="mr-1.5 font-semibold tabular-nums">Mesure {rounds.length - index}</span>
                     {round.text}
+                    {roundMode(round) === "ai" && round.reply && <span className="mt-0.5 block text-muted">→ {round.reply}</span>}
                   </p>
                   <StarRating value={round.score ?? 0} onChange={(score) => onScore(round.id, score === round.score ? 0 : score)} label="Note de la réponse" />
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
                   <ProviderBadge provider={round.sttProvider} />
-                  <ProviderBadge provider={round.ttsProvider}>
-                    {TTS_PROVIDER_CATALOG[round.ttsProvider]?.label ?? round.ttsProvider}, {round.voiceName}
-                  </ProviderBadge>
+                  <ProviderBadge provider={round.ttsProvider} />
+                  {round.voiceName && <span>voix {round.voiceName}</span>}
+                  {roundMode(round) === "ai" && <ProviderBadge provider="groq">IA Groq</ProviderBadge>}
                   {round.fallback && <span className="text-warning">secours utilisé</span>}
                   <span className="tabular-nums">
-                    STT {formatSeconds(round.times.sttMs)}, pause {formatSeconds(round.times.delayMs, 1)}, TTS {formatSeconds(round.times.ttsMs)}, réponse après {formatSeconds(round.times.latencyMs)}, total{" "}
-                    <span className="font-medium text-ink">{formatSeconds(round.times.totalMs ?? 0)}</span>
+                    STT {formatSeconds(round.times.sttMs)}, TTS {formatSeconds(round.times.ttsMs)}, traitement{" "}
+                    <span className="font-medium text-ink">{formatSeconds(round.times.sttMs + round.times.ttsMs)}</span>
                   </span>
                   <span className="ml-auto">{formatClock(round.createdAt)}</span>
                 </div>

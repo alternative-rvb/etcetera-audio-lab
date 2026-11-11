@@ -8,10 +8,10 @@ import { reportBrowserLog } from "@/lib/client/browser-logger";
 import { buildSttFormFields, type SttSettingsByProvider } from "@/features/stt/stt-settings";
 import { useMicrophoneRecorder, type RecordedAudio } from "@/features/stt/use-microphone-recorder";
 import { useWebSpeechRecognition } from "@/features/stt/use-web-speech-recognition";
-import type { EchoPhase, EchoRound, EchoSettings, EchoTimes } from "./echo-types";
+import type { EchoMode, EchoPhase, EchoRound, EchoSettings, EchoTimes } from "./echo-types";
 import { useSilenceDetector } from "./use-silence-detector";
 
-// SECTION: Cycle de l'écho : écoute, transcription, pause, synthèse, lecture. Un démarrage = un tour mesuré.
+// SECTION: Cycle de l'écho : écoute, transcription, réponse IA (mode IA), pause, synthèse, lecture. Un démarrage = un tour mesuré.
 // NOTE: le micro est coupé pendant la lecture, sinon la voix de synthèse serait retranscrite en boucle.
 
 export interface EchoConfig {
@@ -22,13 +22,28 @@ export interface EchoConfig {
   voiceId: string | null;
   voiceName: string;
   settings: EchoSettings;
+  /** Conversation IA en cours et ses derniers tours, envoyés à Groq comme mémoire. */
+  conversationId: string;
+  history: EchoHistoryTurn[];
+}
+
+/** Tour précédent tel qu'envoyé à /api/echo/reply. */
+export interface EchoHistoryTurn {
+  sttProvider: SttProviderId;
+  ttsProvider: TtsProviderId;
+  voiceName: string;
+  user: string;
+  assistant: string;
+  times: { sttMs: number; llmMs: number; ttsMs: number; latencyMs: number; totalMs: number };
 }
 
 /** Tour en cours, affiché étape par étape. */
 export interface LiveRound {
   sttProvider: SttProviderId;
   ttsProvider: TtsProviderId;
+  mode: EchoMode;
   text: string;
+  reply?: string;
   times: EchoTimes;
 }
 
@@ -75,7 +90,7 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
   const listen = useCallback(async () => {
     const session = sessionRef.current;
     const cfg = configRef.current;
-    setLive({ sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider, text: "", times: {} });
+    setLive({ sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider, mode: cfg.settings.responseMode, text: "", times: {} });
     const started = await recorder.start();
     if (!started) {
       setPhase("idle");
@@ -165,6 +180,30 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
       if (!text) throw new EchoSkip("Aucune parole reconnue.");
       update({ text });
 
+      // SECTION: réponse IA (mode IA) ; en mode écho, la voix relit la phrase telle quelle.
+      const mode = cfg.settings.responseMode;
+      let reply = text;
+      let llmModel: string | undefined;
+      times.llmMs = 0;
+      if (mode === "ai") {
+        setPhase("thinking");
+        const llmRequestId = createClientRequestId();
+        setActiveRequestId(llmRequestId);
+        const llmStartedAt = performance.now();
+        const answer = await apiRequest<{ reply: string; model: string; processingTimeMs: number }>("/api/echo/reply", {
+          method: "POST",
+          signal: controller.signal,
+          body: JSON.stringify({ text, current: { sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider, voiceName: cfg.voiceName }, history: cfg.history }),
+          headers: { "Content-Type": "application/json", "X-Request-Id": llmRequestId },
+        });
+        times.llmMs = performance.now() - llmStartedAt;
+        times.llmServerMs = answer.processingTimeMs;
+        if (stale()) return;
+        reply = answer.reply;
+        llmModel = answer.model;
+        update({ reply });
+      }
+
       // SECTION: pause avant la réponse
       setPhase("waiting");
       await sleep(cfg.settings.delayMs, controller.signal);
@@ -179,7 +218,7 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
       const { entry: tts } = await apiRequest<{ entry: TtsHistoryEntry }>("/api/tts", {
         method: "POST",
         signal: controller.signal,
-        body: JSON.stringify({ provider: cfg.ttsProvider, text, voiceId: cfg.voiceId, settings: cfg.ttsSettings[cfg.ttsProvider] }),
+        body: JSON.stringify({ provider: cfg.ttsProvider, text: reply, voiceId: cfg.voiceId, settings: cfg.ttsSettings[cfg.ttsProvider] }),
         headers: { "Content-Type": "application/json", "X-Request-Id": ttsRequestId },
       });
       times.ttsMs = performance.now() - ttsStartedAt;
@@ -207,6 +246,10 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
         ttsProvider: cfg.ttsProvider,
         voiceName: cfg.voiceName,
         text,
+        mode,
+        reply,
+        conversationId: mode === "ai" ? cfg.conversationId : undefined,
+        llmModel,
         audioUrl: tts.url,
         times: times as Required<EchoTimes>,
         sttRuntime: stt.runtime,
@@ -219,8 +262,8 @@ export function useEchoLoop(config: EchoConfig, onRound: (round: EchoRound) => v
         "info",
         "browser",
         "echo.round",
-        `Tour d'écho ${cfg.sttProvider} + ${cfg.ttsProvider} : latence perçue ${Math.round(times.latencyMs ?? 0)} ms, temps total ${Math.round(times.totalMs)} ms.`,
-        { meta: { ...times, sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider } }
+        `Tour d'écho ${cfg.sttProvider} + ${mode === "ai" ? "IA + " : ""}${cfg.ttsProvider} : latence perçue ${Math.round(times.latencyMs ?? 0)} ms, temps total ${Math.round(times.totalMs)} ms.`,
+        { meta: { ...times, mode, sttProvider: cfg.sttProvider, ttsProvider: cfg.ttsProvider } }
       );
       setPhase("idle");
     } catch (err) {

@@ -24,7 +24,13 @@ export function ChatterboxSettingsPanel({
           { value: "cpu", label: "CPU" },
           { value: "cuda", label: "GPU CUDA", disabledReason: cudaAvailable === false ? "Aucun GPU CUDA détecté par le service Python." : undefined },
         ]}
-        note={settings.device === "cpu" ? "Sur CPU, comptez plusieurs dizaines de secondes par phrase." : undefined}
+        note={
+          settings.device !== "cpu"
+            ? undefined
+            : cudaAvailable === true
+              ? "GPU CUDA disponible : choisissez-le, la synthèse sera nettement plus rapide que sur CPU."
+              : "Sur CPU, comptez plusieurs dizaines de secondes par phrase."
+        }
         onChange={(device) => onChange({ ...settings, device })}
       />
       <SettingSlider
