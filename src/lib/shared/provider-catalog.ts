@@ -19,9 +19,9 @@ export const TTS_PROVIDER_CATALOG: Record<TtsProviderId, ProviderSpec> = {
     tagline: "API cloud Microsoft",
     description:
       "Voix neurales Microsoft Edge via un endpoint gratuit, sans clé API. Moteur de référence actuellement en production dans NowWeAct.",
-    stack: "edge-tts-universal, Node.js, WebSocket",
+    stack: "msedge-tts, Node.js, WebSocket",
     requirements: ["Connexion Internet (HTTPS/WSS)", "Aucune clé API, empreinte mémoire minime"],
-    license: "AGPL-3.0 (lib)",
+    license: "MIT (lib)",
     output: "MP3 24 kHz",
   },
   piper: {

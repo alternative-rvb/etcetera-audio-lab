@@ -10,7 +10,7 @@ L'interface compte trois pages: Synthèse (`/tts`), Transcription (`/stt`) et Lo
 
 | Moteur | Type | Licence | Version utilisée | Dernière version | Particularités |
 | ------ | ---- | ------- | ---------------- | ---------------- | -------------- |
-| Edge TTS (`edge-tts-universal`) | API distante, non officielle | AGPL-3.0 (lib) | 1.4.0 | ![npm](https://img.shields.io/npm/v/edge-tts-universal?label=) | Voix Microsoft Edge Neural, aucune clé API |
+| Edge TTS (`msedge-tts`) | API distante, non officielle | MIT (lib) | 2.1.1 | ![npm](https://img.shields.io/npm/v/msedge-tts?label=) | Voix Microsoft Edge Neural, aucune clé API |
 | Piper | Local, binaire natif | MIT (repo archivé) | 2023.11.14-2 | ![GitHub release](https://img.shields.io/github/v/release/rhasspy/piper?label=) | Voix ONNX (Siwis, UPMC, etc.), CPU |
 | Kokoro (82M, `kokoro-js`) | Local, Node.js + ONNX Runtime | Apache 2.0 | kokoro-js 1.2.1, onnxruntime-node 1.30.0 | ![npm](https://img.shields.io/npm/v/kokoro-js?label=) | Qualité supérieure à Piper, voix française `ff_siwis` |
 | Chatterbox (Resemble AI) | Local, micro-service Python | MIT | chatterbox-tts 0.1.7, torch 2.6.0 | ![PyPI](https://img.shields.io/pypi/v/chatterbox-tts?label=) | Clonage vocal zéro-shot, exagération émotionnelle, GPU CUDA recommandé |

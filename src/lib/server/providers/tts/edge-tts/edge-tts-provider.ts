@@ -1,5 +1,5 @@
 import "server-only";
-import { EdgeTTS } from "edge-tts-universal";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { z } from "zod";
 import { AppError } from "@/lib/server/core/errors";
 import { createLogger } from "@/lib/server/core/logger";
@@ -8,7 +8,9 @@ import { filterVoicesByLocale } from "../tts-voice-utils";
 import type { TtsProvider } from "../tts-provider.types";
 import { EDGE_TTS_VOICES } from "./edge-tts-voices";
 
-// SECTION: Provider Edge TTS (endpoint gratuit des voix Microsoft Edge Neural, via edge-tts-universal).
+// SECTION: Provider Edge TTS (endpoint gratuit des voix Microsoft Edge Neural, via msedge-tts).
+// NOTE: msedge-tts remplace edge-tts-universal 1.4.0 depuis le 2026-11-11 (backlog id 24) : Microsoft a déplacé la
+// synthèse vers api.msedgeservices.com et l'ancienne lib restait pendante sur l'ancien hôte (403 au handshake).
 
 const edgeTtsLogger = createLogger("edge-tts");
 const EDGE_TTS_TIMEOUT_MS = 30_000;
@@ -19,9 +21,22 @@ function formatRate(ratePercent: number): string | undefined {
   return `${ratePercent >= 0 ? "+" : ""}${ratePercent}%`;
 }
 
+async function synthesizeEdgeAudio(text: string, voiceId: string, rate: string | undefined): Promise<Buffer> {
+  const tts = new MsEdgeTTS();
+  try {
+    await tts.setMetadata(voiceId, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const { audioStream } = tts.toStream(text, rate ? { rate } : undefined);
+    const chunks: Buffer[] = [];
+    for await (const chunk of audioStream) chunks.push(chunk as Buffer);
+    return Buffer.concat(chunks);
+  } finally {
+    tts.close();
+  }
+}
+
 function isRetryableNetworkError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  return /websocket|network|ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up/i.test(err.message);
+  return /websocket|network|stream closed|ECONNRESET|ETIMEDOUT|ENOTFOUND|socket hang up/i.test(err.message);
 }
 
 export const edgeTtsProvider: TtsProvider<"edge-tts"> = {
@@ -45,9 +60,7 @@ export const edgeTtsProvider: TtsProvider<"edge-tts"> = {
     let lastError: unknown;
     for (let attempt = 1; attempt <= EDGE_TTS_MAX_ATTEMPTS; attempt++) {
       try {
-        const tts = new EdgeTTS(text, voiceId, rate ? { rate } : undefined);
-        const { audio } = await withTimeout(tts.synthesize(), EDGE_TTS_TIMEOUT_MS, "Edge TTS");
-        const buffer = Buffer.from(await audio.arrayBuffer());
+        const buffer = await withTimeout(synthesizeEdgeAudio(text, voiceId, rate), EDGE_TTS_TIMEOUT_MS, "Edge TTS");
         if (buffer.length === 0) {
           throw new AppError("ENGINE_FAILED", "Edge TTS a renvoyé un audio vide.", { provider: "edge-tts" });
         }
@@ -65,12 +78,11 @@ export const edgeTtsProvider: TtsProvider<"edge-tts"> = {
     }
 
     if (lastError instanceof AppError) throw lastError;
-    // NOTE: constaté le 2026-11-11 avec edge-tts-universal 1.4.0 : la connexion WebSocket se ferme sans jamais
-    // résoudre la promesse. Le délai coupe la requête, le hint oriente vers la vraie cause plutôt que la longueur du texte.
+    // NOTE: garde-fou si l'endpoint non documenté change encore sans prévenir (cf. panne d'octobre 2026, backlog id 24).
     if (lastError instanceof Error && lastError.name === "TimeoutError") {
       throw new AppError("TIMEOUT", `Edge TTS n'a pas répondu en ${EDGE_TTS_TIMEOUT_MS / 1000} s.`, {
         provider: "edge-tts",
-        hint: "L'endpoint Microsoft (non officiel) ne renvoie aucun audio. Vérifiez la connexion, puis une éventuelle mise à jour de edge-tts-universal.",
+        hint: "L'endpoint Microsoft (non officiel) ne renvoie aucun audio. Vérifiez la connexion, puis une éventuelle mise à jour de msedge-tts (Microsoft change parfois l'hôte ou le jeton).",
         cause: lastError,
       });
     }
