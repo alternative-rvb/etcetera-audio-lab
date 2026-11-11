@@ -10,6 +10,26 @@ Etcetera Audio Lab répond à ces questions par la mesure. Vous envoyez le même
 
 Les moteurs locaux tournent côté serveur (Node.js d'abord, Python ou binaire natif en secours) et non en WASM dans le navigateur: les mesures restent représentatives d'un déploiement sur un serveur.
 
+## Aperçu
+
+### Synthèse vocale
+
+Quatre moteurs, réglages propres à chacun, écoute avec spectre audio, historique noté et matrice de décision.
+
+![Page Synthèse vocale: choix du moteur et de la voix, lecteur audio, historique et comparatif](docs/screenshots/tts.png)
+
+### Transcription
+
+Micro, fichier ou échantillon de démo, avec le temps de traitement et le facteur temps réel de chaque essai.
+
+![Page Transcription: moteurs, résultat horodaté, historique et comparatif](docs/screenshots/stt.png)
+
+### Écho
+
+Chaque mesure chronomètre la transcription et la synthèse, puis la note place le couple STT + TTS sur la matrice de décision.
+
+![Page Écho: réglages, liste des mesures, matrice de décision et tableau comparatif des couples](docs/screenshots/echo.png)
+
 ## Fonctionnalités
 
 - Page Synthèse (`/tts`): choix du moteur et de la voix, réglages propres à chaque moteur, écoute avec spectre audio, historique filtrable avec favoris et notes.
