@@ -9,6 +9,7 @@ import { ProviderBadge } from "@/components/ui/provider-badge";
 import { compareToPeers, MeasureHeadline } from "@/components/ui/measure-headline";
 import { STT_PROVIDER_CATALOG } from "@/lib/shared/provider-catalog";
 import { formatClock } from "@/lib/client/format";
+import { HARDWARE_LABELS, sttHardware } from "@/lib/shared/hardware";
 import { providerStyle } from "@/lib/client/provider-style";
 import { cn } from "@/lib/client/cn";
 
@@ -51,8 +52,8 @@ export function SttTranscriptView({
   // NOTE: comparaison sur le RTF, indépendant de la durée de l'audio ; même moteur et même modèle.
   const comparison = useMemo(() => {
     if (!entry || entry.rtf <= 0) return undefined;
-    const others = peers.filter((item) => item.provider === entry.provider && item.modelSize === entry.modelSize && item.id !== entry.id);
-    return compareToPeers(entry.rtf, others.map((item) => item.rtf), `${STT_PROVIDER_CATALOG[entry.provider].label} ${entry.modelSize}`, "RTF");
+    const others = peers.filter((item) => item.provider === entry.provider && item.modelSize === entry.modelSize && sttHardware(item) === sttHardware(entry) && item.id !== entry.id);
+    return compareToPeers(entry.rtf, others.map((item) => item.rtf), `${STT_PROVIDER_CATALOG[entry.provider].label} ${entry.modelSize} sur ${HARDWARE_LABELS[sttHardware(entry)]}`, "RTF");
   }, [entry, peers]);
 
   return (
@@ -81,6 +82,7 @@ export function SttTranscriptView({
             realtimeDetail={`RTF ${entry.rtf.toFixed(3)} : temps de traitement divisé par la durée de l'audio (${entry.durationSec.toFixed(1)} s).`}
             comparison={comparison}
             trace={entry}
+            hardware={sttHardware(entry)}
             score={entry.score}
             onScore={(score) => onScore(entry.id, score)}
           />

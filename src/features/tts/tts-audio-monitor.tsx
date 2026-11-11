@@ -9,6 +9,7 @@ import { Panel } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
 import { compareToPeers, MeasureHeadline } from "@/components/ui/measure-headline";
 import { formatBytes, formatClock } from "@/lib/client/format";
+import { HARDWARE_LABELS, ttsHardware } from "@/lib/shared/hardware";
 import { providerStyle } from "@/lib/client/provider-style";
 
 // SECTION: Panneau Écoute : dit quel audio est chargé (origine, moteur, voix, texte, fichier), le lit et permet de le juger.
@@ -49,8 +50,9 @@ export function TtsAudioMonitor({
   const comparison = useMemo(() => {
     if (!entry) return undefined;
     const costOf = (item: TtsHistoryEntry) => item.generationTimeMs / Math.max(item.text.length, 1);
-    const others = peers.filter((item) => item.provider === entry.provider && item.id !== entry.id && item.generationTimeMs > 0);
-    return compareToPeers(costOf(entry), others.map(costOf), TTS_PROVIDER_CATALOG[entry.provider].label, "temps par caractère");
+    const hardware = ttsHardware(entry);
+    const others = peers.filter((item) => item.provider === entry.provider && item.id !== entry.id && item.generationTimeMs > 0 && ttsHardware(item) === hardware);
+    return compareToPeers(costOf(entry), others.map(costOf), `${TTS_PROVIDER_CATALOG[entry.provider].label} sur ${HARDWARE_LABELS[hardware]}`, "temps par caractère");
   }, [entry, peers]);
   const durationSec = entry && audioDuration?.url === entry.url ? audioDuration.seconds : 0;
 
@@ -78,6 +80,7 @@ export function TtsAudioMonitor({
             realtimeDetail={durationSec ? `${durationSec.toFixed(1)} s d'audio produites en ${(entry.generationTimeMs / 1000).toFixed(2)} s.` : undefined}
             comparison={comparison}
             trace={entry}
+            hardware={ttsHardware(entry)}
             score={entry.score}
             onScore={(score) => onScore(entry.id, score)}
           />

@@ -7,6 +7,8 @@ import { ConfirmDeleteButton, CopyButton, FavoriteToggle, StarRating } from "@/c
 import { Icon } from "@/components/ui/icon";
 import { EmptyState, Panel, Skeleton } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
+import { HardwareBadge } from "@/components/ui/hardware-badge";
+import { sttHardware } from "@/lib/shared/hardware";
 import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { applyHistoryFilter, countHistoryFilters, HistoryFilterBar, type HistoryFilter } from "@/components/shared/history-filter-bar";
 import { formatDateTime, formatSeconds } from "@/lib/client/format";
@@ -118,6 +120,7 @@ export function SttHistoryList({
                           <span className="tabular-nums">audio {item.durationSec.toFixed(1)} s</span>
                           {item.rtf > 0 && <span className="tabular-nums">RTF {item.rtf.toFixed(3)}</span>}
                           <span className="tabular-nums">{formatDateTime(item.createdAt)}</span>
+                          <HardwareBadge hardware={sttHardware(item)} />
                           <RuntimeBadge trace={item} />
                         </span>
                       </button>

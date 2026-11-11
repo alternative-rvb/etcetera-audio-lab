@@ -7,6 +7,8 @@ import { ConfirmDeleteButton, CopyButton, FavoriteToggle, StarRating } from "@/c
 import { Icon } from "@/components/ui/icon";
 import { EmptyState, Panel, Skeleton } from "@/components/ui/panel";
 import { ProviderBadge } from "@/components/ui/provider-badge";
+import { HardwareBadge } from "@/components/ui/hardware-badge";
+import { ttsHardware } from "@/lib/shared/hardware";
 import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { applyHistoryFilter, countHistoryFilters, HistoryFilterBar, type HistoryFilter } from "@/components/shared/history-filter-bar";
 import { formatBytes, formatDateTime, formatSeconds } from "@/lib/client/format";
@@ -119,6 +121,7 @@ export function TtsHistoryList({
                           <span className="font-semibold text-ink tabular-nums">{formatSeconds(item.generationTimeMs)}</span>
                           <span>{item.voiceName}</span>
                           <span className="tabular-nums">{formatDateTime(item.createdAt)}</span>
+                          <HardwareBadge hardware={ttsHardware(item)} />
                           <RuntimeBadge trace={item} />
                         </span>
                       </button>

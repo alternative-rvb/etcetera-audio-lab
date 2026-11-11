@@ -1,14 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import type { SttHistoryEntry } from "@/lib/shared/types";
 import { CollapsiblePanel } from "@/components/ui/collapsible-panel";
 import { DecisionMatrixChart } from "@/components/shared/decision-matrix-chart";
+import { NoGpuFilter } from "@/components/ui/hardware-badge";
+import { isVpsComparable, sttHardware } from "@/lib/shared/hardware";
 import { averageOf, StatTiles } from "@/components/shared/stat-tiles";
 
 // SECTION: Statistiques et matrice de décision STT (note en fonction du RTF).
 // NOTE: Web Speech n'a pas de RTF mesurable (traitement dans le navigateur), il n'apparaît pas sur la matrice.
 
-export function SttInsightsPanel({ items, onSelect }: { items: SttHistoryEntry[]; onSelect: (id: string) => void }) {
+export function SttInsightsPanel({ items: allItems, onSelect }: { items: SttHistoryEntry[]; onSelect: (id: string) => void }) {
+  // NOTE: filtre actif par défaut, le banc d'essai vise un VPS sans GPU.
+  const [noGpu, setNoGpu] = useState(true);
+  const items = noGpu ? allItems.filter((i) => isVpsComparable(sttHardware(i))) : allItems;
   const rated = items.filter((i) => i.score > 0);
   const averageScore = averageOf(rated.map((i) => i.score));
   const averageRtf = averageOf(items.filter((i) => i.rtf > 0).map((i) => i.rtf));
@@ -21,6 +27,7 @@ export function SttInsightsPanel({ items, onSelect }: { items: SttHistoryEntry[]
       summary={rated.length === 0 ? "Notez une transcription pour comparer" : `${items.length} transcription${items.length > 1 ? "s" : ""}, ${rated.length} notée${rated.length > 1 ? "s" : ""}`}
     >
       <div className="space-y-3">
+        <NoGpuFilter active={noGpu} onChange={setNoGpu} hiddenCount={allItems.length - items.length} />
         <StatTiles
           tiles={[
             { label: "Transcriptions", value: items.length },

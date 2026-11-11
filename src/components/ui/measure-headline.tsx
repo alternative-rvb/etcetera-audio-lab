@@ -1,6 +1,8 @@
 "use client";
 
 import type { RuntimeTrace } from "@/lib/shared/types";
+import type { Hardware } from "@/lib/shared/hardware";
+import { HardwareBadge } from "@/components/ui/hardware-badge";
 import { RuntimeBadge } from "@/components/ui/runtime-badge";
 import { StarRating } from "@/components/ui/feedback-controls";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -71,6 +73,7 @@ export function MeasureHeadline({
   realtimeDetail,
   comparison,
   trace,
+  hardware,
   score,
   onScore,
 }: {
@@ -83,6 +86,7 @@ export function MeasureHeadline({
   realtimeDetail?: string;
   comparison?: PeerComparison;
   trace: RuntimeTrace;
+  hardware: Hardware;
   score: number;
   onScore: (score: number) => void;
 }) {
@@ -113,6 +117,7 @@ export function MeasureHeadline({
             )
           )}
           {comparison && <PeerLine comparison={comparison} />}
+          <HardwareBadge hardware={hardware} />
           <RuntimeBadge trace={trace} />
         </p>
       </div>
