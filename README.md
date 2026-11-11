@@ -52,8 +52,25 @@ Les moteurs locaux tournent côté serveur (Node.js d'abord, Python ou binaire n
 
 - Linux x86_64 ou Windows avec WSL2 (le binaire Piper et espeak-ng téléchargés sont des builds Linux x86_64).
 - Node.js 20.9 ou plus récent, `ffmpeg`, `curl`, `tar` et `bzip2`.
-- Environ 3,5 Go d'espace disque pour les modèles (1,8 Go de plus avec Whisper medium).
+- Environ 5,5 Go d'espace disque pour l'installation de base, jusqu'à 16 Go avec toutes les options (détail ci-dessous).
 - Facultatif: [uv](https://docs.astral.sh/uv/) pour le service Python, et une carte NVIDIA avec CUDA pour Chatterbox et Whisper sur GPU.
+
+### Espace disque
+
+Le dépôt lui-même pèse moins de 10 Mo: l'essentiel vient des dépendances et des modèles téléchargés à l'installation. Les valeurs ci-dessous sont des ordres de grandeur mesurés sur une installation Linux complète.
+
+| Élément | Emplacement | Taille approximative | Installé par |
+| ------- | ----------- | -------------------- | ------------ |
+| Dépendances npm (Kokoro compris) | `node_modules/` | 1,9 Go | `npm run setup` |
+| Modèles sherpa-onnx (Whisper tiny à small, Parakeet, voix Piper) | `models/sherpa/` | 3 Go | `npm run setup` |
+| Voix Piper et binaire de secours | `voices/`, `bin/` | 0,4 Go | `npm run setup` |
+| Whisper medium (option) | `models/sherpa/` | 1,8 Go | `npm run setup:sherpa -- --whisper-medium` |
+| Environnement Python (PyTorch avec CUDA) | `python/.venv/` | 6,3 Go | `npm run setup:chatterbox` |
+| Poids Chatterbox et Faster-Whisper | `~/.cache/huggingface/` (hors projet) | 2 à 4 Go | Premier usage de Chatterbox et Whisper sur GPU |
+| Build de production | `.next/` | 0,4 Go | `npm run build` |
+| Audios générés, historiques et logs | `output/` | Quelques dizaines de Mo, croît à l'usage | Utilisation |
+
+En résumé, comptez environ 5,5 Go sans le service Python, 7 Go avec Whisper medium, et 14 à 16 Go pour l'installation complète avec Chatterbox.
 
 ### Installation
 

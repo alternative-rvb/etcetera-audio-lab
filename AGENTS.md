@@ -18,7 +18,7 @@ Quand une personne demande de l'aide pour installer le projet, il faut vérifier
 | Node.js 20.9 ou plus | `node -v` | Oui | Minimum imposé par Next.js 16. |
 | ffmpeg | `ffmpeg -version` | Oui | Décode l'audio à transcrire en PCM 16 kHz. |
 | curl, tar, bzip2 | `command -v curl tar bzip2` | Oui | Téléchargement et extraction des modèles. |
-| Espace disque | `df -h .` | Oui | Environ 3,5 Go (`models/`, `voices/`, `bin/`), 1,8 Go de plus avec Whisper medium. |
+| Espace disque | `df -h .` | Oui | Environ 5,5 Go en installation de base (`node_modules/`, `models/`, `voices/`, `bin/`), 7 Go avec Whisper medium, 14 à 16 Go avec le service Python (`python/.venv/` et cache `~/.cache/huggingface/`). Détail dans le README. |
 | uv | `uv --version` | Non | Crée le virtualenv Python 3.12 du service Python. |
 | GPU NVIDIA et CUDA | `nvidia-smi` | Non | Accélère Chatterbox et Whisper. Sans GPU, Chatterbox tourne lentement sur CPU. |
 
