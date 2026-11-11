@@ -3,12 +3,13 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 dist/
-bin/
-voices/
-output/
+/bin/
+/voices/
+/output/
 *.log
 .venv/
 venv/
 __pycache__/
 *.pyc
 .tmp/
+.playwright-mcp/
