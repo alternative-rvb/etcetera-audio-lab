@@ -2,7 +2,7 @@
   "name": "etcetera-audio-lab",
   "version": "0.2.0",
   "private": true,
-  "description": "Etcetera, Audio Lab : banc d'essai de moteurs TTS et STT",
+  "description": "Etcetera Audio Lab : banc d'essai de moteurs TTS et STT",
   "scripts": {
     "setup": "bash scripts/setup-piper.sh && npm install",
     "setup:chatterbox": "bash scripts/setup-chatterbox.sh",

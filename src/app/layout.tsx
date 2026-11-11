@@ -10,8 +10,8 @@ const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-mono" });
 
 export const metadata: Metadata = {
-  title: { default: "Etcetera", template: "%s | Etcetera" },
-  description: "Audio Lab : banc d'essai de moteurs de synthèse vocale et de transcription.",
+  title: { default: "Etcetera Audio Lab", template: "%s | Etcetera Audio Lab" },
+  description: "Banc d'essai de moteurs de synthèse vocale et de transcription.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

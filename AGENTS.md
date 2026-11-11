@@ -1,10 +1,10 @@
-# Etcetera
+# Etcetera Audio Lab
 
-Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
+Banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT), en vue d'une intégration ultérieure dans l'app NextJS (SSR) de Nicolas et d'un déploiement sur le VPS OVH (alternative-rvb.cloud), pas avant feu vert explicite.
 
 C'est le laboratoire voix de NowWeAct (`/home/nicolas/projets/_github/NowWeAct`): toute nouvelle fonctionnalité TTS ou STT (nouveau moteur, nouvelle voix, changement de lib, diagnostic de panne) se teste et se compare ici avant d'être portée dans NowWeAct. NowWeAct le référence dans son propre `AGENTS.md`.
 
-Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Le dépôt GitHub (`alternative-rvb/etcetera-audio-lab`) et le dossier local s'appellent désormais `etcetera-audio-lab`.
+Le projet s'appelait TTS-test jusqu'à la migration vers Next.js (backlog id 23). Son nom complet est Etcetera Audio Lab, à ne pas abréger en Etcetera, qui désigne un autre projet plus ancien (dépôt `alternative-rvb/etcetera`). Le dépôt GitHub (`alternative-rvb/etcetera-audio-lab`) et le dossier local s'appellent désormais `etcetera-audio-lab`.
 
 ## Portée actuelle
 

@@ -8,7 +8,7 @@ import { HealthDot } from "@/components/ui/health-dot";
 import { useHealth } from "./health-provider";
 import { ThemeToggle } from "./theme-toggle";
 
-// SECTION: En-tête : marque Etcetera (baseline Audio Lab), navigation, état du service Python, thème.
+// SECTION: En-tête : marque Etcetera Audio Lab, navigation, état du service Python, thème.
 
 const NAV_ITEMS = [
   { href: "/tts", label: "Synthèse vocale", shortLabel: "TTS", icon: FileAudio },
@@ -23,13 +23,13 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-[color-mix(in_srgb,var(--bg)_85%,transparent)] backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
-        <Link href="/tts" className="flex items-center gap-2.5" aria-label="Etcetera, accueil">
+        <Link href="/tts" className="flex items-center gap-2.5" aria-label="Etcetera Audio Lab, accueil">
           <span className="flex size-9 items-center justify-center rounded-xl bg-accent text-accent-contrast retro:shadow-[0_0_16px_var(--glow)]">
             <AudioLines size={19} />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="text-lg font-semibold tracking-tight text-ink retro:font-mono">Etcetera</span>
-            <span className="mt-0.5 text-xs text-muted">Audio Lab</span>
+            <span className="text-lg font-semibold tracking-tight text-ink retro:font-mono">Etcetera Audio Lab</span>
+            <span className="mt-0.5 text-xs text-muted">Laboratoire TTS et STT</span>
           </span>
         </Link>
 

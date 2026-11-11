@@ -1,6 +1,6 @@
-# Etcetera
+# Etcetera Audio Lab
 
-Audio Lab: banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT) pour le français, en vue d'une intégration dans une app NextJS et d'un déploiement sur VPS. Voir [AGENTS.md](AGENTS.md) pour le contexte et les décisions d'architecture.
+Banc d'essai de moteurs de synthèse vocale (TTS) et de reconnaissance vocale (STT) pour le français, en vue d'une intégration dans une app NextJS et d'un déploiement sur VPS. Voir [AGENTS.md](AGENTS.md) pour le contexte et les décisions d'architecture.
 
 L'interface compte trois pages: Synthèse (`/tts`), Transcription (`/stt`) et Logs (`/logs`), avec trois thèmes (clair, sombre, rétro Y2K).
 
